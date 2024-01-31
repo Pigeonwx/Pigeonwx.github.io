@@ -9,9 +9,7 @@
   <meta name="CocoaVersion" content="2299.7">
   <style type="text/css">
     p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000; min-height: 14.0px}
     span.s1 {font-kerning: none}
-    span.Apple-tab-span {white-space:pre}
   </style>
 </head>
 <body>
@@ -22,53 +20,46 @@
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;title&gt;Document&lt;/title&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" /&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta name="description" content="Description"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/vue.css"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;link rel="stylesheet" href="//cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css"/&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css"&gt;</span></p>
 <p class="p1"><span class="s1">&lt;/head&gt;</span></p>
 <p class="p1"><span class="s1">&lt;body&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div id="app"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;!-- 定义加载时候的动作 --&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div id="app"&gt;莫急，Loading......&lt;/div&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>window.$docsify = {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>name: 'KeyonBlog',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>repo: 'https://gitee.com/YanKeyon/YanKeyon',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>loadNavbar: 'navbar.md',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>coverpage: 'coverpage.md',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>search: 'auto',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>noEmoji: true,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>copyCode: {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      <span class="Apple-tab-span">	</span></span>buttonText : 'Copy to clipboard',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      <span class="Apple-tab-span">	</span></span>errorText<span class="Apple-converted-space">  </span>: 'Error',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      <span class="Apple-tab-span">	</span></span>successText: 'Copied'</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>'flexible-alerts': {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      <span class="Apple-tab-span">	</span></span>style: 'flat'</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>formatUpdated: '{YYYY}/{MM}/{DD} {HH}:{mm}',</span></p>
-<p class="p2"><span class="s1"><span class="Apple-converted-space"> </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// 项目名称</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>name: '不拿呐のBlog',</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// 侧边栏支持，默认加载的是项目根目录下的_sidebar.md文件</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>loadSidebar: true,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// 自定义侧边栏后默认不会再生成目录，设置生成目录的最大层级，建议配置为1或者2</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>subMaxLevel: 2,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// 导航栏支持，默认加载的是项目根目录下的_navbar.md文件,使用html方式配置也需开启</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>loadNavbar: true,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// 封面支持，默认加载的是项目根目录下的_coverpage.md文件</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>coverpage: true,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// 最大支持渲染的标题层级</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>maxLevel: 4,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// 搜索配置</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>search: {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>maxAge: 86400000,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>paths: 'auto',</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>placeholder: '搜索',</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>noData: '找不到结果',</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>depth: 4,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>hideOtherSidebarContent: false</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/docsify/lib/docsify.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/docsify/lib/plugins/search.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/docsify-copy-code"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//cdn.jsdelivr.net/npm/docsify-katex@latest/dist/docsify-katex.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="https://unpkg.com/docsify-plugin-flexible-alerts"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/prismjs/components/prism-java.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/prismjs/components/prism-bash.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/prismjs/components/prism-c.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/prismjs/components/prism-cpp.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/prismjs/components/prism-css.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/prismjs/components/prism-javascript.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/prismjs/components/prism-http.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/prismjs/components/prism-python.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/prismjs/components/prism-properties.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/prismjs/components/prism-sql.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/prismjs/components/prism-yaml.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;!-- docsify的js依赖 --&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"&gt;&lt;/script&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;!-- 搜索功能支持 --&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"&gt;&lt;/script&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;!-- 图片放大缩小支持 --&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"&gt;&lt;/script&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;!-- emoji表情支持 --&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/emoji.min.js"&gt;&lt;/script&gt;</span></p>
 <p class="p1"><span class="s1">&lt;/body&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/html&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;/html&gt;<span class="Apple-converted-space"> </span></span></p>
 </body>
 </html>
