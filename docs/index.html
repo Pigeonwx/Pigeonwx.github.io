@@ -46,18 +46,7 @@
 <p class="p1"><span class="s1"><span class="Apple-converted-space">      <span class="Apple-tab-span">	</span></span>style: 'flat'</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>},</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>formatUpdated: '{YYYY}/{MM}/{DD} {HH}:{mm}',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>plugins: [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>function(hook, vm) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>hook.beforeEach(function (html) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>var url = 'https://gitee.com/YanKeyon/YanKeyon/blob/master/' + vm.route.file</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>var editHtml = '[:memo: Edit Document](' + url + ')\n'</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>return html</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>+ '\n----\n'</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>+ '&gt; Last Modified {docsify-updated} '</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>+ editHtml</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>})</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>]</span></p>
+<p class="p2"><span class="s1"><span class="Apple-converted-space"> </span></span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="//unpkg.com/docsify/lib/docsify.min.js"&gt;&lt;/script&gt;</span></p>
