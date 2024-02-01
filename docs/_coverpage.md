@@ -1,7 +1,16 @@
-# Pigeonwx's PagesBlog
+<!-- _coverpage.md -->
 
-> A Knowledge Repository.
+<img width="180px" style="border-radius: 50%" bor src="_media/icon.jpg">
 
-[Get Started](#keyonblog) 
+# Pigeon
 
-![](../pics/wallpaper/pexels-pixabay-220660.jpg)
+- Pigeonwx |  murray.zju@gmail.com
+- 热爱生活，步履不停
+
+
+[Github](<https://github.com/moxi624/mogu_blog_v2>)
+[开始阅读](README.md)
+
+<!-- 背景图片 -->
+
+![](_media/bg.jpg)

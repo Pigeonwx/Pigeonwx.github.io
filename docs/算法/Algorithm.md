@@ -1,0 +1,1103 @@
+# Algorithm
+
+> 开始于2023年年末，仅用于个人刷算法题的笔记。
+
+## 零、基本算法
+
+###  一、基本数学
+
+#### 1.1 最大公约数
+
+```java
+public int gcd(int x, int y){
+        if(x>y){
+            return gcd(y,x);
+        }
+        while(y%x!=0){
+            int t=y%x;
+            y=x;
+            x=t;
+        }
+        return x;
+    }
+```
+
+
+
+## 一、常用工具
+
+### 1.1 Stack 
+
+```java
+Stack<Integer> stack = new Stack<>();
+stack.push(1);
+stack.push(2);
+stack.push(3);
+int topElement = stack.pop(); // 移除并返回栈顶元素
+int topElement = stack.peek(); // 查看栈顶元素但不移除
+boolean isEmpty = stack.isEmpty(); // 检查栈是否为空
+```
+
+### 1.2 队列
+
+- 普通队列
+
+  - ```java
+    Queue<Integer> queue = new LinkedList<>();
+    queue.offer(1);
+    queue.offer(2);
+    queue.offer(3);
+    int frontElement = queue.poll(); // 移除并返回队列头部的元素
+    int frontElement = queue.peek(); // 查看队列头部的元素但不移除
+    boolean isEmpty = queue.isEmpty(); // 检查队列是否为空
+    ```
+
+  
+
+- 双端队列
+
+  - ```java
+    Deque<Integer> deque = new LinkedList<>();
+    deque.addFirst(1);
+    deque.offerFirst(2);
+    
+    Deque<Integer> deque = new LinkedList<>();
+    deque.addLast(3);
+    deque.offerLast(4);
+    
+    int frontElement = deque.removeFirst(); // 从队头移除并返回元素
+    int rearElement = deque.removeLast(); // 从队尾移除并返回元素
+    int frontElement = deque.getFirst(); // 查看队头元素但不移除
+    int rearElement = deque.getLast(); // 查看队尾元素但不移除
+    boolean isEmpty = deque.isEmpty(); // 检查双端队列是否为空
+    ```
+
+- 优先级队列
+
+  - ```java
+    import java.util.PriorityQueue;
+    
+    public class PriorityQueueExample {
+        public static void main(String[] args) {
+            // 创建一个优先队列，按自然顺序排序
+            PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+    
+            // 添加元素到队列
+            minHeap.offer(10);
+            minHeap.offer(5);
+            minHeap.offer(8);
+            minHeap.offer(1);
+    
+            // 输出队列中的元素（按照升序排列）
+            System.out.println("升序排列的元素：");
+            while (!minHeap.isEmpty()) {
+                System.out.println(minHeap.poll());
+            }
+    
+            // 创建一个使用比较器来确定优先级的优先队列（降序排列）
+            PriorityQueue<Integer> maxHeap = new PriorityQueue<>((a, b) -> b - a);
+    
+            // 添加元素到队列
+            maxHeap.offer(10);
+            maxHeap.offer(5);
+            maxHeap.offer(8);
+            maxHeap.offer(1);
+    
+            // 输出队列中的元素（按照降序排列）
+            System.out.println("降序排列的元素：");
+            while (!maxHeap.isEmpty()) {
+                System.out.println(maxHeap.poll());
+            }
+        }
+    }
+    
+    ```
+
+
+
+### 1.3 Map
+
+#### 基本操作
+
+```java
+Map<String, Integer> myMap = new HashMap<>();
+myMap.put("Alice", 25);
+myMap.put("Bob", 30);
+myMap.put("Charlie", 28);
+
+int age = myMap.get("Alice"); // 获取键 "Alice" 对应的值
+// mpMap.getOrDefault(i, default)
+boolean containsBob = myMap.containsKey("Bob");
+boolean containsAge28 = myMap.containsValue(28);
+
+// 遍历键或值： 通过迭代 Map 可以遍历它的键或值。
+for (String name : myMap.keySet()) {
+    System.out.println("Name: " + name);
+}
+for (int age : myMap.values()) {
+    System.out.println("Age: " + age);
+}
+for (Map.Entry<String, Integer> entry : myMap.entrySet()) {
+    String name = entry.getKey();
+    int age = entry.getValue();
+    System.out.println(name + " is " + age + " years old.");
+}
+myMap.remove("Charlie"); // 删除键 "Charlie" 对应的键值对
+Set<String> keys = myMap.keySet();
+Collection<Integer> values = myMap.values();
+
+```
+
+ #### Pair
+
+```java
+import javafx.util.Pair;
+public class PairExample {
+    public static void main(String[] args) {
+        Pair<String, Integer> pair = new Pair<>("Alice", 25);
+        String name = pair.getKey();
+        int age = pair.getValue();
+        System.out.println(name + " is " + age + " years old.");
+    }
+}
+
+```
+
+
+
+#### TreeMap ceiling&floor
+
+```java
+TreeMap<Integer, String> treeMap = new TreeMap<>();
+treeMap.put(1, "One");
+treeMap.put(3, "Three");
+treeMap.put(5, "Five");
+
+Integer ceilingResult = treeMap.ceilingKey(2); // 结果是3
+Integer ceilingResult2 = treeMap.ceilingKey(4); // 结果是5
+
+
+TreeMap<Integer, String> treeMap = new TreeMap<>();
+treeMap.put(1, "One");
+treeMap.put(3, "Three");
+treeMap.put(5, "Five");
+
+Integer floorResult = treeMap.floorKey(4); // 结果是3
+Integer floorResult2 = treeMap.floorKey(0); // 结果是null，因为没有小于0的键
+
+```
+
+#### TreeMap 自定义排序
+
+```java
+TreeMap<Person, String> people = new TreeMap<>(new AgeComparator<Person>(){
+  @Override
+    public int compare(Person person1, Person person2) {
+        return person1.getAge() - person2.getAge();
+    }
+});
+        people.put(new Person("Alice", 30), "Engineer");
+        people.put(new Person("Bob", 25), "Designer");
+        people.put(new Person("Charlie", 35), "Manager");
+
+        for (Person person : people.keySet()) {
+            System.out.println(person + " - " + people.get(person));
+        }
+```
+
+
+
+### 1.4 Set
+
+#### 基本操作
+
+```java
+Set<String> set = new HashSet<>(); // 使用 HashSet
+Set<Integer> linkedHashSet = new LinkedHashSet<>(); // 使用 LinkedHashSet，保持插入顺序
+Set<String> treeSet = new TreeSet<>(); // 使用 TreeSet，元素有序且可排序
+
+set.add("apple");
+set.add("banana");
+set.add("cherry");
+
+set.remove("banana");
+boolean contains = set.contains("apple");
+int size = set.size();
+
+for (String item : set) {
+    System.out.println(item);
+}
+
+set.clear();
+String[] array = set.toArray(new String[0]);
+
+
+Iterator<String> iterator = set.iterator();
+while (iterator.hasNext()) {
+    String item = iterator.next();
+    System.out.println(item);
+}
+
+boolean isEmpty = set.isEmpty();
+
+```
+
+#### TreeSet ceiling & floor
+
+```java
+//一些函数
+import java.util.TreeSet;
+
+public class TreeSetExample {
+    public static void main(String[] args) {
+        TreeSet<Integer> treeSet = new TreeSet<>();
+        treeSet.add(1);
+        treeSet.add(3);
+        treeSet.add(5);
+        treeSet.add(7);
+
+        Integer ceilingResult = treeSet.ceiling(4); // 返回大于或等于4的最小元素，即 5
+        Integer floorResult = treeSet.floor(4);     // 返回小于或等于4的最大元素，即 3
+
+        System.out.println("Ceiling: " + ceilingResult);
+        System.out.println("Floor: " + floorResult);
+    }
+}
+```
+
+#### TreeSet 自定义排序
+
+```java
+TreeSet<Person> people = new TreeSet<>(new Comparator<Person>() {
+       @Override
+       public int compare(Person person1, Person person2) {
+                return person1.getAge() - person2.getAge();
+            }
+        });
+        people.add(new Person("Alice", 30));
+        people.add(new Person("Bob", 25));
+        people.add(new Person("Charlie", 35));
+
+        for (Person person : people) {
+            System.out.println(person);
+        }
+}
+```
+
+
+
+### 1.5 Vector-建议多线程
+
+```java
+Vector<String> vector = new Vector<>();
+vector.add("Apple");
+vector.add("Banana");
+vector.add("Cherry");
+String element = vector.get(1); // 获取索引为1的元素，即 "Banana"
+vector.set(0, "Orange"); // 将索引为0的元素修改为 "Orange"
+vector.remove(2); // 删除索引为2的元素，即 "Cherry"
+int size = vector.size();
+for (String item : vector) {
+    System.out.println(item);
+}
+boolean contains = vector.contains("Apple");
+vector.clear();
+
+```
+
+### 1.6 List
+
+```java
+ArrayList<String> list = new ArrayList<>();
+list.add("Apple");
+list.add("Banana");
+list.add("Cherry");
+String element = list.get(1); // 获取索引为1的元素，即 "Banana"
+list.set(0, "Orange"); // 将索引为0的元素修改为 "Orange"
+list.remove(2); // 删除索引为2的元素，即 "Cherry"
+int size = list.size();
+for (String item : list) {
+    System.out.println(item);
+}
+boolean contains = list.contains("Apple");
+list.clear();
+
+```
+
+### 1.7 Stream
+
+Java中的Stream是Java 8引入的一个新的抽象概念，它提供了一种更便利和高效的处理集合数据的方式。Stream可以让我们以一种类似于SQL查询的方式对集合数据进行操作，包括过滤、映射、排序、归约等。
+
+以下是Java中Stream的一些常见用法：
+
+1. 创建Stream：
+   - 从集合创建：`List<String> list = Arrays.asList("a", "b", "c"); Stream<String> stream = list.stream();`
+   - 从数组创建：`String[] array = {"a", "b", "c"}; Stream<String> stream = Arrays.stream(array);`
+   - 使用Stream.of创建：`Stream<String> stream = Stream.of("a", "b", "c");`
+
+2. 中间操作：
+   - 过滤：`stream.filter(s -> s.startsWith("a"))`
+   - 映射：`stream.map(String::toUpperCase)`
+   - 排序：`stream.sorted()`
+   - 去重：`stream.distinct()`
+   - 截断：`stream.limit(5)`
+   - 跳过：`stream.skip(3)`
+
+3. 终端操作：
+   - 收集到集合：`List<String> resultList = stream.collect(Collectors.toList())`
+   - 转换为数组：`String[] array = stream.toArray(String[]::new)`
+   - 匹配：`boolean anyMatch = stream.anyMatch(s -> s.startsWith("a"))`
+   - 计数：`long count = stream.count()`
+   - 最大值：`Optional<String> max = stream.max(Comparator.naturalOrder())`
+
+4. 并行Stream：
+   - 通过`parallelStream()`方法可以将普通Stream转换为并行Stream，以便在多核处理器上并行执行操作。
+
+Java中的Stream提供了丰富的API，并且可以与Lambda表达式和方法引用等特性结合使用，可以让代码更加简洁和易读。使用Stream可以帮助我们更方便地对集合数据进行处理，并且利用并行Stream可以提高处理速度。
+
+- **数字平方排序（倒叙）输出&&字符串转 map 输出**
+
+```java
+import java.util.List;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
+class Main {
+    public static void main(String[] args) {
+        List<Integer> numbers = Arrays.asList(3, 2, 2, 3, 7, 3, 5);
+        // 获取对应的平方数
+//        List<Integer> squaresList = numbers.stream().map( i -> i*i).distinct().collect(Collectors.toList());
+        List<Integer> squaresList = numbers.stream()
+                .map(i -> i * i)
+                .sorted((x, y) -> y - x)
+                .collect(Collectors.toList());
+//        squaresList.forEach(System.out::println);
+        squaresList.forEach(num -> {
+            num++;
+            System.out.println(num);
+        });
+
+        List<String> strList = Arrays.asList("a", "ba", "bb", "abc", "cbb", "bba", "cab");
+        Map<Integer, String> strMap = new HashMap<Integer, String>();
+
+        strMap = strList.stream()
+                .collect( Collectors.toMap( str -> strList.indexOf(str), str -> str ) );
+        
+        strMap.forEach((key, value) -> {
+            System.out.println(key+"::"+value);
+        });
+
+    }
+}
+```
+
+
+
+## 二、常用函数
+
+### 2.1 逆转函数
+
+- ```java
+  String str = "Hello, World!";
+  StringBuilder reversedStr = new StringBuilder(str).reverse();
+  ```
+
+- ```java
+  List<Integer> list = new ArrayList<>();
+  list.add(1);
+  list.add(2);
+  list.add(3);
+  
+  Collections.reverse(list);
+  ```
+
+### 2.2 排序函数
+
+#### Collections 排序
+
+> java.util.Collections中的静态方法的Collection.sort()主要是针对集合框架中的动态数组，链表，树，哈希表等（ ArrayList、LinkedList、HashSet、LinkedHashSet、HashMap、LinkedHashMap ）进行排序。
+
+```java
+Collections.sort(s,new new Comparator <student>(){
+        public int compare(student p1,student p2){
+            if (p1.getGrade()>p2.getGrade())
+                return 1;
+            else if (p1.getGrade()<p2.getGrade())
+                return -1;
+            else
+                return 0;
+        }
+    }
+);
+```
+
+
+
+#### Arrays 排序
+
+```java
+Arrays.sort(s,new new Comparator <student>(){
+        public int compare(student p1,student p2){
+            if (p1.getGrade()>p2.getGrade())
+                return 1;
+            else if (p1.getGrade()<p2.getGrade())
+                return -1;
+            else
+                return 0;
+        }
+    }
+);
+```
+
+
+
+### 2.3 类型转换
+
+- ```java
+  String str = "123";
+  int num = Integer.parseInt(str);
+  
+  String str = "3.14";
+  double num = Double.parseDouble(str);
+  
+  int num = 123;
+  String str = Integer.toString(num);
+  String str2 = String.valueOf(num);
+  
+  double num = 3.14;
+  String str = Double.toString(num);
+  
+  String str = "Hello";
+  char[] charArray = str.toCharArray();
+  
+  char[] charArray = {'H', 'e', 'l', 'l', 'o'};
+  String str = new String(charArray);
+  
+  String str = "true";
+  boolean bool = Boolean.parseBoolean(str);
+  
+  boolean bool = true;
+  String str = Boolean.toString(bool);
+  
+  StringBuilder stringBuilder = new StringBuilder("Hello, ");
+  stringBuilder.append("world!");
+  String result = stringBuilder.toString();
+  
+  ```
+
+### 2.4 二分查找
+
+- ```java
+  //A[]为递增序列，x 为欲查询的数，函数返回第一个大于 × 的元素的位置
+  //二分上下界为左闭右闭的[left, right],传入的初值为[0,n]
+   int upper_bound(int A[], int left, int right, int x){
+   		int mid;
+   		//mid为 left 和 right 的中点
+  		 while (left < right) ( //对[left,right]来说, left==right意味着找到唯一位置
+  		 if(A[mid] > x){
+  			 mid = (left + right) / 2;
+  			//取中点
+  			//中间的数大于 ×
+   			right = mid;
+  			//往左子区间[left，mid]查找
+  		else { //中间的数小于等于 ×
+   			left = mid + 1;
+   			//往右子区间[mid+1, right]查找
+      }
+         return left;
+    }
+  ```
+
+## 三、常用算法
+
+### 3.1 最短路径
+
+#### Dijkstra
+
+> 以邻接矩阵为例
+
+**代码示例**
+
+```java
+import java.util.Arrays;
+
+public class DijkstraAlgorithm {
+    private static final int V = 6; // 图中节点的数量
+
+    // 辅助函数，用于查找距离数组中最小值的索引
+    private int minDistance(int[] dist, boolean[] visited) {
+        int min = Integer.MAX_VALUE;
+        int minIndex = -1;
+
+        for (int v = 0; v < V; v++) {
+            if (!visited[v] && dist[v] < min) {
+                min = dist[v];
+                minIndex = v;
+            }
+        }
+
+        return minIndex;
+    }
+
+    // 打印最短路径
+    private void printSolution(int[] dist) {
+        System.out.println("节点\t最短距离");
+        for (int i = 0; i < V; i++) {
+            System.out.println(i + "\t" + dist[i]);
+        }
+    }
+
+    // 使用Dijkstra算法找到从起始节点到所有其他节点的最短路径
+    public void dijkstra(int[][] graph, int src) {
+        int[] dist = new int[V]; // 存储最短距离
+        boolean[] visited = new boolean[V]; // 记录节点是否已被访问
+
+        // 初始化距离数组
+        Arrays.fill(dist, Integer.MAX_VALUE);
+        dist[src] = 0;
+
+        for (int count = 0; count < V - 1; count++) {
+            int u = minDistance(dist, visited);
+            visited[u] = true;
+
+            for (int v = 0; v < V; v++) {
+                if (!visited[v] && graph[u][v] != 0 && dist[u] != Integer.MAX_VALUE && dist[u] + graph[u][v] < dist[v]) {
+                    dist[v] = dist[u] + graph[u][v];
+                }
+            }
+        }
+
+        // 打印最短路径
+        printSolution(dist);
+    }
+
+    public static void main(String[] args) {
+        int[][] graph = {
+            {0, 1, 4, 0, 0, 0},
+            {1, 0, 4, 2, 7, 0},
+            {4, 4, 0, 3, 5, 0},
+            {0, 2, 3, 0, 4, 6},
+            {0, 7, 5, 4, 0, 7},
+            {0, 0, 0, 6, 7, 0}
+        };
+
+        DijkstraAlgorithm dijkstra = new DijkstraAlgorithm();
+        dijkstra.dijkstra(graph, 0);
+    }
+}
+
+```
+
+#### Floyd
+
+> 以邻接表为例
+
+**代码示例**
+
+```java
+public class FloydWarshallAlgorithm {
+    private static final int V = 4; // 图中节点的数量
+
+    // 打印最短路径矩阵
+    private void printSolution(int[][] dist) {
+        System.out.println("最短路径矩阵:");
+        for (int i = 0; i < V; i++) {
+            for (int j = 0; j < V; j++) {
+                if (dist[i][j] == Integer.MAX_VALUE) {
+                    System.out.print("INF\t");
+                } else {
+                    System.out.print(dist[i][j] + "\t");
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    // 使用Floyd-Warshall算法查找最短路径
+    public void floydWarshall(int[][] graph) {
+        int[][] dist = new int[V][V];
+
+        // 初始化最短路径矩阵
+        for (int i = 0; i < V; i++) {
+            for (int j = 0; j < V; j++) {
+                dist[i][j] = graph[i][j];
+            }
+        }
+
+        // 逐一考虑每个中间节点
+        for (int k = 0; k < V; k++) {
+            for (int i = 0; i < V; i++) {
+                for (int j = 0; j < V; j++) {
+                    if (dist[i][k] != Integer.MAX_VALUE && dist[k][j] != Integer.MAX_VALUE && dist[i][k] + dist[k][j] < dist[i][j]) {
+                        dist[i][j] = dist[i][k] + dist[k][j];
+                    }
+                }
+            }
+        }
+
+        // 打印最短路径矩阵
+        printSolution(dist);
+    }
+
+    public static void main(String[] args) {
+        int[][] graph = {
+            {0, 5, Integer.MAX_VALUE, 10},
+            {Integer.MAX_VALUE, 0, 3, Integer.MAX_VALUE},
+            {Integer.MAX_VALUE, Integer.MAX_VALUE, 0, 1},
+            {Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, 0}
+        };
+
+        FloydWarshallAlgorithm floydWarshall = new FloydWarshallAlgorithm();
+        floydWarshall.floydWarshall(graph);
+    }
+}
+
+```
+
+
+
+### 3.2 动态规划
+
+#### 最长公共子序列
+
+> 给定两个字符串（或数字序列）A 和 B，求一个字符串，使得这个字符串是 A 和 B 的最长公共部分(子序列可以不连续)。
+
+```java
+int lenA = strlen(A + 1); 
+//由于读入时下标从 1 开始，因此读取长度也从+1 开始
+ int lenBstrlen(B + 1);
+//边界
+ for (int i = 0; i <= lenA; i++) {
+ 		dp[i][0] = 0;
+ }
+ for (int j=0; j <= lenB; j++){
+ 		dp[0] [j] = 0;
+ }
+//状态转移方程
+for (int i = 1; i <= lenA; i++) {
+ 		for(int j = 1; j <= lenB; j++) {
+ 		if (A[i] == B[j]){
+ 			dp[i][] = dp[i-1][-1] + 1;
+    } else {
+ 			dp[i][j] = max (dp[i - 1][5], dp[i][ - 1]);
+    }
+ }
+//dp[lenA] [lenB]是答案
+  return dp[lenA] [lenB]
+
+```
+
+#### 最长回文子串
+
+> 给出一个字符串 S，求 S 的最长回文子串的长度。
+
+```java
+//边界
+ for (int i = 0; i < len; i++){
+ 		dp[i][i] = 1;
+ 		if (i < len - 1) {
+ 			if(S[i] == S[i + 1]) {
+ 				dp [i] [i + 1] = 1;
+				ans =2; //初始化时注意当前最长回文子串长度
+       }
+      }
+ }
+     //状态转移方程
+for(int L = 3; L <= len; L++) { //枚举子串的长度
+ 		for (int i =0; i+L-1< len; i++) //枚举子串的起始端点
+ 			int j=i+L-1; //子串的右端点
+ 			if(S[i] S[j] && dp[i + 1][ - 1] == 1) {
+ 				dp[i] [j] -1;
+				ans= L; //更新最长回文子串长度
+      }
+ 		}
+}
+   
+```
+
+
+
+#### 01背包问题
+
+> 有 n 件物品，每件物品的重量为 w[i]，价值为 c[i]。现有一个容量为 V 的背包，问如何
+> 选取物品放入背包，使得背包内物品的总价值最大。其中每种物品都只有1 件。
+
+``` java
+ for(int i=1;i<=n;i++){
+ 		for(int v=V;v>= w[i];v--){
+      //可以减少空间复杂度，逆序枚举v  dp [v]=max (dp[v],dp[v-w[i]]+c[i]);
+      dp[i][v]=max (dp[i-1][v],dp[i-1][v-w[i]]+c[i]);
+   }
+ }
+```
+
+
+
+
+
+#### 完全背包问题
+
+> 有 n 种物品，每种物品的单件重量为 w[i]，价值为 c[i]。现有一个容量为 V 的背包，问
+> 如何选取物品放入背包,使得背包内物品的总价值最大。其中每种物品都有无穷件。
+
+```java
+ for(int i=1;i<=n;i++){
+ 			for(int v= w[i];v<= V;v++){ 
+        dp[i][v]=max (dp[i-1][v],dp[i][v-w[i]]+c[i]);
+        //可以简化，正向枚举 dp[v]=max (dp[v], dp[v-w [i]]+c[i]);
+ 			}
+ }
+	
+```
+
+#### 最长公共子序列
+
+> 给定两个字符串（或数字序列）A 和 B，求一个字符串，使得这个字符串是 A 和 B 的最长公共部分(子序列可以不连续)。
+
+```java
+//边界
+ for (int i =0; i <= lenA; i++) {
+ dp[i] [0] =0;
+ for (int j = 0; j <= lenB; j++) {
+ dp[0][] = 0;
+//状态转移方程
+ for(int i = 1; i <= lenA; i++) {
+ 		for (int j = 1; j <= lenB; j++) {
+ 			if (A[i] == B[j])
+ 				dp[i][j] = dp[i-1][j-1] +1;
+ 			} else
+ 				dp[i][j] = max(dp[i - 1][j], dp[i][ - 1]);
+ 		}
+	} 
+```
+
+
+
+### 3.3 排序算法-手写实现
+
+#### 3.3.1 快速排序
+
+```c++
+int partion(int A[], int low, int high) {
+    int temp = A[low];
+    int l = low, h = high;
+    while (l < h) {
+        while (l < h && temp <= A[h]) {
+            h--;
+        }
+        A[l] = A[h];
+        while (l < h && temp >= A[l]) {
+            l++;
+        }
+        A[h] = A[l];
+    }
+    A[l] = temp;
+    return l;
+}
+
+void quick_Sort(int A[], int low, int high) {
+    if (low < high) {
+        int pos = partion(A, low, high);
+        quick_Sort(A, low, pos - 1);
+        quick_Sort(A, pos + 1, high);
+    }
+}
+```
+
+
+
+#### 3.3.2 桶排序
+
+```java
+public static void bucketSort(int[] array) {
+    int max = Arrays.stream(array).max().getAsInt();
+    int min = Arrays.stream(array).min().getAsInt();
+    int bucketSize = 5;
+    int bucketCount = (max - min) / bucketSize + 1;
+    ArrayList<ArrayList<Integer>> buckets = new ArrayList<>(bucketCount);
+    for (int i = 0; i < bucketCount; i++) {
+        buckets.add(new ArrayList<>());
+    }
+
+    for (int value : array) {
+        int bucketIndex = (value - min) / bucketSize;
+        buckets.get(bucketIndex).add(value);
+    }
+
+    for (ArrayList<Integer> bucket : buckets) {
+        Collections.sort(bucket);
+    }
+
+    int index = 0;
+    for (ArrayList<Integer> bucket : buckets) {
+        for (int value : bucket) {
+            array[index++] = value;
+        }
+    }
+}
+
+public static void main(String[] args) {
+    int[] array = {29, 25, 3, 49, 9, 37, 21, 43};
+    bucketSort(array);
+    System.out.println(Arrays.toString(array));
+}
+```
+
+
+## 四、奇思妙想
+
+### 4.1 GospersHack
+
+- 从小到大n个二进制位里面挑选k个1
+
+```java
+void GospersHack(int k, int n)
+{
+    int set = (1 << k) - 1;
+    int limit = (1 << n);
+    while (set < limit)
+    {
+        DoStuff(set);
+
+        // Gosper's hack:
+        int c = set & - set;
+        int r = set + c;
+        set = (((r ^ set) >> 2) / c) | r;
+    }
+}
+```
+
+
+
+### 4.2 单调栈
+
+**定义：**单调栈是一种特殊的数据结构，它的特点是栈中的元素保持一种单调性，可以是单调递增或单调递减。单调栈常被用于解决下一个更大元素/更小元素等问题。
+
+**举个例子：**一个常见的问题是求解数组中每个元素的下一个更大元素。给定一个数组，要求找出数组中每个元素右边第一个比它大的元素。如果不存在就输出-1。这个问题就可以用单调栈来解决。具体的Java代码如下：
+
+```java
+public int[] nextGreaterElement(int[] nums) {
+    int[] res = new int[nums.length];
+    Deque<Integer> stack = new ArrayDeque<>();
+    for (int i = nums.length - 1; i >= 0; i--) {
+        while (!stack.isEmpty() && stack.peek() <= nums[i]) {
+            stack.pop();
+        }
+        res[i] = stack.isEmpty() ? -1 : stack.peek();
+        stack.push(nums[i]);
+    }
+    return res;
+}
+```
+
+这个代码中，我们从右向左遍历数组，并维护一个单调递减的栈。对于每个元素，当栈不为空且栈顶元素小于或等于当前元素时，就将栈顶元素出栈，这样就保证了栈顶元素总是当前元素的下一个更大元素。然后，将当前元素入栈。最后，如果栈为空，说明当前元素没有下一个更大元素，结果就是-1，否则结果就是栈顶元素。通过单调栈，我们可以在O(n)的时间复杂度内解决这个问题，比暴力解法的O(n^2)要快很多。
+
+
+
+### 4.3 字典树
+
+![截屏2024-01-10 19.40.12](./Algorithm/截屏2024-01-10 19.40.12.png)
+
+
+
+**参考代码如下：**
+
+```java
+class TrieNode {
+    private TrieNode[] children;
+    private boolean isEndOfWord;
+
+    public TrieNode() {
+        this.children = new TrieNode[26];
+        this.isEndOfWord = false;
+    }
+
+    public void insert(String word) {
+        TrieNode node = this;
+        for (char c : word.toCharArray()) {
+            int index = c - 'a';
+            if (node.children[index] == null) {
+                node.children[index] = new TrieNode();
+            }
+            node = node.children[index];
+        }
+        node.isEndOfWord = true;
+    }
+
+    public boolean search(String word) {
+        TrieNode node = this;
+        for (char c : word.toCharArray()) {
+            int index = c - 'a';
+            if (node.children[index] == null) {
+                return false;
+            }
+            node = node.children[index];
+        }
+        return node.isEndOfWord;
+    }
+
+    public boolean startsWith(String prefix) {
+        TrieNode node = this;
+        for (char c : prefix.toCharArray()) {
+            int index = c - 'a';
+            if (node.children[index] == null) {
+                return false;
+            }
+            node = node.children[index];
+        }
+        return true;
+    }
+}
+
+public class Trie {
+    private TrieNode root;
+
+    public Trie() {
+        this.root = new TrieNode();
+    }
+
+    public void insert(String word) {
+        root.insert(word);
+    }
+
+    public boolean search(String word) {
+        return root.search(word);
+    }
+
+    public boolean startsWith(String prefix) {
+        return root.startsWith(prefix);
+    }
+}
+
+```
+
+
+
+维护异或值
+
+
+
+### 4.4 LCA倍增法
+
+![截屏2024-01-26 21.27.33](./Algorithm/截屏2024-01-26 21.27.33.png)
+
+```
+class Solution {
+   public int[] minOperationsQueries(int n, int[][] edges, int[][] queries) {
+       int m = 32 - Integer.numberOfLeadingZeros(n);
+
+       // 建图
+       List<int[]>[] g = new List[n];
+       Arrays.setAll(g, i -> new ArrayList<>()); // 初始化图
+       int[][] f = new int[n][m]; // 倍增结点数组
+       int[] p = new int[n]; // 父结点数组
+       int[][] cnt = new int[n][0]; // 记录结点到根结点的边权出现次数
+       int[] depth = new int[n]; // 记录结点深度
+       for (var e : edges) {
+           int u = e[0], v = e[1], w = e[2] - 1;
+           g[u].add(new int[] {v, w});
+           g[v].add(new int[] {u, w});
+       }
+       cnt[0] = new int[26];
+
+       // 层次遍历初始化各变量
+       Deque<Integer> q = new ArrayDeque<>();
+       q.offer(0);
+       while (!q.isEmpty()) {
+           int i = q.poll();
+           f[i][0] = p[i]; // 从结点 i 走 i^0 步（f[i][0]）到达 i 的父结点（p[i]）
+           for (int j = 1; j < m; ++j) {
+               f[i][j] = f[f[i][j - 1]][j - 1]; // 完成 f[i][j] 的初始化
+           }
+           for (var nxt : g[i]) { // 遍历结点 i 的相邻结点
+               int j = nxt[0], w = nxt[1];
+               if (j != p[i]) { // 不遍历结点 i 的父结点，即只遍历结点 i 的子结点
+                   p[j] = i; // 完成 p[j] 的初始化，即结点 j 的父结点指向结点 i 
+                   cnt[j] = cnt[i].clone(); // 结点 j 到根结点的边权计数在父结点 i 到根结点的边权计数基础上计算，因此先克隆一份
+                   cnt[j][w]++; // 当前遍历到的边 (i, j) 的权重计数计入cnt数组，即从结点 j 到根结点所有边的权重计数
+                   depth[j] = depth[i] + 1; // 初始化 depth 深度数组
+                   q.offer(j);
+               }
+           }
+       }
+       int k = queries.length;
+       int[] ans = new int[k];
+       for (int i = 0; i < k; ++i) {
+           int u = queries[i][0], v = queries[i][1];
+           int x = u, y = v;
+           if (depth[x] < depth[y]) { // 如果 x 比 y 浅则交换 x, y 保证 x 的深度大于等于 y
+               int t = x;
+               x = y;
+               y = t;
+           }
+
+           // 重点 1，根据 f 数组先将 x 走到与 y 同层
+           for (int j = m - 1; j >= 0; --j) { // 先尽可能走最大的一步，即 2^j 步，如果超过了 y 的层数，就不走这一步，尝试 2^(j-1) 步。
+               if (depth[x] - depth[y] >= (1 << j)) { // 如果 x 与 y 的深度差大于等于 这一步（ 2^j ），那就走这一步，将最近的公共祖先结点 x 更新。
+                   x = f[x][j];
+               }
+           }
+
+           // 重点 2, 将已是同层的 x, y 继续向上走更新 x, y 直到 x, y 的公共祖先相同
+           for (int j = m - 1; j >= 0; --j) { // 还是先尽可能走最大的一步
+               if (f[x][j] != f[y][j]) { // 如果走这一步还不是公共祖先，就走这一步
+                   x = f[x][j]; // 更新 x, y
+                   y = f[y][j];
+               }
+           }
+
+           // 如果重点 1 的循环已经得到了 x, y 不仅同层而且就是相同的结点，那么 x 就是最近的公共祖先
+           // 否则会执行重点 2 里的if语句，这样更新后的 x, y 是不相同的，而是 x, y 的父结点是相同的。（可以画图试试看），此时会执行以下if语句，让 x 再走一步到 x, y 的父结点，也就是最近公共祖先。
+           if (x != y) { // 
+               x = p[x];
+           }
+           int mx = 0;
+           for (int j = 0; j < 26; ++j) { // 得到从 u, v 到公共祖先 x 的边权众数。
+               mx = Math.max(mx, cnt[u][j] + cnt[v][j] - 2 * cnt[x][j]);
+           }
+           ans[i] = depth[u] + depth[v] - 2 * depth[x] - mx; // u 到 v 的路径长度减去边权众数就是需要更改权重的边数，即得到第 i 个查询的答案
+       }
+       return ans;
+   }
+}
+```
+
+
+
+### 4.5 置数求和
+
+> 求一个数的二进制中有几个1 (分治思想)
+
+```java
+  static int bitCount(int x) {
+        x = (x & 0b01010101010101010101010101010101) + ((x >> 1) & 0b01010101010101010101010101010101);
+        x = (x & 0b00110011001100110011001100110011) + ((x >> 2) & 0b00110011001100110011001100110011);
+        x = (x & 0b00001111000011110000111100001111) + ((x >> 4) & 0b00001111000011110000111100001111);
+        x = (x & 0b00000000111111110000000011111111) + ((x >> 8) & 0b00000000111111110000000011111111);
+        x = (x & 0b00000000000000001111111111111111) + ((x >> 16) & 0b00000000000000001111111111111111);
+        return x;
+    }
+```
+
+### 4.6 贝祖法解决两杯喝水问题
+
+> 裴蜀定理（或贝祖定理）得名于法国数学家艾蒂安·裴蜀，说明了对任何整数a、b和它们的[最大公约数](https://baike.baidu.com/item/最大公约数/869308?fromModule=lemma_inlink)d，关于未知数x和y的线性[不定方程](https://baike.baidu.com/item/不定方程/6815217?fromModule=lemma_inlink)（称为裴蜀等式）：若a,b是整数,且[gcd](https://baike.baidu.com/item/gcd/24166657?fromModule=lemma_inlink)(a,b)=d，那么对于任意的整数x,y,ax+by都一定是d的倍数，特别地，一定存在整数x,y，使ax+by=d成立。
+
+**题目：**
+
+有两个水壶，容量分别为 `jug1Capacity` 和 `jug2Capacity` 升。水的供应是无限的。确定是否有可能使用这两个壶准确得到 `targetCapacity` 升。如果可以得到 `targetCapacity` 升水，最后请用以上水壶中的一或两个来盛放取得的 `targetCapacity` 升水。你可以：
+
+- 装满任意一个水壶
+- 清空任意一个水壶
+- 从一个水壶向另外一个水壶倒水，直到装满或者倒空
+
+**解法：**
+
+我们认为，每次操作只会让桶里的水总量增加 x，增加 y，减少 x，或者减少 y。你可能认为这有问题：如果往一个不满的桶里放水，或者把它排空呢？那变化量不就不是 x 或者 y 了吗？接下来我们来解释这一点：
+
+- 首先要清楚，在题目所给的操作下，两个桶不可能同时有水且不满。因为观察所有题目中的操作，操作的结果都至少有一个桶是空的或者满的；
+- 其次，对一个不满的桶加水是没有意义的。因为如果另一个桶是空的，那么这个操作的结果等价于直接从初始状态给这个桶加满水；而如果另一个桶是满的，那么这个操作的结果等价于从初始状态分别给两个桶加满；
+- 再次，把一个不满的桶里面的水倒掉是没有意义的。因为如果另一个桶是空的，那么这个操作的结果等价于回到初始状态；而如果另一个桶是满的，那么这个操作的结果等价于从初始状态直接给另一个桶倒满。
+
+因此，我们可以认为每次操作只会给水的总量带来 x 或者 y 的变化量。因此我们的目标可以改写成：找到一对整数 a,b，使得ax+by=z
