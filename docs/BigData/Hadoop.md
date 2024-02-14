@@ -1,5 +1,7 @@
 #  Hadoop
 
+[TOC]
+
 ## 大数据入门
 
 ### 概念
@@ -1908,6 +1910,7 @@ Fair Schedulere 是 Facebook 开发的多用户调度器。
 ####  1.1 NameNode内存生产配置
 
   1) NameNode内存计算
+
     每个文件块大概占用 150byte，一台服务器 128G 内存为例，能存储多少文件块呢？ 
       128 * 1024 * 1024 * 1024 /150Byte = 9.1 亿
       G          MB       KB       Byte
@@ -2500,7 +2503,7 @@ bin/hdfs ec [COMMAND]
       ```
 
    	4. 再打开一个窗口，执行
-   bin/hdfs dfsadmin -safemode leave
+       bin/hdfs dfsadmin -safemode leave
 
    5. 再观察上一个窗口
        Safe mode is OFF
@@ -2627,7 +2630,7 @@ bin/hdfs ec [COMMAND]
      -  yarn.nodemanager.pmem-check-enabled 是否开启物理内存检查限制 container
      - yarn.nodemanager.vmem-check-enabled  是否开启虚拟内存检查限制 container
      - yarn.nodemanager.vemem-ratio 虚拟内存物理内存比例
-       
+     
    - Container 容器相关
      - 最小内存yarn.scheduler.minimum-allocation-mb 
      - 最大内存yarn.scheduler.maximum-allocation-mb 
@@ -2657,7 +2660,7 @@ bin/hdfs ec [COMMAND]
 1. 在数据采集的时候,就将小文件或小批数据合成大文件再上传 HDFS (数据源头)
 
  2) Hadoop Archive (存储方向)
-  是一个高效的将小文件放入 HDFS 块中的文件存档工具，能够将多个小文件打包成一个HAR文件,从而达到减少NameNode的内存使用
+    是一个高效的将小文件放入 HDFS 块中的文件存档工具，能够将多个小文件打包成一个HAR文件,从而达到减少NameNode的内存使用
 
  3) CombineTextInputFormat (计算方向)
 

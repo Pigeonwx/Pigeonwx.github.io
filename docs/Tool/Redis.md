@@ -1,5 +1,7 @@
 # Redis
 
+[TOC]
+
 ## 背景
 
 Redis（Remote Dictionary Server）是一个内存数据库，通常被称为键-值存储系统，它具有以下特点：
