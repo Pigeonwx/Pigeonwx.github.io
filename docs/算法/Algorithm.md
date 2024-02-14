@@ -897,7 +897,7 @@ public int[] nextGreaterElement(int[] nums) {
 
 ### 4.3 字典树
 
-![截屏2024-01-10 19.40.12](./Algorithm/截屏2024-01-10 19.40.12.png)
+![截屏2024-01-10 19.40.12](./Algorithm/截屏2024-01-1019.40.12.png)
 
 
 
@@ -980,7 +980,7 @@ public class Trie {
 
 ### 4.4 LCA倍增法
 
-![截屏2024-01-26 21.27.33](./Algorithm/截屏2024-01-26 21.27.33.png)
+![截屏2024-01-26 21.27.33](./Algorithm/截屏2024-01-2621.27.33.png)
 
 ```
 class Solution {

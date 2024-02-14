@@ -26,17 +26,17 @@
 
 - 基本架构
 
-  ![image-20230921145014004](/Users/xiangjianhang/Downloads/LN/Kafka/image-20230921145014004.png)
+  ![image-20230921145014004](./Kafka/image-20230921145014004.png)
 
 ### 基本操作
 
 - Topic
-  - ![截屏2023-09-22 15.29.42](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-22 15.29.42.png)
+  - ![截屏2023-09-22 15.29.42](./Kafka/截屏2023-09-2215.29.42.png)
   -  bin/kafka-topics.sh -bootstrap-server 192.168.1.100:58589 topic first -create -partitions 1 replication-factor 3
   - 分区只能增不能减，--alter ; 副本需要另外手段修改
 - Producer
   -  bin/kafka-console-producer.sh --bootstrap-server 192.168.1.100:58589 --topic first
-  - ![截屏2023-09-22 15.57.12](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-22 15.57.12.png)
+  - ![截屏2023-09-22 15.57.12](./Kafka/截屏2023-09-2215.57.12.png)
   - 数据传递安全
     - 至少一次（At Least Once） =ACK级别设置为-1 + 分区副本大于等于2 + ISR里应答的最小副本数量大于等于2
     - 最多一次（At Most Once) = ACK级别设置为0
@@ -46,25 +46,25 @@
     - 幂等性就是指Producer不论向Broker发送多少次重复数据, Broker端都只会持久化一条,保证了不重复。精确一次（Exactly Once） = 幂等性 + 至少一次（ack=-1 + 分区副本数>=2 + ISR最小副本数量>=2）。重复数据的判断标准:具有<PID, Partition, SeqNumber>相同主键的消息提交时, Broker只会持久化一条。其 中PID是Kafka每次重启都会分配一个新的; Partition表示分区号; Sequence Number是单调自增的。所以幂等性只能保证的是在单分区单会话内不重复。
     - 事务：开启事务，必须开启幂等性
       
-      ![截屏2023-09-26 16.24.24](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-26 16.24.24.png)
+      ![截屏2023-09-26 16.24.24](./Kafka/截屏2023-09-2616.24.24.png)
 - Consumer
   -  bin/kafka-console-consumer.sh --bootstrap-server 192.168.1.100:58589 --topic first --from-beginning
 
 ### Zookeeper & Kafak
 
 - Relationship
-  - ![截屏2023-09-26 19.09.50](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-26 19.09.50.png)
+  - ![截屏2023-09-26 19.09.50](./Kafka/截屏2023-09-2619.09.50.png)
 
 - Broker Leader
-  - ![截屏2023-09-27 18.57.13](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-27 18.57.13.png) 
+  - ![截屏2023-09-27 18.57.13](./Kafka/截屏2023-09-2718.57.13.png) 
 
 - 分区的好处
   - 存储：便于合理使用存储资源，每个Partition在一个Broker上存储，可以把海量的数据按照分区切割成一块一块数据存储在多台Broker上。合理控制分区的任务,可以实现负载均衡的效果。
   - 计算：提高并行度,生产者可以以分区为单位发送数据;消费者可以以分区为单位进行消费数据。
-  - ![截屏2023-09-28 19.08.58](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-28 19.08.58.png) 
+  - ![截屏2023-09-28 19.08.58](./Kafka/截屏2023-09-2819.08.58.png) 
   - 粘性：先往一个分区发，集合在一起
   - 分区分配：保存负载均衡 & 可靠
-    - ![截屏2023-09-29 11.57.03](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-29 11.57.03.png)
+    - ![截屏2023-09-29 11.57.03](./Kafka/截屏2023-09-2911.57.03.png)
 
 ### 副本
 
@@ -79,15 +79,15 @@
 
 - Follower
 
-![截屏2023-09-29 11.17.52](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-29 11.17.52.png)
+![截屏2023-09-29 11.17.52](./Kafka/截屏2023-09-2911.17.52.png)
 
 - Leader
 
-![截屏2023-09-29 11.51.46](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-29 11.51.46.png)
+![截屏2023-09-29 11.51.46](./Kafka/截屏2023-09-2911.51.46.png)
 
 ### Kafka文件存储
 
-- 存储架构：![截屏2023-09-29 14.41.35](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-29 14.41.35.png)
+- 存储架构：![截屏2023-09-29 14.41.35](./Kafka/截屏2023-09-2914.41.35.png)
 
 - 稀疏索引查找：![image-20230929150147570](/Users/xiangjianhang/Library/Application Support/typora-user-images/image-20230929150147570.png) 
 
@@ -117,7 +117,7 @@
 3. 顺序写磁盘
    - Kafka 的 producer 生产数据，要写入到 log 文件中，写的过程是一直追加到文件末端，为顺序写。官网有数据表明，同样的磁盘，顺序写能到 600M/s，而随机写只有 100K/s。这与磁盘的机械机构有关，顺序写之所以快，是因为其省去了大量磁头寻址的时间。
 4. 页缓存和零拷贝技术
-   - ![截屏2023-09-29 15.17.05](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-29 15.17.05.png)
+   - ![截屏2023-09-29 15.17.05](./Kafka/截屏2023-09-2915.17.05.png)
 
 ## Kafka 消费
 
@@ -129,7 +129,7 @@
 
 ### Kafka消费者总体工作流程
 
-![截屏2023-09-29 15.25.44](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-29 15.25.44.png)
+![截屏2023-09-29 15.25.44](./Kafka/截屏2023-09-2915.25.44.png)
 
 ### 消费者组   
 
@@ -138,16 +138,16 @@
   - 消费者组之间互不影响。所有的消费 者都属于某个消费者组，即消费者组是逻辑上的一个订阅者。
   - 如果向消费组中添加更多的消费者，超过主题分区数量，则有一部分消费者就会闲置，不会接收任何消息。
 - 消费者组的初始化流程
-  - ![截屏2023-09-29 16.30.03](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-29 16.30.03.png)
-  - ![截屏2023-09-29 17.00.56](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-29 17.00.56.png)
+  - ![截屏2023-09-29 16.30.03](./Kafka/截屏2023-09-2916.30.03.png)
+  - ![截屏2023-09-29 17.00.56](./Kafka/截屏2023-09-2917.00.56.png)
 - 代码实现案例：必须指定消费组id 
 
 ### 消费offset
 
 -  _consumer_offsets 主题里面采用 key 和 value 的方式存储数据。key 是 group.id+topic+分区号，value 就是当前 offset 的值。每隔一段时间，kafka 内部会对这个 topic 进行compact，也就是每个group.id+topic+分区号就保留最新数据
-- ![截屏2023-09-29 21.14.38](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-29 21.14.38.png)
+- ![截屏2023-09-29 21.14.38](./Kafka/截屏2023-09-2921.14.38.png)
 
-- 自动提交offset：![截屏2023-09-29 21.39.31](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-29 21.39.31.png)
+- 自动提交offset：![截屏2023-09-29 21.39.31](./Kafka/截屏2023-09-2921.39.31.png)
 
 - 手动提交offset
   - 虽然自动提交offset十分简单便利,但由于其是基于时间提交的,开发人员难以把握offset提交的时机。因 此Kafka还提供了手动提交offset的API。
@@ -224,7 +224,7 @@
 
 ### 生产经验：手动调整分区副本存储
 
-- 背景：![截屏2023-09-29 11.58.57](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-29 11.58.57.png)
+- 背景：![截屏2023-09-29 11.58.57](./Kafka/截屏2023-09-2911.58.57.png)
 
 - Steps:
 
@@ -274,7 +274,7 @@
 
 ### 生产经验：消费者事务
 
-- ![截屏2023-09-30 13.04.13](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-30 13.04.13.png)
+- ![截屏2023-09-30 13.04.13](./Kafka/截屏2023-09-3013.04.13.png)
 
 ### 生产经验：数据积压（消费者如何提高吞吐量）
 
@@ -288,7 +288,7 @@
 
 - Flume生产者 
 
-  - 举个例子：![截屏2023-09-30 17.14.27](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-30 17.14.27.png)
+  - 举个例子：![截屏2023-09-30 17.14.27](./Kafka/截屏2023-09-3017.14.27.png)
 
   - 关键配置文件：
 
@@ -323,7 +323,7 @@
 
 - Flume消费者
 
-  - 举个例子：![截屏2023-09-30 17.17.53](/Users/xiangjianhang/Downloads/LN/Kafka/截屏2023-09-30 17.17.53.png)
+  - 举个例子：![截屏2023-09-30 17.17.53](./Kafka/截屏2023-09-3017.17.53.png)
 
   - 关键配置文件：
 
