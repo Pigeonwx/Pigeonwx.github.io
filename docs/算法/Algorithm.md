@@ -7,7 +7,7 @@
 # 零、背景
 ## 0.1 参考资料
 ```pdf
-https://raw.githubusercontent.com/pigeonwx/pigeonwx.github.io/5f3aaef50222a3d08819008e78aa2da15fd26bfe/docs/%E7%AE%97%E6%B3%95/LeetCode%20101%20-%20A%20LeetCode%20Grinding%20Guide%20(C%2B%2B%20Version).pdf
+https://github.com/pigeonwx/pigeonwx.github.io/blob/5f3aaef50222a3d08819008e78aa2da15fd26bfe/docs/%E7%AE%97%E6%B3%95/LeetCode%20101%20-%20A%20LeetCode%20Grinding%20Guide%20(C%2B%2B%20Version).pdf
 ```
 ##  0.2 基本数学
 
