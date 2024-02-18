@@ -4,11 +4,14 @@
 
 [TOC]
 
-## 零、基本算法
+# 零、背景
+## 0.1 参考资料
+```pdf
+	https://github.com/pigeonwx/pigeonwx.github.io/blob/main/docs/%E7%AE%97%E6%B3%95/LeetCode%20101%20-%20A%20LeetCode%20Grinding%20Guide%20(C%2B%2B%20Version).pdf	
+```
+##  0.2 基本数学
 
-###  一、基本数学
-
-#### 1.1 最大公约数
+### 0.2.1 最大公约数
 
 ```java
 public int gcd(int x, int y){
