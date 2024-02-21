@@ -14,9 +14,9 @@
   - [大数据](BigData/BigData.md)
     - [Hadoop](BigData/Hadoop.md)
     - [Spark](BigData/Spark.md)
-  - [数据库](数据库/DB.md)
+  - [数据库]
+    - [关系数据库](数据库/DB.md)
   - [算法](算法/Algorithm.md) 
   - AI
 - **其他**
-  - [致谢](doc/文档/致谢.md)
   - [将要做的事](doc/文档/将要做的事.md)
