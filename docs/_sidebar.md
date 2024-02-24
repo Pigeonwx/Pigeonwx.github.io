@@ -24,4 +24,4 @@
   - AI
     - [NLP](AI/NLP.md)
 - **其他**
-  - [将要做的事](doc/文档/将要做的事.md)
+  - [英语](other/English.md)
