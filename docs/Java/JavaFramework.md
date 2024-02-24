@@ -12,7 +12,7 @@
 
 ### 整体架构
 
-![image-20231011234231758](/Users/xiangjianhang/Downloads/LN/JavaFramework/image-20231011234231758.png)
+![image-20231011234231758](./JavaFramework/image-20231011234231758.png)
 
 ### MyBatis vs Hibernate
 
