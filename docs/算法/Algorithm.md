@@ -11,7 +11,7 @@ https://github.com/pigeonwx/pigeonwx.github.io/blob/5f3aaef50222a3d08819008e78aa
 ```
 ##  0.2 基本数学
 
-### 0.2.1 最大公约数
+## 0.2.1 最大公约数
 
 ```java
 public int gcd(int x, int y){
@@ -29,9 +29,9 @@ public int gcd(int x, int y){
 
 
 
-## 一、常用工具
+# 一、常用工具
 
-### 1.1 Stack 
+## 1.1 Stack 
 
 ```java
 Stack<Integer> stack = new Stack<>();
@@ -43,7 +43,7 @@ int topElement = stack.peek(); // 查看栈顶元素但不移除
 boolean isEmpty = stack.isEmpty(); // 检查栈是否为空
 ```
 
-### 1.2 队列
+## 1.2 队列
 
 - 普通队列
 
@@ -120,9 +120,9 @@ boolean isEmpty = stack.isEmpty(); // 检查栈是否为空
 
 
 
-### 1.3 Map
+## 1.3 Map
 
-#### 基本操作
+### 基本操作
 
 ```java
 Map<String, Integer> myMap = new HashMap<>();
@@ -153,7 +153,7 @@ Collection<Integer> values = myMap.values();
 
 ```
 
- #### Pair
+ ### Pair
 
 ```java
 import javafx.util.Pair;
@@ -170,7 +170,7 @@ public class PairExample {
 
 
 
-#### TreeMap ceiling&floor
+### TreeMap ceiling&floor
 
 ```java
 TreeMap<Integer, String> treeMap = new TreeMap<>();
@@ -192,7 +192,7 @@ Integer floorResult2 = treeMap.floorKey(0); // 结果是null，因为没有小�
 
 ```
 
-#### TreeMap 自定义排序
+### TreeMap 自定义排序
 
 ```java
 TreeMap<Person, String> people = new TreeMap<>(new AgeComparator<Person>(){
@@ -212,9 +212,9 @@ TreeMap<Person, String> people = new TreeMap<>(new AgeComparator<Person>(){
 
 
 
-### 1.4 Set
+## 1.4 Set
 
-#### 基本操作
+### 基本操作
 
 ```java
 Set<String> set = new HashSet<>(); // 使用 HashSet
@@ -247,7 +247,7 @@ boolean isEmpty = set.isEmpty();
 
 ```
 
-#### TreeSet ceiling & floor
+### TreeSet ceiling & floor
 
 ```java
 //一些函数
@@ -270,7 +270,7 @@ public class TreeSetExample {
 }
 ```
 
-#### TreeSet 自定义排序
+### TreeSet 自定义排序
 
 ```java
 TreeSet<Person> people = new TreeSet<>(new Comparator<Person>() {
@@ -291,7 +291,7 @@ TreeSet<Person> people = new TreeSet<>(new Comparator<Person>() {
 
 
 
-### 1.5 Vector-建议多线程
+## 1.5 Vector-建议多线程
 
 ```java
 Vector<String> vector = new Vector<>();
@@ -310,7 +310,7 @@ vector.clear();
 
 ```
 
-### 1.6 List
+## 1.6 List
 
 ```java
 ArrayList<String> list = new ArrayList<>();
@@ -329,7 +329,7 @@ list.clear();
 
 ```
 
-### 1.7 Stream
+## 1.7 Stream
 
 Java中的Stream是Java 8引入的一个新的抽象概念，它提供了一种更便利和高效的处理集合数据的方式。Stream可以让我们以一种类似于SQL查询的方式对集合数据进行操作，包括过滤、映射、排序、归约等。
 
@@ -399,9 +399,9 @@ class Main {
 
 
 
-## 二、常用函数
+# 二、常用函数
 
-### 2.1 逆转函数
+## 2.1 逆转函数
 
 - ```java
   String str = "Hello, World!";
@@ -417,9 +417,9 @@ class Main {
   Collections.reverse(list);
   ```
 
-### 2.2 排序函数
+## 2.2 排序函数
 
-#### Collections 排序
+### Collections 排序
 
 > java.util.Collections中的静态方法的Collection.sort()主要是针对集合框架中的动态数组，链表，树，哈希表等（ ArrayList、LinkedList、HashSet、LinkedHashSet、HashMap、LinkedHashMap ）进行排序。
 
@@ -439,7 +439,7 @@ Collections.sort(s,new new Comparator <student>(){
 
 
 
-#### Arrays 排序
+### Arrays 排序
 
 ```java
 Arrays.sort(s,new new Comparator <student>(){
@@ -457,7 +457,7 @@ Arrays.sort(s,new new Comparator <student>(){
 
 
 
-### 2.3 类型转换
+## 2.3 类型转换
 
 - ```java
   String str = "123";
@@ -491,7 +491,7 @@ Arrays.sort(s,new new Comparator <student>(){
   
   ```
 
-### 2.4 二分查找
+## 2.4 二分查找
 
 - ```java
   //A[]为递增序列，x 为欲查询的数，函数返回第一个大于 × 的元素的位置
@@ -514,11 +514,11 @@ Arrays.sort(s,new new Comparator <student>(){
     }
   ```
 
-## 三、常用算法
+# 三、常用算法
 
-### 3.1 最短路径
+## 3.1 最短路径
 
-#### Dijkstra
+### Dijkstra
 
 > 以邻接矩阵为例
 
@@ -594,7 +594,7 @@ public class DijkstraAlgorithm {
 
 ```
 
-#### Floyd
+### Floyd
 
 > 以邻接表为例
 
@@ -662,9 +662,9 @@ public class FloydWarshallAlgorithm {
 
 
 
-### 3.2 动态规划
+## 3.2 动态规划
 
-#### 最长公共子序列
+### 最长公共子序列
 
 > 给定两个字符串（或数字序列）A 和 B，求一个字符串，使得这个字符串是 A 和 B 的最长公共部分(子序列可以不连续)。
 
@@ -693,7 +693,7 @@ for (int i = 1; i <= lenA; i++) {
 
 ```
 
-#### 最长回文子串
+### 最长回文子串
 
 > 给出一个字符串 S，求 S 的最长回文子串的长度。
 
@@ -723,7 +723,7 @@ for(int L = 3; L <= len; L++) { //枚举子串的长度
 
 
 
-#### 01背包问题
+### 01背包问题
 
 > 有 n 件物品，每件物品的重量为 w[i]，价值为 c[i]。现有一个容量为 V 的背包，问如何
 > 选取物品放入背包，使得背包内物品的总价值最大。其中每种物品都只有1 件。
@@ -741,7 +741,7 @@ for(int L = 3; L <= len; L++) { //枚举子串的长度
 
 
 
-#### 完全背包问题
+### 完全背包问题
 
 > 有 n 种物品，每种物品的单件重量为 w[i]，价值为 c[i]。现有一个容量为 V 的背包，问
 > 如何选取物品放入背包,使得背包内物品的总价值最大。其中每种物品都有无穷件。
@@ -756,7 +756,7 @@ for(int L = 3; L <= len; L++) { //枚举子串的长度
 	
 ```
 
-#### 最长公共子序列
+### 最长公共子序列
 
 > 给定两个字符串（或数字序列）A 和 B，求一个字符串，使得这个字符串是 A 和 B 的最长公共部分(子序列可以不连续)。
 
@@ -779,9 +779,9 @@ for(int L = 3; L <= len; L++) { //枚举子串的长度
 
 
 
-### 3.3 排序算法-手写实现
+## 3.3 排序算法-手写实现
 
-#### 3.3.1 快速排序
+### 3.3.1 快速排序
 
 ```c++
 int partion(int A[], int low, int high) {
@@ -812,7 +812,7 @@ void quick_Sort(int A[], int low, int high) {
 
 
 
-#### 3.3.2 桶排序
+### 3.3.2 桶排序
 
 ```java
 public static void bucketSort(int[] array) {
@@ -850,9 +850,9 @@ public static void main(String[] args) {
 ```
 
 
-## 四、奇思妙想
+# 四、奇思妙想
 
-### 4.1 GospersHack
+## 4.1 GospersHack
 
 - 从小到大n个二进制位里面挑选k个1
 
@@ -875,7 +875,7 @@ void GospersHack(int k, int n)
 
 
 
-### 4.2 单调栈
+## 4.2 单调栈
 
 **定义：**单调栈是一种特殊的数据结构，它的特点是栈中的元素保持一种单调性，可以是单调递增或单调递减。单调栈常被用于解决下一个更大元素/更小元素等问题。
 
@@ -900,7 +900,7 @@ public int[] nextGreaterElement(int[] nums) {
 
 
 
-### 4.3 字典树
+## 4.3 字典树
 
 ![截屏2024-01-10 19.40.12](./Algorithm/截屏2024-01-1019.40.12.png)
 
@@ -983,7 +983,7 @@ public class Trie {
 
 
 
-### 4.4 LCA倍增法
+## 4.4 LCA倍增法
 
 ![截屏2024-01-26 21.27.33](./Algorithm/截屏2024-01-2621.27.33.png)
 
@@ -1070,7 +1070,7 @@ class Solution {
 
 
 
-### 4.5 置数求和
+## 4.5 置数求和
 
 > 求一个数的二进制中有几个1 (分治思想)
 
@@ -1085,7 +1085,7 @@ class Solution {
     }
 ```
 
-### 4.6 贝祖法解决两杯喝水问题
+## 4.6 贝祖法解决两杯喝水问题
 
 > 裴蜀定理（或贝祖定理）得名于法国数学家艾蒂安·裴蜀，说明了对任何整数a、b和它们的[最大公约数](https://baike.baidu.com/item/最大公约数/869308?fromModule=lemma_inlink)d，关于未知数x和y的线性[不定方程](https://baike.baidu.com/item/不定方程/6815217?fromModule=lemma_inlink)（称为裴蜀等式）：若a,b是整数,且[gcd](https://baike.baidu.com/item/gcd/24166657?fromModule=lemma_inlink)(a,b)=d，那么对于任意的整数x,y,ax+by都一定是d的倍数，特别地，一定存在整数x,y，使ax+by=d成立。
 
