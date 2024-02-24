@@ -1,19 +1,19 @@
 - [**首页**](/)
 - **Personal Wiki**
-  - [JAVA](docs/Java/JAVA.md)
+  - JAVA
     - [Java](Java/Java.md)
     - [JavaFramework](Java/JavaFramework.md)
     - [SpringBoot](Java/Springboot)
     - [DesignPattern](Java/DP.md)
   - Golang
     - [Golang](Golang/go.md)
-  - [中间件](Tool/Tool.md)
+  - 中间件
     - [Redis](Tool/Redis.md)
     - [Kafka](Tool/Kafaka.md)
-  - [分布式](DSTB)
+  - 分布式
     - [Docker](DSTB/Docker.md)
     - [K8S](DSTB/K8S.md)
-  - [大数据](BigData/BigData.md)
+  - 大数据
     - [Hadoop](BigData/Hadoop.md)
     - [Spark](BigData/Spark.md)
   - 数据库
@@ -26,4 +26,5 @@
   - AI
     - [NLP](AI/NLP.md)
 - **其他**
+  - [信息系统项目管理师](other/高项.md)
   - [英语](other/English.md)
