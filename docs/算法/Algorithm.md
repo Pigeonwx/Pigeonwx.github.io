@@ -424,7 +424,7 @@ class Main {
 > java.util.Collections中的静态方法的Collection.sort()主要是针对集合框架中的动态数组，链表，树，哈希表等（ ArrayList、LinkedList、HashSet、LinkedHashSet、HashMap、LinkedHashMap ）进行排序。
 
 ```java
-Collections.sort(s,new new Comparator <student>(){
+Collections.sort(s, new Comparator <student>(){
         public int compare(student p1,student p2){
             if (p1.getGrade()>p2.getGrade())
                 return 1;
@@ -442,7 +442,7 @@ Collections.sort(s,new new Comparator <student>(){
 ### Arrays 排序
 
 ```java
-Arrays.sort(s,new new Comparator <student>(){
+Arrays.sort(s, new Comparator <student>(){
         public int compare(student p1,student p2){
             if (p1.getGrade()>p2.getGrade())
                 return 1;
@@ -493,26 +493,30 @@ Arrays.sort(s,new new Comparator <student>(){
 
 ## 2.4 二分查找
 
-- ```java
+- 找第一个满足x条件的二分查找
+  
+  ```java
   //A[]为递增序列，x 为欲查询的数，函数返回第一个大于 × 的元素的位置
   //二分上下界为左闭右闭的[left, right],传入的初值为[0,n]
    int upper_bound(int A[], int left, int right, int x){
    		int mid;
    		//mid为 left 和 right 的中点
   		 while (left < right) ( //对[left,right]来说, left==right意味着找到唯一位置
-  		 if(A[mid] > x){
-  			 mid = (left + right) / 2;
-  			//取中点
-  			//中间的数大于 ×
-   			right = mid;
-  			//往左子区间[left，mid]查找
-  		else { //中间的数小于等于 ×
-   			left = mid + 1;
-   			//往右子区间[mid+1, right]查找
-      }
+         if(A[mid] > x){
+           mid = (left + right) / 2;
+          //取中点
+          //中间的数大于 ×
+          right = mid;
+          //往左子区间[left，mid]查找
+        else { //中间的数小于等于 ×
+          left = mid + 1;
+          //往右子区间[mid+1, right]查找
+        }
          return left;
     }
   ```
+
+
 
 # 三、常用算法
 
@@ -671,24 +675,24 @@ public class FloydWarshallAlgorithm {
 ```java
 int lenA = strlen(A + 1); 
 //由于读入时下标从 1 开始，因此读取长度也从+1 开始
- int lenBstrlen(B + 1);
+int lenBstrlen(B + 1);
 //边界
- for (int i = 0; i <= lenA; i++) {
- 		dp[i][0] = 0;
- }
- for (int j=0; j <= lenB; j++){
- 		dp[0] [j] = 0;
- }
+for (int i = 0; i <= lenA; i++) {
+  dp[i][0] = 0;
+}
+for (int j=0; j <= lenB; j++){
+  dp[0] [j] = 0;
+}
 //状态转移方程
 for (int i = 1; i <= lenA; i++) {
- 		for(int j = 1; j <= lenB; j++) {
- 		if (A[i] == B[j]){
- 			dp[i][] = dp[i-1][-1] + 1;
+  for(int j = 1; j <= lenB; j++) {
+    if (A[i] == B[j]){
+      dp[i][j] = dp[i-1][j-1] + 1;
     } else {
- 			dp[i][j] = max (dp[i - 1][5], dp[i][ - 1]);
+      dp[i][j] = max (dp[i - 1][j], dp[i][ j- 1]);
     }
- }
-//dp[lenA] [lenB]是答案
+  }
+  //dp[lenA] [lenB]是答案
   return dp[lenA] [lenB]
 
 ```
@@ -712,8 +716,8 @@ for (int i = 1; i <= lenA; i++) {
 for(int L = 3; L <= len; L++) { //枚举子串的长度
  		for (int i =0; i+L-1< len; i++) //枚举子串的起始端点
  			int j=i+L-1; //子串的右端点
- 			if(S[i] S[j] && dp[i + 1][ - 1] == 1) {
- 				dp[i] [j] -1;
+ 			if(S[i] == S[j] && dp[i + 1][ j- 1] == 1) {
+ 				dp[i] [j] =1;
 				ans= L; //更新最长回文子串长度
       }
  		}
@@ -754,27 +758,6 @@ for(int L = 3; L <= len; L++) { //枚举子串的长度
  			}
  }
 	
-```
-
-### 最长公共子序列
-
-> 给定两个字符串（或数字序列）A 和 B，求一个字符串，使得这个字符串是 A 和 B 的最长公共部分(子序列可以不连续)。
-
-```java
-//边界
- for (int i =0; i <= lenA; i++) {
- dp[i] [0] =0;
- for (int j = 0; j <= lenB; j++) {
- dp[0][] = 0;
-//状态转移方程
- for(int i = 1; i <= lenA; i++) {
- 		for (int j = 1; j <= lenB; j++) {
- 			if (A[i] == B[j])
- 				dp[i][j] = dp[i-1][j-1] +1;
- 			} else
- 				dp[i][j] = max(dp[i - 1][j], dp[i][ - 1]);
- 		}
-	} 
 ```
 
 
@@ -979,15 +962,13 @@ public class Trie {
 
 
 
-维护异或值
-
 
 
 ## 4.4 LCA倍增法
 
 ![截屏2024-01-26 21.27.33](./Algorithm/截屏2024-01-2621.27.33.png)
 
-```
+```java
 class Solution {
    public int[] minOperationsQueries(int n, int[][] edges, int[][] queries) {
        int m = 32 - Integer.numberOfLeadingZeros(n);
@@ -1073,6 +1054,8 @@ class Solution {
 ## 4.5 置数求和
 
 > 求一个数的二进制中有几个1 (分治思想)
+>
+> https://blog.csdn.net/m0_52440465/article/details/134668845?spm=1001.2101.3001.6650.3&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-3-134668845-blog-115082504.235%5Ev42%5Epc_relevant_anti_vip&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-3-134668845-blog-115082504.235%5Ev42%5Epc_relevant_anti_vip
 
 ```java
   static int bitCount(int x) {
@@ -1085,7 +1068,7 @@ class Solution {
     }
 ```
 
-## 4.6 贝祖法解决两杯喝水问题
+## 4.6 贝祖法解决水壶问题
 
 > 裴蜀定理（或贝祖定理）得名于法国数学家艾蒂安·裴蜀，说明了对任何整数a、b和它们的[最大公约数](https://baike.baidu.com/item/最大公约数/869308?fromModule=lemma_inlink)d，关于未知数x和y的线性[不定方程](https://baike.baidu.com/item/不定方程/6815217?fromModule=lemma_inlink)（称为裴蜀等式）：若a,b是整数,且[gcd](https://baike.baidu.com/item/gcd/24166657?fromModule=lemma_inlink)(a,b)=d，那么对于任意的整数x,y,ax+by都一定是d的倍数，特别地，一定存在整数x,y，使ax+by=d成立。
 
@@ -1106,3 +1089,7 @@ class Solution {
 - 再次，把一个不满的桶里面的水倒掉是没有意义的。因为如果另一个桶是空的，那么这个操作的结果等价于回到初始状态；而如果另一个桶是满的，那么这个操作的结果等价于从初始状态直接给另一个桶倒满。
 
 因此，我们可以认为每次操作只会给水的总量带来 x 或者 y 的变化量。因此我们的目标可以改写成：找到一对整数 a,b，使得ax+by=z
+
+
+
+## 维护异或值

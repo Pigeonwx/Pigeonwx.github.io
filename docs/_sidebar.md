@@ -4,12 +4,11 @@
     - [Java](Java/Java.md)
     - [JavaFramework](Java/JavaFramework.md)
     - [SpringBoot](Java/Springboot)
-    - [DesignPattern](Java/DP.md)
   - Golang
     - [Golang](Golang/go.md)
   - 中间件
     - [Redis](Tool/Redis.md)
-    - [Kafka](Tool/Kafaka.md)
+    - [Kafka](Tool/Kafka.md)
   - 分布式
     - [Docker](DSTB/Docker.md)
     - [K8S](DSTB/K8S.md)
@@ -20,8 +19,10 @@
     - [关系数据库](数据库/DB.md)
   - 计算机基础
     - [计算机网络](计算机基础/计算机网络.md)
+    - [DesignPattern](计算机基础/DP.md)
   - 算法
     - [算法](算法/Algorithm.md)
+    - [腾讯精选算法题](算法/Tencent.md)
     - [脑筋急转弯](算法/脑筋急转弯.md)
   - AI
     - [NLP](AI/NLP.md)
