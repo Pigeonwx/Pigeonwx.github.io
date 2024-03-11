@@ -4,15 +4,15 @@
 
 # 一、基本语法
 
-## 1. 基础知识
+## 1.1 基础知识
 
-## 1.1 Java 版本
+## 1.1.1 Java 版本
 
 > https://zh.wikipedia.org/zh-cn/Java%E7%89%88%E6%9C%AC%E6%AD%B7%E5%8F%B2
 
-## 2. 常用类型
+## 1.2 常用类型
 
-### 2.1 List
+### 1.2.1 List
 
 ```java
 ArrayList<String> list = new ArrayList<>();
@@ -49,7 +49,7 @@ list.clear();
 
 ### 
 
-### 2.2 Stack 
+### 1.2.2 Stack 
 
 ```java
 Stack<Integer> stack = new Stack<>();
@@ -61,7 +61,7 @@ int topElement = stack.peek(); // 查看栈顶元素但不移除
 boolean isEmpty = stack.isEmpty(); // 检查栈是否为空
 ```
 
-### 2.3 队列
+### 1.2.3 队列
 
 - 普通队列
 
@@ -138,7 +138,7 @@ boolean isEmpty = stack.isEmpty(); // 检查栈是否为空
 
 
 
-### 2.4 Map
+### 1.2.4 Map
 
 #### 基本操作
 
@@ -213,7 +213,7 @@ TreeMap<Person, String> people = new TreeMap<>(new AgeComparator<Person>(){
 
 
 
-### 2.3 Set
+### 1.2.3 Set
 
 #### 基本操作
 
@@ -292,7 +292,7 @@ TreeSet<Person> people = new TreeSet<>(new Comparator<Person>() {
 
 
 
-### 2.4 Vector-建议多线程
+### 1.2.4 Vector-建议多线程
 
 ```java
 Vector<String> vector = new Vector<>();
@@ -308,14 +308,13 @@ for (String item : vector) {
 }
 boolean contains = vector.contains("Apple");
 vector.clear();
-
 ```
 
 
 
-## 3. 常用函数
+## 1.3. 常用函数
 
-### 3.1 逆转函数
+### 1.3.1 逆转函数
 
 - ```java
   String str = "Hello, World!";
@@ -331,7 +330,7 @@ vector.clear();
   Collections.reverse(list);
   ```
 
-### 3.2 排序函数
+### 1.3.2 排序函数
 
 #### Collections 排序
 
@@ -371,7 +370,7 @@ Arrays.sort(s,new new Comparator <student>(){
 
 
 
-### 3.3 类型转换
+### 1.3.3 类型转换
 
 - ```java
   String str = "123";
@@ -1214,7 +1213,7 @@ AQS支持自定义同步器，即通过继承AQS并实现`tryAcquire`和`tryRele
 
 - [ReentrantLock](###2.4.2 ReentrantLock 锁)
 
-### **CountDownLatch**
+### **2.5.3 CountDownLatch**
 
 > ⽤来控制⼀个或者多个线程等待多个线程。维护了⼀个计数器 cnt，每次调⽤ countDown() ⽅法会让计数器的值减 1，减到 0 的时候，那些因为调⽤ await() ⽅法⽽在等待的线程就会被唤醒
 
@@ -1249,7 +1248,7 @@ run..run..run..run..run..run..run..run..run..run..end
 
 
 
-### CyclicBarrier
+### 2.5.4 CyclicBarrier
 
 >  ⽤来控制多个线程互相等待，只有当多个线程都到达时，这些线程才会继续执⾏。和 CountdownLatch 相似，都是通过维护计数器来实现的。线程执⾏ await() ⽅法之后计数器会减 1，并进⾏等待，直到计数器为 0，所有调⽤ await() ⽅法⽽在等待的线程才能继续执⾏。CyclicBarrier 和 CountdownLatch 的⼀个区别是，CyclicBarrier 的计数器通过调⽤ reset() ⽅法可以循环使⽤，所以它才叫做循环屏障。
 >
@@ -1398,7 +1397,7 @@ public class ForkJoinExample extends RecursiveTask<Integer> {
 }
 ```
 
-### ConcurrentHashMap
+### 2.5.7 ConcurrentHashMap
 
 `ConcurrentHashMap` 使用了 **CAS（Compare-And-Swap）** 操作来实现并发控制。CAS是一种无锁的原子操作，用于确保多个线程可以同时访问和修改`ConcurrentHashMap`的不同部分而不会导致数据不一致。
 
@@ -1414,7 +1413,7 @@ public class ForkJoinExample extends RecursiveTask<Integer> {
 
 总之，`ConcurrentHashMap`使用CAS操作以及分段锁等技术，以实现高效的并发控制。这使得它能够在多线程环境中提供高性能的并发访问，而不需要显式地使用锁。CAS操作允许多线程同时进行并发读写操作，只有在必要时才会阻塞或重试，从而提高了并发性。
 
-### Collections类封装集合实现多线程安全
+### 2.5.8 Collections类封装集合实现多线程安全
 
 > - public static Collection synchronizedCollention(Collection c)
 >
@@ -1477,6 +1476,8 @@ public class SafeCollectionIteration extends Object {
    如果另外的一个线程调用了相同对象的notifyAll()方法，那么处于该对象的等待池中的线程就会全部进入该对象的锁池中，准备争夺锁的拥有权。如果另外的一个线程调用了相同对象的notify()方法，那么仅仅有一个处于该对象的等待池中的线程(随机)会进入该对象的锁池.
 
 ![16ba3e85f12c33b2~tplv-t2oaga2asx-jj-mark_3024_0_0_0_q75](./Java/16ba3e85f12c33b2~tplv-t2oaga2asx-jj-mark_3024_0_0_0_q75.png)
+
+
 
 这些都是与锁有关的优化技术，用于提高多线程程序的性能和并发能力。以下是它们的简要介绍：
 
@@ -1862,7 +1863,7 @@ All workers have completed.
 >
 > **OKIO底层实现**
 
-## 常见IO方法
+## 3.1 常见IO方法
 
 - BIO：Block IO 同步阻塞式 IO，就是我们平常使用的传统 IO，它的特点是模式简单使用方便，并发处理能力低。
 - NIO：Non IO 同步非阻塞 IO，是传统 IO 的升级，客户端和服务器端通过 Channel（通道）通讯，实现了多路复用。
@@ -1884,7 +1885,40 @@ All workers have completed.
 |         | `SocketChannel`                      | `SocketChannel`                      |                                                              |
 |         | `DatagramChannel`                    | `DatagramChannel`                    |                                                              |
 
-希望这样更清晰明了！
+
+
+Java 的 I/O ⼤概可以分成以下⼏类：
+
+- 磁盘操作：File
+- 字节操作：InputStream 和 OutputStream
+- 字符操作：Reader 和 Writer
+- 对象操作：Serializable
+- ⽹络操作：Socket
+- 新的输⼊/输出：NIO
+
+## 3.2字节IO
+
+![截屏2024-02-27 14.19.16](./Java/截屏2024-02-27 14.19.16.png)
+
+**装饰者模式**
+
+Java I/O 使⽤了装饰者模式来实现。以 InputStream 为例
+
+- InputStream 是抽象组件；
+- FileInputStream 是 InputStream 的⼦类，属于具体组件，提供了字节流的输⼊操作；FilterInputStream 属于抽象装饰者，装饰者⽤于装饰组件，为组件提供额外的功能。
+- BufferedInputStream 为 FileInputStream 提供缓存的功能。
+
+实例化⼀个具有缓存功能的字节流对象时，只需要在 FileInputStream 对象上再套⼀层BufferedInputStream 对象即可。
+
+```java
+FileInputStream fileInputStream = new FileInputStream(filePath);
+BufferedInputStream bufferedInputStream = new
+BufferedInputStream(fileInputStream);
+```
+
+
+
+DataInputStream 装饰者提供了对更多数据类型进⾏输⼊的操作，⽐如 int、double 等基本类型。
 
 ## NIO
 

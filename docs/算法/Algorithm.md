@@ -6,9 +6,8 @@
 
 # 零、背景
 ## 0.1 参考资料
-```pdf
-https://github.com/pigeonwx/pigeonwx.github.io/blob/5f3aaef50222a3d08819008e78aa2da15fd26bfe/docs/%E7%AE%97%E6%B3%95/LeetCode%20101%20-%20A%20LeetCode%20Grinding%20Guide%20(C%2B%2B%20Version).pdf
-```
+- [LeetCode 101](https://github.com/pigeonwx/pigeonwx.github.io/blob/e420c5b7fd09f757260613cb85add5a956e3f038/docs/%E7%AE%97%E6%B3%95/LeetCode%20101%20-%20A%20LeetCode%20Grinding%20Guide%20(C%2B%2B%20Version).pdf)
+
 ##  0.2 基本数学
 
 ## 0.2.1 最大公约数
@@ -45,84 +44,84 @@ boolean isEmpty = stack.isEmpty(); // 检查栈是否为空
 
 ## 1.2 队列
 
-- 普通队列
+### 1.2.1 普通队列
 
-  - ```java
-    Queue<Integer> queue = new LinkedList<>();
-    queue.offer(1);
-    queue.offer(2);
-    queue.offer(3);
-    int frontElement = queue.poll(); // 移除并返回队列头部的元素
-    int frontElement = queue.peek(); // 查看队列头部的元素但不移除
-    boolean isEmpty = queue.isEmpty(); // 检查队列是否为空
-    ```
+- ```java
+  Queue<Integer> queue = new LinkedList<>();
+  queue.offer(1);
+  queue.offer(2);
+  queue.offer(3);
+  int frontElement = queue.poll(); // 移除并返回队列头部的元素
+  int frontElement = queue.peek(); // 查看队列头部的元素但不移除
+  boolean isEmpty = queue.isEmpty(); // 检查队列是否为空
+  ```
 
+
+
+### 1.2.2 双端队列
+
+- ```java
+  Deque<Integer> deque = new LinkedList<>();
+  deque.addFirst(1);
+  deque.offerFirst(2);
   
+  Deque<Integer> deque = new LinkedList<>();
+  deque.addLast(3);
+  deque.offerLast(4);
+  
+  int frontElement = deque.removeFirst(); // 从队头移除并返回元素
+  int rearElement = deque.removeLast(); // 从队尾移除并返回元素
+  int frontElement = deque.getFirst(); // 查看队头元素但不移除
+  int rearElement = deque.getLast(); // 查看队尾元素但不移除
+  boolean isEmpty = deque.isEmpty(); // 检查双端队列是否为空
+  ```
 
-- 双端队列
+### 1.2.3 优先级队列
 
-  - ```java
-    Deque<Integer> deque = new LinkedList<>();
-    deque.addFirst(1);
-    deque.offerFirst(2);
-    
-    Deque<Integer> deque = new LinkedList<>();
-    deque.addLast(3);
-    deque.offerLast(4);
-    
-    int frontElement = deque.removeFirst(); // 从队头移除并返回元素
-    int rearElement = deque.removeLast(); // 从队尾移除并返回元素
-    int frontElement = deque.getFirst(); // 查看队头元素但不移除
-    int rearElement = deque.getLast(); // 查看队尾元素但不移除
-    boolean isEmpty = deque.isEmpty(); // 检查双端队列是否为空
-    ```
-
-- 优先级队列
-
-  - ```java
-    import java.util.PriorityQueue;
-    
-    public class PriorityQueueExample {
-        public static void main(String[] args) {
-            // 创建一个优先队列，按自然顺序排序
-            PriorityQueue<Integer> minHeap = new PriorityQueue<>();
-    
-            // 添加元素到队列
-            minHeap.offer(10);
-            minHeap.offer(5);
-            minHeap.offer(8);
-            minHeap.offer(1);
-    
-            // 输出队列中的元素（按照升序排列）
-            System.out.println("升序排列的元素：");
-            while (!minHeap.isEmpty()) {
-                System.out.println(minHeap.poll());
-            }
-    
-            // 创建一个使用比较器来确定优先级的优先队列（降序排列）
-            PriorityQueue<Integer> maxHeap = new PriorityQueue<>((a, b) -> b - a);
-    
-            // 添加元素到队列
-            maxHeap.offer(10);
-            maxHeap.offer(5);
-            maxHeap.offer(8);
-            maxHeap.offer(1);
-    
-            // 输出队列中的元素（按照降序排列）
-            System.out.println("降序排列的元素：");
-            while (!maxHeap.isEmpty()) {
-                System.out.println(maxHeap.poll());
-            }
-        }
-    }
-    
-    ```
+- ```java
+  import java.util.PriorityQueue;
+  
+  public class PriorityQueueExample {
+      public static void main(String[] args) {
+          // 创建一个优先队列，按自然顺序排序
+          PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+  
+          // 添加元素到队列
+          minHeap.offer(10);
+          minHeap.offer(5);
+          minHeap.offer(8);
+          minHeap.offer(1);
+  
+          // 输出队列中的元素（按照升序排列）
+          System.out.println("升序排列的元素：");
+          while (!minHeap.isEmpty()) {
+              System.out.println(minHeap.poll());
+          }
+  
+          // 创建一个使用比较器来确定优先级的优先队列（降序排列）
+          PriorityQueue<Integer> maxHeap = new PriorityQueue<>((a, b) -> b - a);
+  
+          // 添加元素到队列
+          maxHeap.offer(10);
+          maxHeap.offer(5);
+          maxHeap.offer(8);
+          maxHeap.offer(1);
+  
+          // 输出队列中的元素（按照降序排列）
+          System.out.println("降序排列的元素：");
+          while (!maxHeap.isEmpty()) {
+              System.out.println(maxHeap.poll());
+          }
+      }
+  }
+  
+  ```
 
 
 
 ## 1.3 Map
 
-### 基本操作
+### 1.3.1 基本操作
 
 ```java
 Map<String, Integer> myMap = new HashMap<>();
@@ -153,7 +152,7 @@ Collection<Integer> values = myMap.values();
 
 ```
 
- ### Pair
+ ### 1.3.2 Pair
 
 ```java
 import javafx.util.Pair;
@@ -170,7 +169,7 @@ public class PairExample {
 
 
 
-### TreeMap ceiling&floor
+### 1.3.3 TreeMap ceiling&floor
 
 ```java
 TreeMap<Integer, String> treeMap = new TreeMap<>();
@@ -192,7 +191,7 @@ Integer floorResult2 = treeMap.floorKey(0); // 结果是null，因为没有小�
 
 ```
 
-### TreeMap 自定义排序
+### 1.3.4 TreeMap 自定义排序
 
 ```java
 TreeMap<Person, String> people = new TreeMap<>(new AgeComparator<Person>(){
@@ -214,7 +213,7 @@ TreeMap<Person, String> people = new TreeMap<>(new AgeComparator<Person>(){
 
 ## 1.4 Set
 
-### 基本操作
+### 1.4.1 基本操作
 
 ```java
 Set<String> set = new HashSet<>(); // 使用 HashSet
@@ -247,7 +246,7 @@ boolean isEmpty = set.isEmpty();
 
 ```
 
-### TreeSet ceiling & floor
+### 1.4.2 TreeSet ceiling & floor
 
 ```java
 //一些函数
@@ -270,7 +269,7 @@ public class TreeSetExample {
 }
 ```
 
-### TreeSet 自定义排序
+### 1.4.3 TreeSet 自定义排序
 
 ```java
 TreeSet<Person> people = new TreeSet<>(new Comparator<Person>() {
@@ -399,6 +398,143 @@ class Main {
 
 
 
+## 1.8 数组
+
+在Java中，数组是一组具有相同数据类型的元素的集合。以下是一些Java数组的相关操作以及多维数组的初始化方法：
+
+### Java数组的相关操作：
+
+1. **声明数组：** 声明数组需要指定数组的类型和数组的名称，如 `int[] numbers;` 或 `String[] names;`。
+   
+2. **创建数组：** 使用 `new` 关键字创建数组，并指定数组的长度，如 `numbers = new int[5];` 或 `names = new String[10];`。
+
+3. **初始化数组：** 可以在声明数组的同时进行初始化，或者在创建数组后进行初始化。
+
+   ```java
+   int[] numbers = {1, 2, 3, 4, 5};
+   String[] names = new String[]{"Alice", "Bob", "Charlie"};
+   ```
+
+4. **访问数组元素：** 使用索引访问数组元素，索引从0开始。
+
+   ```java
+   int firstNumber = numbers[0];
+   String secondName = names[1];
+   ```
+
+5. **修改数组元素：** 使用索引修改数组元素的值。
+
+   ```java
+   numbers[0] = 10;
+   names[1] = "Bill";
+   ```
+
+6. **遍历数组：** 使用循环结构遍历数组中的所有元素。
+
+   ```java
+   for (int i = 0; i < numbers.length; i++) {
+       System.out.println(numbers[i]);
+   }
+   
+   for (String name : names) {
+       System.out.println(name);
+   }
+   ```
+
+### 多维数组的初始化：
+
+多维数组是数组的数组。Java中多维数组的初始化可以分为两种方式：
+
+1. **静态初始化：** 在声明多维数组时进行初始化。
+
+   ```java
+   int[][] matrix = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+   ```
+
+2. **动态初始化：** 先声明多维数组，然后在之后进行初始化。
+
+   ```java
+   int[][] matrix = new int[3][3];
+   matrix[0][0] = 1;
+   matrix[0][1] = 2;
+   // 其他元素类似
+   ```
+
+以上是Java数组的基本操作和多维数组的初始化方法。通过这些操作，可以方便地创建和操作数组。
+
+## 1.9 String
+
+在Java中，String类是用来表示字符串的，提供了丰富的方法来操作字符串。以下是一些常用的String类的相关函数和用法：
+
+1. **length()：** 返回字符串的长度。
+
+   ```java
+   String str = "Hello";
+   int length = str.length(); // length = 5
+   ```
+
+2. **charAt(int index)：** 返回指定索引处的字符。
+
+   ```java
+   char ch = str.charAt(0); // ch = 'H'
+   ```
+
+3. **substring(int beginIndex) 和 substring(int beginIndex, int endIndex)：** 返回从指定索引开始到字符串末尾的子字符串，或者返回从指定索引开始到指定索引结束的子字符串。
+
+   ```java
+   String sub1 = str.substring(1);    // sub1 = "ello"
+   String sub2 = str.substring(1, 3); // sub2 = "el"
+   ```
+
+4. **indexOf(String str) 和 indexOf(String str, int fromIndex)：** 返回指定字符串在当前字符串中第一次出现的位置，或者从指定位置开始搜索指定字符串第一次出现的位置。
+
+   ```java
+   int index1 = str.indexOf("l");      // index1 = 2
+   int index2 = str.indexOf("l", 3);   // index2 = 3
+   ```
+
+5. **toUpperCase() 和 toLowerCase()：** 将字符串转换为全大写或全小写。
+
+   ```java
+   String upperCase = str.toUpperCase(); // upperCase = "HELLO"
+   String lowerCase = str.toLowerCase(); // lowerCase = "hello"
+   ```
+
+6. **trim()：** 去除字符串前后的空格。
+
+   ```java
+   String trimmed = "   Hello   ".trim(); // trimmed = "Hello"
+   ```
+
+7. **equals(Object obj) 和 equalsIgnoreCase(String anotherString)：** 判断两个字符串是否相等，或者忽略大小写判断两个字符串是否相等。
+
+   ```java
+   boolean isEqual = str.equals("Hello");            // isEqual = true
+   boolean isIgnoreCaseEqual = str.equalsIgnoreCase("hello"); // isIgnoreCaseEqual = true
+   ```
+
+8. **startsWith(String prefix) 和 endsWith(String suffix)：** 判断字符串是否以指定前缀开头或以指定后缀结尾。
+
+   ```java
+   boolean startsWith = str.startsWith("He");   // startsWith = true
+   boolean endsWith = str.endsWith("lo");       // endsWith = true
+   ```
+
+9. **split(String regex)：** 将字符串根据指定的正则表达式分割成字符串数组。
+
+   ```java
+   String[] parts = str.split("l"); // parts = {"He", "", "o"}
+   ```
+
+10. **replace(char oldChar, char newChar) 和 replace(CharSequence target, CharSequence replacement)：** 替换字符串中的字符或者字符串。
+
+    ```java
+    String replaced1 = str.replace('l', 'L');                    // replaced1 = "HeLLo"
+    String replaced2 = str.replace("ll", "LL");                   // replaced2 = "HeLLo"
+    ```
+
+这些是String类的一些常用方法，能够帮助你对字符串进行各种操作。
+
 # 二、常用函数
 
 ## 2.1 逆转函数
@@ -419,7 +555,7 @@ class Main {
 
 ## 2.2 排序函数
 
-### Collections 排序
+### 2.2.1 Collections 排序
 
 > java.util.Collections中的静态方法的Collection.sort()主要是针对集合框架中的动态数组，链表，树，哈希表等（ ArrayList、LinkedList、HashSet、LinkedHashSet、HashMap、LinkedHashMap ）进行排序。
 
@@ -439,7 +575,7 @@ Collections.sort(s, new Comparator <student>(){
 
 
 
-### Arrays 排序
+### 2.2.2 Arrays 排序
 
 ```java
 Arrays.sort(s, new Comparator <student>(){
@@ -522,7 +658,7 @@ Arrays.sort(s, new Comparator <student>(){
 
 ## 3.1 最短路径
 
-### Dijkstra
+### 3.1.1 Dijkstra
 
 > 以邻接矩阵为例
 
@@ -598,7 +734,7 @@ public class DijkstraAlgorithm {
 
 ```
 
-### Floyd
+### 3.1.2 Floyd
 
 > 以邻接表为例
 
@@ -668,7 +804,7 @@ public class FloydWarshallAlgorithm {
 
 ## 3.2 动态规划
 
-### 最长公共子序列
+### 3.2.1 最长公共子序列
 
 > 给定两个字符串（或数字序列）A 和 B，求一个字符串，使得这个字符串是 A 和 B 的最长公共部分(子序列可以不连续)。
 
@@ -697,7 +833,7 @@ for (int i = 1; i <= lenA; i++) {
 
 ```
 
-### 最长回文子串
+### 3.2.2 最长回文子串
 
 > 给出一个字符串 S，求 S 的最长回文子串的长度。
 
@@ -727,7 +863,7 @@ for(int L = 3; L <= len; L++) { //枚举子串的长度
 
 
 
-### 01背包问题
+### 3.2.3 01背包问题
 
 > 有 n 件物品，每件物品的重量为 w[i]，价值为 c[i]。现有一个容量为 V 的背包，问如何
 > 选取物品放入背包，使得背包内物品的总价值最大。其中每种物品都只有1 件。
@@ -745,7 +881,7 @@ for(int L = 3; L <= len; L++) { //枚举子串的长度
 
 
 
-### 完全背包问题
+### 3.2.4完全背包问题
 
 > 有 n 种物品，每种物品的单件重量为 w[i]，价值为 c[i]。现有一个容量为 V 的背包，问
 > 如何选取物品放入背包,使得背包内物品的总价值最大。其中每种物品都有无穷件。
@@ -766,6 +902,8 @@ for(int L = 3; L <= len; L++) { //枚举子串的长度
 
 ### 3.3.1 快速排序
 
+- 挖坑法
+
 ```c++
 int partion(int A[], int low, int high) {
     int temp = A[low];
@@ -781,6 +919,40 @@ int partion(int A[], int low, int high) {
         A[h] = A[l];
     }
     A[l] = temp;
+    return l;
+}
+
+void quick_Sort(int A[], int low, int high) {
+    if (low < high) {
+        int pos = partion(A, low, high);
+        quick_Sort(A, low, pos - 1);
+        quick_Sort(A, pos + 1, high);
+    }
+}
+```
+
+- 交换法
+
+```java
+int partion(int A[], int low, int high) {
+    int pivot = A[low];
+    int l = low, h = high;
+  	int temp;
+    while (l < h) {
+        while (l < h && pivot <= A[h]) {
+            h--;
+        }
+        while (l < h && pivot >= A[l]) {
+            l++;
+        }
+       if (l < h) {
+            temp = A[l];
+            A[l] = A[h];
+            A[h] = temp;
+        }
+    }
+    A[low] = A[l];
+    A[l]=pivot;
     return l;
 }
 
@@ -832,6 +1004,72 @@ public static void main(String[] args) {
 }
 ```
 
+### 3.3.3 堆排序
+
+```java
+import java.util.Arrays;
+
+public class HeapSort {
+
+    public static void heapSort(int[] arr) {
+        int n = arr.length;
+
+        // 构建最大堆（Heapify）
+        for (int i = n / 2 - 1; i >= 0; i--) {
+            heapify(arr, n, i);
+        }
+
+        // 从最大堆中一个一个取出元素，放入已排序区间
+        for (int i = n - 1; i > 0; i--) {
+            // 将堆顶元素（最大值）与当前未排序部分的最后一个元素交换
+            int temp = arr[0];
+            arr[0] = arr[i];
+            arr[i] = temp;
+
+            // 对剩余未排序部分重新构建最大堆
+            heapify(arr, i, 0);
+        }
+    }
+
+    // 将数组转换为最大堆
+    private static void heapify(int[] arr, int n, int i) {
+        int largest = i; // 初始化父节点为最大值
+        int left = 2 * i + 1; // 左子节点索引
+        int right = 2 * i + 2; // 右子节点索引
+
+        // 如果左子节点大于父节点，则将左子节点索引赋值给最大值索引
+        if (left < n && arr[left] > arr[largest]) {
+            largest = left;
+        }
+
+        // 如果右子节点大于父节点，则将右子节点索引赋值给最大值索引
+        if (right < n && arr[right] > arr[largest]) {
+            largest = right;
+        }
+
+        // 如果最大值索引不等于父节点索引，则交换父节点与最大值
+        if (largest != i) {
+            int temp = arr[i];
+            arr[i] = arr[largest];
+            arr[largest] = temp;
+
+            // 继续递归调用，直到子树满足最大堆性质
+            heapify(arr, n, largest);
+        }
+    }
+
+    public static void main(String[] args) {
+        int[] arr = {12, 11, 13, 5, 6, 7};
+        System.out.println("Original array: " + Arrays.toString(arr));
+
+        heapSort(arr);
+
+        System.out.println("Sorted array using Heap Sort: " + Arrays.toString(arr));
+    }
+}
+```
+
+在这个堆排序实现中，我们首先构建一个最大堆，然后将堆顶元素（最大值）与当前未排序部分的最后一个元素交换，再对剩余未排序部分重新构建最大堆。重复这个过程，直到所有元素都已排序。堆排序的时间复杂度为 O(nlogn)，空间复杂度为 O(1)。
 
 # 四、奇思妙想
 
@@ -1092,4 +1330,41 @@ class Solution {
 
 
 
-## 维护异或值
+## 4.7 维护异或值
+
+
+
+## 4.8 Boyer-Moore 投票算法
+
+Boyer-Moore 投票算法是一种用于寻找数组中出现次数超过一半的主要元素的算法。该算法由Robert S. Boyer 和 J Strother Moore 于 1981 年首次提出。它的思想是通过抵消不同的元素来找到出现次数超过一半的主要元素。
+
+算法步骤如下：
+1. 初始化两个变量：候选主要元素和候选元素计数器。开始时候选主要元素为空，计数器为0。
+2. 遍历数组，对于数组中的每个元素：
+   - 如果候选主要元素为空，则将当前元素作为候选主要元素，并将计数器设置为1。
+   - 如果当前元素与候选主要元素相同，则将计数器加1。
+   - 如果当前元素与候选主要元素不同，则将计数器减1。
+3. 在遍历完成后，候选主要元素即为最终结果。
+
+该算法的关键在于其特殊的投票机制：不同元素之间的抵消。由于主要元素出现的次数超过数组长度的一半，所以抵消过程中主要元素的计数总是会大于其他非主要元素的计数，最终剩下的候选主要元素即为真正的主要元素。
+
+Boyer-Moore 算法的时间复杂度为 O(n)，空间复杂度为 O(1)，因此是一种高效的寻找主要元素的算法。
+
+```java
+class Solution {
+    public int majorityElement(int[] nums) {
+        int count = 0;
+        Integer candidate = null;
+
+        for (int num : nums) {
+            if (count == 0) {
+                candidate = num;
+            }
+            count += (num == candidate) ? 1 : -1;
+        }
+
+        return candidate;
+    }
+}
+```
+
