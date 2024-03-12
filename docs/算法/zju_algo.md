@@ -39,9 +39,11 @@
 // 定义树节点
 struct TreeNode {
     int data;
-    TreeNode* left;
-    TreeNode* right;
+    int left;
+    int right;
 };
+
+TreeNode tree[10];
 ```
 
 ### 2.1.2 动态实现
@@ -65,17 +67,150 @@ struct TreeNode {
 - 后序遍历
 - 层序遍历
 
+```c++
+#include <iostream>
+#include <queue>
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+};
+
+// 前序遍历
+void preorderTraversal(TreeNode* root) {
+    if (root == nullptr) {
+        return;
+    }
+    std::cout << root->val << " ";
+    preorderTraversal(root->left);
+    preorderTraversal(root->right);
+}
+
+// 中序遍历
+void inorderTraversal(TreeNode* root) {
+    if (root == nullptr) {
+        return;
+    }
+    inorderTraversal(root->left);
+    std::cout << root->val << " ";
+    inorderTraversal(root->right);
+}
+
+// 后序遍历
+void postorderTraversal(TreeNode* root) {
+    if (root == nullptr) {
+        return;
+    }
+    postorderTraversal(root->left);
+    postorderTraversal(root->right);
+    std::cout << root->val << " ";
+}
+
+// 层序遍历
+void levelOrderTraversal(TreeNode* root) {
+    if (root == nullptr) {
+        return;
+    }
+    
+    std::queue<TreeNode*> q;
+    q.push(root);
+    
+    while (!q.empty()) {
+        TreeNode* current = q.front();
+        q.pop();
+        std::cout << current->val << " ";
+        if (current->left) {
+            q.push(current->left);
+        }
+        if (current->right) {
+            q.push(current->right);
+        }
+    }
+}
+
+int main() {
+    TreeNode* root = new TreeNode(1);
+    root->left = new TreeNode(2);
+    root->right = new TreeNode(3);
+    root->left->left = new TreeNode(4);
+    root->left->right = new TreeNode(5);
+    
+    std::cout << "Preorder traversal: ";
+    preorderTraversal(root);
+    std::cout << std::endl;
+    
+    std::cout << "Inorder traversal: ";
+    inorderTraversal(root);
+    std::cout << std::endl;
+    
+    std::cout << "Postorder traversal: ";
+    postorderTraversal(root);
+    std::cout << std::endl;
+    
+    std::cout << "Level order traversal: ";
+    levelOrderTraversal(root);
+    std::cout << std::endl;
+    
+    return 0;
+}
+
+```
+
+
+
 ### 2.2.2 算法题目
 
-#### 2.2.2.1 PAT A1020 
+> PAT
+>
+> codeup
+>
+> 力扣
+
+PAT A1020 
+
+PAT A1053  Path of Equal Weight
+
+PAT A1043  Is it a Binary Search Tree
 
 
 
-#### 2.2.2.2 PAT A1053  Path of Equal Weight
+> 1. 先听后做
+>
+> 2. 先做后听
+
+[94 二叉树中序遍历-E](https://leetcode.cn/problems/binary-tree-inorder-traversal/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[104 二叉树的最大深度-E](https://leetcode.cn/problems/maximum-depth-of-binary-tree/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[226 翻转二叉树-E](https://leetcode.cn/problems/invert-binary-tree/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[101 对称二叉树-E](https://leetcode.cn/problems/symmetric-tree/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[543 二叉树的直径-E](https://leetcode.cn/problems/diameter-of-binary-tree/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[102 二叉树的层序遍历-M](https://leetcode.cn/problems/binary-tree-level-order-traversal/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[108 将有序数组转为二叉搜索树-E](https://leetcode.cn/problems/convert-sorted-array-to-binary-search-tree/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[98 验证二叉搜索树-M](https://leetcode.cn/problems/validate-binary-search-tree/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[230 二叉搜索树中的第K小元素-M](https://leetcode.cn/problems/kth-smallest-element-in-a-bst/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[199 二叉树的右视图-M](https://leetcode.cn/problems/binary-tree-right-side-view/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[114 二叉树展开为链表-M](https://leetcode.cn/problems/flatten-binary-tree-to-linked-list/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[105 从前序与中序遍历序列构造二叉树-M](https://leetcode.cn/problems/construct-binary-tree-from-preorder-and-inorder-traversal/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[437 路径总和3-M](https://leetcode.cn/problems/path-sum-iii/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[236 二叉树的最近公共祖先-M](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree/description/?envType=study-plan-v2&envId=top-100-liked)
+
+[124 二叉树中的最大路径和-M](https://leetcode.cn/problems/binary-tree-maximum-path-sum/description/?envType=study-plan-v2&envId=top-100-liked)
 
 
-
-#### PAT A1043  Is it a Binary Search Tree
 
 
 
@@ -138,7 +273,7 @@ void updateHeight(Node *root) {
 }
 
 //左旋（Left Rotation)
-void L(Node *&root) {
+void L(Node *& root) {
     Node *temp = root->rchild;
     root->rchild = temp->lchild;
     temp->lchild = root;
@@ -168,10 +303,11 @@ void insert(Node *&root, int v) {
         if (getBalanceFactor(root) == 2) {
             if (getBalanceFactor(root->lchild) == 1) { //LL型
                 R(root);
-            } else if (getBalanceFactor(root->lchild) == -1)
+            } else if (getBalanceFactor(root->lchild) == -1){
                 //LR 型
                 L(root->lchild);
-            R(root);
+            		R(root);
+            }
         }
     } else {
         insert(root->rchild, v);
@@ -198,6 +334,16 @@ Node *Create(int data[], int n) {
     return root;
 }
 ```
+
+
+
+### 算法题目
+
+[110 平衡二叉树-E](https://leetcode.cn/problems/balanced-binary-tree/description/)
+
+[LCR 176 判断是否为平衡二叉树-E](https://leetcode.cn/problems/ping-heng-er-cha-shu-lcof/description/)
+
+[1382 将二叉搜索树变平衡-M](https://leetcode.cn/problems/balance-a-binary-search-tree/description/)
 
 
 
@@ -247,6 +393,7 @@ int findFather_zip(int x){
     while(x!=father[x]){
         int z=x;
         father[x]=f;
+      	x=z;
     }
     return f;
 }
@@ -262,7 +409,11 @@ int main() {
 
 
 
+### 算法题目
 
+[2092 找出知晓所有秘密的专家-H](https://leetcode.cn/problems/find-all-people-with-secret/description/)
+
+[765 情侣牵手-H](https://leetcode.cn/problems/couples-holding-hands/description/)
 
 
 
@@ -349,6 +500,18 @@ int main(){
 
 ```
 
+### 算法题目
+
+[347 前K个高频元素-M](https://leetcode.cn/problems/top-k-frequent-elements/description/)
+
+[378 有序矩阵中第K小的元素-M](https://leetcode.cn/problems/kth-smallest-element-in-a-sorted-matrix/description/)
+
+[23 合并k个升序链表-H](https://leetcode.cn/problems/merge-k-sorted-lists/description/)
+
+[215 数组中的第K个最大元素-M](https://leetcode.cn/problems/kth-largest-element-in-an-array/description/)
+
+[239 滑动窗口最大值-H](https://leetcode.cn/problems/sliding-window-maximum/description/)
+
 
 
 ## 2.6 哈夫曼编码
@@ -369,7 +532,7 @@ using namespace std;
 #include <queue>
 
 using namespace std;
-//代表小顶堆的优先队列
+//代表小顶堆的优先队列 <
 priority_queue<long long, vector<long long>, greater<long long>> q;
 
 int main() {
