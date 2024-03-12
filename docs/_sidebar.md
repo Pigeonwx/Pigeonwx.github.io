@@ -24,7 +24,7 @@
     - [算法](算法/Algorithm.md)
     - [腾讯精选算法题](算法/Tencent.md)
     - [字节跳动算法题](算法/Tiktok.md)
-    - [浙江大学机考算法题](zju_algo.md)
+    - [浙江大学机考算法题](算法/zju_algo.md)
     - [脑筋急转弯](算法/脑筋急转弯.md)
   - AI
     - [NLP](AI/NLP.md)
