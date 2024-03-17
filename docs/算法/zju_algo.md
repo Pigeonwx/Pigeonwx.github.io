@@ -21,8 +21,6 @@
 
 
 
-
-
 # 一、链表
 
 
@@ -221,7 +219,7 @@ PAT A1043  Is it a Binary Search Tree
 ![balancetree](./zju_algo/balancetree.png)
 
 - 左旋![左旋](./zju_algo/左旋.png)
-- 右旋![右旋](./算法/zju_algo/右旋.png)
+- 右旋![右旋](./zju_algo/右旋.png)
 
 - LL ![LL](./zju_algo/LL.png)
 - LR ![LR](./zju_algo/LR.png)
@@ -229,7 +227,7 @@ PAT A1043  Is it a Binary Search Tree
 - RR ![RR](./zju_algo/RR.png)
 - RL![RL](./zju_algo/RL.png)
 
-### 基本代码
+### 2.3.1 基本代码
 
 ```c++
 //
@@ -337,7 +335,7 @@ Node *Create(int data[], int n) {
 
 
 
-### 算法题目
+### 2.3.2 算法题目
 
 [110 平衡二叉树-E](https://leetcode.cn/problems/balanced-binary-tree/description/)
 
@@ -351,7 +349,7 @@ Node *Create(int data[], int n) {
 
 ![zippath](./zju_algo/zippath.png)
 
-### **基本代码**
+### 2.4.1 **基本代码**
 
 ```c++
 #include <iostream>
@@ -409,7 +407,7 @@ int main() {
 
 
 
-### 算法题目
+### 2.4.2 算法题目
 
 [2092 找出知晓所有秘密的专家-H](https://leetcode.cn/problems/find-all-people-with-secret/description/)
 
@@ -419,9 +417,9 @@ int main() {
 
 ## 2.5 堆
 
-### 基本代码
+### 2.5.1 基本代码
 
-```java
+```c++
 //
 // Created by 项建航 on 2024/3/11.
 //
@@ -470,7 +468,7 @@ void upAdjust(int low, int high) {
 
 ```
 
-### 优先级队列实现最小堆-STL
+### 2.5.2 优先级队列实现最小堆-STL
 
 ```c++
 #include <iostream>
@@ -500,7 +498,7 @@ int main(){
 
 ```
 
-### 算法题目
+### 2.5.3 算法题目
 
 [347 前K个高频元素-M](https://leetcode.cn/problems/top-k-frequent-elements/description/)
 
@@ -516,7 +514,7 @@ int main(){
 
 ## 2.6 哈夫曼编码
 
-### 基本代码
+### 2.6.1 基本代码
 
 ```c++
 //
@@ -566,25 +564,592 @@ int main() {
 
 ## 3.1 图的构造
 
+### 3.1.1 邻接矩阵
+
+![邻接矩阵](./zju_algo/邻接矩阵.png)
+
+### 3.1.2 邻接表
+
+```c++
+struct Node{
+  int v;
+  int w;
+};
+vector<Node>Adj[N];
+```
+
 
 
 ## 3.2 DFS
 
+### 3.2.1 基本代码
 
+```c++
+#include <string>
+#include <vector>
+
+using namespace std;
+const int MAXN = 10;
+vector<int> Adj[MAXN];
+int n;
+bool vis[MAXN] = {false};
+
+void DFS(int u, int depth) {
+    vis[u] = true;
+    for (int i = 0; i < Adj[u].size(); i++) {
+        int v = Adj[u][i];
+        if (vis[v] == false) {
+            DFS(v, depth + 1);
+        }
+    }
+    return;
+}
+
+//遍历图G
+void DFSTravel() {
+    for (int u = 0; u < n; ++u) {
+        if (vis[u] == false) {
+            DFS(u, 1);
+        }
+    }
+}
+
+int main() {
+
+    return 0;
+}
+
+```
+
+
+
+### 3.2.2 算法题目
+
+ [PAT A1034 Head of a Gang]
 
 ## 3.3 BFS
 
+### 3.3.1 基本代码
 
+```c++
+#include <string>
+#include <vector>
+#include <queue>
+using namespace std;
+const int MAXN = 10;
+vector<int> Adj[MAXN];
+int n;
+//记录是否进队
+bool vis[MAXN] = {false};
+
+void BFS(int u){
+    queue<int> q;
+    q.push(u);
+    vis[u]=true;
+    while(!q.empty()){
+        int u=q.front();
+        q.pop();
+        for(int i=0;i<Adj[u].size();i++){
+            int v=Adj[u][i];
+            if(vis[v]==false){
+                q.push(v);
+                vis[q]==true;
+            }
+        }
+    }
+}
+void BFSTravel(){
+    for (int u = 0; u < n; ++u) {
+        if(vis[u]== false){
+            BFS(u);
+        }
+    }
+}
+int main() {
+
+    return 0;
+}
+
+```
+
+
+
+### 3.3.2 算法题目
+
+ [PAT A1076 Forwards on Weibo]
 
 ## 3.4 最短路径
 
+### 3.4.1 Dijkstra
 
+
+
+```c++
+#include <iostream>
+#include <vector>
+#include <climits>
+
+using namespace std;
+
+#define V 6
+
+int minDistance(vector<int>& dist, vector<bool>& visited) {
+    int minDist = INT_MAX, minIndex;
+
+    for (int i = 0; i < V; ++i) {
+        if (!visited[i] && dist[i] < minDist) {
+            minDist = dist[i];
+            minIndex = i;
+        }
+    }
+
+    return minIndex;
+}
+
+void dijkstra(vector<vector<int>>& graph, int src) {
+    vector<int> dist(V, INT_MAX);
+    vector<bool> visited(V, false);
+
+    dist[src] = 0;
+
+    for (int count = 0; count < V - 1; ++count) {
+        int u = minDistance(dist, visited);
+        visited[u] = true;
+
+        for (int v = 0; v < V; ++v) {
+            if (!visited[v] && graph[u][v] && dist[u] != INT_MAX && dist[u] + graph[u][v] < dist[v]) {
+                dist[v] = dist[u] + graph[u][v];
+            }
+        }
+    }
+
+    cout << "Vertex \t Distance from Source" << endl;
+    for (int i = 0; i < V; ++i) {
+        cout << i << " \t\t " << dist[i] << endl;
+    }
+}
+
+int main() {
+    vector<vector<int>> graph = {
+        {0, 4, 0, 0, 0, 0},
+        {4, 0, 8, 0, 0, 0},
+        {0, 8, 0, 7, 0, 4},
+        {0, 0, 7, 0, 9, 14},
+        {0, 0, 0, 9, 0, 10},
+        {0, 0, 4, 14, 10, 0}
+    };
+
+    dijkstra(graph, 0);
+
+    return 0;
+}
+
+```
+
+
+
+### 3.4.2 Floyd
+
+```c++
+#include <iostream>
+#include <vector>
+#include <climits>
+
+using namespace std;
+
+#define V 4
+
+void printPath(vector<vector<int>>& next, int u, int v) {
+    if (next[u][v] == -1) {
+        cout << "No path from " << u << " to " << v << endl;
+        return;
+    }
+
+    cout << "Path from " << u << " to " << v << ": " << u << " ";
+    while (u != v) {
+        u = next[u][v];
+        cout << u << " ";
+    }
+    cout << endl;
+}
+
+void floyd(vector<vector<int>>& graph) {
+    vector<vector<int>> dist = graph;
+    vector<vector<int>> next(V, vector<int>(V, -1));
+
+    for (int k = 0; k < V; ++k) {
+        for (int i = 0; i < V; ++i) {
+            for (int j = 0; j < V; ++j) {
+                if (dist[i][k] != INT_MAX && dist[k][j] != INT_MAX && dist[i][k] + dist[k][j] < dist[i][j]) {
+                    dist[i][j] = dist[i][k] + dist[k][j];
+                    next[i][j] = k;
+                }
+            }
+        }
+    }
+
+    cout << "Shortest path matrix:" << endl;
+    for (int i = 0; i < V; ++i) {
+        for (int j = 0; j < V; ++j) {
+            cout << dist[i][j] << " ";
+        }
+        cout << endl;
+    }
+
+    cout << endl;
+
+    for (int i = 0; i < V; ++i) {
+        for (int j = 0; j < V; ++j) {
+            if (i != j) {
+                printPath(next, i, j);
+            }
+        }
+    }
+}
+
+int main() {
+    vector<vector<int>> graph = {
+        {0, 5, INT_MAX, 10},
+        {INT_MAX, 0, 3, INT_MAX},
+        {INT_MAX, INT_MAX, 0, 1},
+        {INT_MAX, INT_MAX, INT_MAX, 0}
+    };
+
+    floyd(graph);
+
+    return 0;
+}
+
+```
+
+
+
+### 3.4.3 Bellman-Ford 算法-不重要
+
+```c++
+#include <iostream>
+#include <vector>
+#include <climits>
+
+using namespace std;
+
+struct Edge {
+    int src, dest, weight;
+};
+
+void bellmanFord(vector<Edge>& edges, int V, int E, int src) {
+    vector<int> dist(V, INT_MAX);
+    dist[src] = 0;
+
+    for (int i = 1; i < V; ++i) {
+        for (int j = 0; j < E; ++j) {
+            int u = edges[j].src;
+            int v = edges[j].dest;
+            int weight = edges[j].weight;
+            if (dist[u] != INT_MAX && dist[u] + weight < dist[v]) {
+                dist[v] = dist[u] + weight;
+            }
+        }
+    }
+
+    for (int i = 0; i < E; ++i) {
+        int u = edges[i].src;
+        int v = edges[i].dest;
+        int weight = edges[i].weight;
+        if (dist[u] != INT_MAX && dist[u] + weight < dist[v]) {
+            cout << "Graph contains negative weight cycle" << endl;
+            return;
+        }
+    }
+
+    cout << "Vertex \t Distance from Source" << endl;
+    for (int i = 0; i < V; ++i) {
+        cout << i << " \t\t " << dist[i] << endl;
+    }
+}
+
+int main() {
+    int V = 5;
+    int E = 8;
+    vector<Edge> edges = {
+        {0, 1, -1},
+        {0, 2, 4},
+        {1, 2, 3},
+        {1, 3, 2},
+        {1, 4, 2},
+        {3, 2, 5},
+        {3, 1, 1},
+        {4, 3, -3}
+    };
+
+    bellmanFord(edges, V, E, 0);
+
+    return 0;
+}
+
+```
+
+
+
+### 3.4.4 SPFA 算法-不重要
+
+可以改进下面算法，记录每个节点的入队次数，超过n-1次说明有负数环
+
+```c++
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <climits>
+
+using namespace std;
+
+struct Edge {
+    int dest, weight;
+};
+
+void spfa(vector<vector<Edge>>& graph, int V, int src) {
+    vector<int> dist(V, INT_MAX);
+    vector<bool> inQueue(V, false);
+
+    dist[src] = 0;
+    queue<int> q;
+    q.push(src);
+    inQueue[src] = true;
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+        inQueue[u] = false;
+
+        for (const Edge& edge : graph[u]) {
+            int v = edge.dest;
+            int weight = edge.weight;
+
+            if (dist[u] != INT_MAX && dist[u] + weight < dist[v]) {
+                dist[v] = dist[u] + weight;
+                if (!inQueue[v]) {
+                    q.push(v);
+                    inQueue[v] = true;
+                }
+            }
+        }
+    }
+
+    cout << "Vertex \t Distance from Source" << endl;
+    for (int i = 0; i < V; ++i) {
+        cout << i << " \t\t " << dist[i] << endl;
+    }
+}
+
+int main() {
+    int V = 5;
+    vector<vector<Edge>> graph(V);
+
+    graph[0].push_back({1, -1});
+    graph[0].push_back({2, 4});
+    graph[1].push_back({2, 3});
+    graph[1].push_back({3, 2});
+    graph[1].push_back({4, 2});
+    graph[3].push_back({2, 5});
+    graph[3].push_back({1, 1});
+    graph[4].push_back({3, -3});
+
+    spfa(graph, V, 0);
+
+    return 0;
+}
+
+```
+
+
+
+### 3.4.5 算法题目
+
+### 3.4.5 算法题目
+
+ [PAT A1003 Emergency]
+
+ [PAT A1030 Travel Plan]
 
 ## 3.5 最小生成树
 
+### 3.5.1 Prim
 
+```c++
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <climits>
 
+using namespace std;
 
+#define V 5
+
+int minKey(vector<int>& key, vector<bool>& mstSet) {
+    int min = INT_MAX, min_index;
+
+    for (int v = 0; v < V; ++v) {
+        if (!mstSet[v] && key[v] < min) {
+            min = key[v];
+            min_index = v;
+        }
+    }
+
+    return min_index;
+}
+
+void printMST(vector<int>& parent, vector<vector<int>>& graph) {
+    cout << "Edge \t Weight" << endl;
+    for (int i = 1; i < V; ++i) {
+        cout << parent[i] << " - " << i << "\t" << graph[i][parent[i]] << endl;
+    }
+}
+
+void primMST(vector<vector<int>>& graph) {
+    vector<int> parent(V);
+    vector<int> key(V, INT_MAX);
+    vector<bool> mstSet(V, false);
+
+    key[0] = 0;
+    parent[0] = -1;
+
+    for (int count = 0; count < V - 1; ++count) {
+        int u = minKey(key, mstSet);
+        mstSet[u] = true;
+
+        for (int v = 0; v < V; ++v) {
+            if (graph[u][v] && !mstSet[v] && graph[u][v] < key[v]) {
+                parent[v] = u;
+                key[v] = graph[u][v];
+            }
+        }
+    }
+
+    printMST(parent, graph);
+}
+
+int main() {
+    vector<vector<int>> graph = {
+        {0, 2, 0, 6, 0},
+        {2, 0, 3, 8, 5},
+        {0, 3, 0, 0, 7},
+        {6, 8, 0, 0, 9},
+        {0, 5, 7, 9, 0}
+    };
+
+    primMST(graph);
+
+    return 0;
+}
+
+```
+
+或者如下写法
+
+![Prim](./zju_algo/Prim.png)
+
+### 3.5.2 Kruskal
+
+```c++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+struct Edge {
+    int src, dest, weight;
+};
+
+struct Graph {
+    int V, E;
+    vector<Edge> edges;
+};
+
+struct DisjointSet {
+    vector<int> parent, rank;
+
+    DisjointSet(int n) {
+        parent.resize(n);
+        rank.resize(n, 0);
+
+        for (int i = 0; i < n; ++i) {
+            parent[i] = i;
+        }
+    }
+
+    int find(int u) {
+        if (u != parent[u]) {
+            parent[u] = find(parent[u]);
+        }
+        return parent[u];
+    }
+
+    void merge(int x, int y) {
+        x = find(x);
+        y = find(y);
+
+        if (rank[x] > rank[y]) {
+            parent[y] = x;
+        } else {
+            parent[x] = y;
+            if (rank[x] == rank[y]) {
+                rank[y]++;
+            }
+        }
+    }
+};
+
+bool compareEdges(Edge a, Edge b) {
+    return a.weight < b.weight;
+}
+
+void kruskalMST(Graph& graph) {
+    vector<Edge> result;
+    DisjointSet ds(graph.V);
+
+    sort(graph.edges.begin(), graph.edges.end(), compareEdges);
+
+    for (Edge edge : graph.edges) {
+        int x = ds.find(edge.src);
+        int y = ds.find(edge.dest);
+
+        if (x != y) {
+            result.push_back(edge);
+            ds.merge(x, y);
+        }
+    }
+
+    cout << "Edge \t Weight" << endl;
+    for (Edge edge : result) {
+        cout << edge.src << " - " << edge.dest << "\t" << edge.weight << endl;
+    }
+}
+
+int main() {
+    Graph graph;
+    graph.V = 4;
+    graph.E = 5;
+    graph.edges = {
+        {0, 1, 10},
+        {0, 2, 6},
+        {0, 3, 5},
+        {1, 3, 15},
+        {2, 3, 4}
+    };
+
+    kruskalMST(graph);
+
+    return 0;
+}
+
+```
+
+或者如下写法
+
+![Kruskal](./zju_algo/Kruskal.png)
+
+### 3.5.3 算法题目
 
 # 四、动态规划
 

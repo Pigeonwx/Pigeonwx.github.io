@@ -10,7 +10,7 @@
 
 ##  0.2 基本数学
 
-## 0.2.1 最大公约数
+### 0.2.1 最大公约数
 
 ```java
 public int gcd(int x, int y){
@@ -653,6 +653,28 @@ Arrays.sort(s, new Comparator <student>(){
   ```
 
 
+
+## 2.5 fill函数
+
+在Java中，常见的填充（fill）操作包括使用数组工具类 `Arrays` 中的 `fill` 方法和集合框架中的 `Collections` 类中的 `fill` 方法。
+
+1. **使用 `Arrays.fill` 方法填充数组**：
+   
+   ```java
+   int[] array = new int[5];
+   Arrays.fill(array, 10); // 将数组中的所有元素填充为 10
+   ```
+   
+2. **使用 `Collections.fill` 方法填充集合**：
+   ```java
+   List<String> list = new ArrayList<>();
+   list.add("A");
+   list.add("B");
+   list.add("C");
+   Collections.fill(list, "X"); // 将集合中的所有元素填充为 "X"
+   ```
+
+这些 `fill` 方法可以帮助我们快速填充数组或集合中的元素，提高代码的简洁性和可读性。需要注意的是，填充操作会将数组或集合中原有的元素都替换为指定的值，因此在使用时要确保填充操作不会影响到原有的数据。
 
 # 三、常用算法
 

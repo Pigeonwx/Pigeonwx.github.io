@@ -2,19 +2,19 @@
 
 [TOC]
 
-## Mybatis
+# 一、Mybatis
 
-### 简介
+## 简介
 
 - MyBATIS是一种data mapper，处于类和数据表之间的中间层；把SQL语句的参数（parameter）和返回结果（result）映射至类
 - 更好地分离数据库和对象模型的设计，这样就相对减少了两者间的耦合
 - 半自动化框架的ORM，需要开发人员掌握SQL语句的编写。不同的数据库要重新修改SQL，因此MyBatis的数据库移植性不好
 
-### 整体架构
+## 整体架构
 
 ![image-20231011234231758](./JavaFramework/image-20231011234231758.png)
 
-### MyBatis vs Hibernate
+## MyBatis vs Hibernate
 
 - Hibernate 优势
   - DAO 层开发比较简单
@@ -25,13 +25,12 @@
   - 可以进行更为细致的 SQL 优化，可以减少查询字段
   - MyBatis 容易掌握，而 Hibernate 门槛较高
 
-### 代码示例
+## 代码示例
 
 > 核心jar包
 >
 > ```java
->                                           
-> mybatis-3.2.2.jar 核心jar 
+>                                           mybatis-3.2.2.jar 核心jar 
 > mysql-connector-java-5.1.10-bin.jar 数据库访问 
 > asm-3.3.1.jar 增强类 
 > cglib-2.2.2.jar 动态代理 
@@ -197,7 +196,7 @@
 
 - ```xml
                                        Person.xml 
-        
+                
   <mapper namespace="Person"> 
         <select id="getPerson" resultType="examples.domain.Person"> 
   	SELECT PER_ID as id, 
@@ -292,9 +291,9 @@
   
   ```
 
-## Spring
+# 二、Spring
 
-### spring容器的生命周期 
+## spring容器的生命周期 
 
 Spring容器的生命周期是指整个Spring应用程序上下文的生命周期。Spring容器的生命周期包括以下主要阶段：
 
@@ -304,7 +303,7 @@ Spring容器的生命周期是指整个Spring应用程序上下文的生命周�
 - **运行（Runtime）**：在容器初始化后，应用程序可以从容器中检索和使用Bean。
 - **销毁（Destruction）**：应用程序关闭时，Spring容器会销毁所有Bean，释放资源，执行销毁回调方法。
 
-### springbean的生命周期
+## springbean的生命周期
 
 **Spring Bean的生命周期**： Spring Bean的生命周期是指单个Bean实例的生命周期，它是Spring容器生命周期的一部分。Bean的生命周期包括以下主要阶段：
 
@@ -317,9 +316,9 @@ Spring容器的生命周期是指整个Spring应用程序上下文的生命周�
 
 在Bean的生命周期中，你可以使用Spring提供的初始化方法和销毁方法，或者使用注解（如`@PostConstruct`和`@PreDestroy`）来自定义Bean的初始化和销毁过程。这允许你在Bean的生命周期各个阶段执行自定义逻辑。
 
-### 设计模式
+## 设计模式
 
-#### IOC
+### IOC
 
 IOC（Inversion of Control）是一种设计思想，而不是一个特定的设计模式。它代表了一种控制反转的概念，也叫做依赖注入（Dependency Injection），它将应用程序的控制权从应用程序代码中反转到容器或框架中，实现了松耦合的设计。
 
@@ -335,7 +334,7 @@ IOC（Inversion of Control）是一种设计思想，而不是一个特定的设
 
 总之，虽然IOC本身不是一个设计模式，但它影响了应用程序的设计和架构，使得应用程序更加灵活、可扩展和易于维护。在实际应用中，IOC通常与其他设计模式结合使用，以实现更好的软件工程实践。
 
-#### AOP
+### AOP
 
 AOP（面向切面编程）通常体现了以下设计模式：
 
@@ -347,7 +346,7 @@ AOP（面向切面编程）通常体现了以下设计模式：
 
 总之，AOP在许多方面体现了装饰器、策略和观察者等设计模式的特征，以实现横切关注点的模块化和可维护性。这种模式的主要目标是将与核心业务逻辑无关的横切关注点（如日志、事务管理、安全性）从核心业务逻辑中分离出来，从而提高代码的可读性和可维护性。
 
-### 事务实现
+## 事务实现
 
 Spring框架实现事务的方式主要包括编程式事务管理和声明式事务管理。Spring事务管理建立在底层的事务抽象之上，它支持多种不同的事务管理器和事务传播行为，以满足不同应用场景的需求。
 
@@ -389,3 +388,73 @@ Spring框架实现事务的方式主要包括编程式事务管理和声明式�
 Spring框架提供了不同的事务管理器（如JDBC、Hibernate、JPA、JTA等）来适应不同的数据访问技术。开发人员可以根据应用的需要选择合适的事务管理器。
 
 Spring的事务管理还支持不同的事务传播行为，如REQUIRED、REQUIRES_NEW、NESTED等，以定义方法之间的事务关系。这些特性使得Spring事务管理非常强大和灵活，适用于各种不同的应用场景。
+
+
+
+# SpringBoot
+
+>  笔记: https://www.yuque.com/leifengyang/springboot3
+>  代码: https://gitee.com/leifengyang/spring-boot-3
+
+## SpringBoot3核心特性
+
+### 快速入门
+
+### SpringBoot是什么
+
+SpringBoot 帮我们简单、快速地创建一个独立的、生产级别的 Spring 应用大多数 SpringBoot 应用只需要编写少量配置即可快速整合 Spring 平台以及第三方技术
+
+特性：
+
+- 快速创建独立 Spring 应用
+  - SSM：导包、写配置、启动运行
+- 直接嵌入Tomcat, Jetty or Undertow (无需部署 war 包) 【Servlet容器】
+  -  linux java tomcat mysql: war 放到 tomcat 的webapps下
+  -  jar: java环境; java -jar
+- 重点：提供可选的starter，简化应用整合
+  - 场景启动器（starter）：web、json、邮件、oss（对象存储）、异步、定时任务、缓存…..
+  - 以前：导包一堆，控制好版本。
+  - 现在：为每一种场景准备了一个依赖： web-starter, mybatis-starter
+  - 无代码生成、无xml
+- 总结：简化开发，简化配置，简化整合，简化部署，简化监控，简化运维。
+
+##  SpringBoot3场景实战
+
+###  Docker快速入门
+
+###  NoSOL
+
+接口文档
+远程调用
+消息服务
+Web安全
+可观测性
+ AOT
+
+## 响应式编程全套
+
+ Reactor核心
+ Spring-WebFlux(响应式Web)
+
+Spring Data R2DBC（响应式数据库）
+Spring Data Reactive Redis（响应式NoSQL） 
+
+Spring Security Reactive（响应式安全）
+
+
+
+# 常见面试问题
+
+## SpingBoot 也有定时任务？是什么注解？
+
+在 SpringBoot 中使用定时任务主要有两种不同的方式，一个就是使用 Spring 中的 @Scheduled 注解，另一个则是使用第三方框架 Quartz。
+
+- 使用 Spring 中的 @Scheduled 的方式主要通过 @Scheduled 注解来实现。
+- 使用 Quartz ，则按照 Quartz 的方式，定义 Job 和 Trigger 即可。
+
+
+
+## 介绍 Spring MVC 的工作流程？
+
+
+用户向服务端发送一次请求，这个请求会先到前端控制器DispatcherServlet。DispatcherServlet接收到请求后会调用HandlerMapping处理器映射器。由此得知， 该请求该由哪个Controller来处理(并未调用Controller,只是得知)DispatcherServlet调用HandlerAdapter处理器适配器，告诉处理器适配器应该要去 执行哪个ControllerHandlerAdapter处理器适配器去执行Controller并得到ModelAndView(数据和视图), 并层层返回给DispatcherServletDispatcherServlet 将 ModelAndView 交给 ViewReslover 视图解析器解析，然后返 回真正的视图。DispatcherServlet将模型数据填充到视图中DispatcherServlet将结果响应给用户
