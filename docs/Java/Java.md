@@ -948,7 +948,11 @@ List revisedList = split1 + split2;//将结果合并
 
 大家对hadoop有稍微了解就知道，里面的 MapReduce 本身就是用于并行处理大数据集的软件框架，其 处理大数据的核心思想就是大而化小，分配到不同机器去运行map，最终通过reduce将所有机器的结果结合起来得到一个最终结果，与MapReduce不同，Stream则是利用多核技术可将大数据通过多核并行处理，而MapReduce则可以分布式的。
 
-#### forEach
+---
+
+**具体用法如下：**
+
+**forEach**
 
 ```java
 // forEach
@@ -959,7 +963,7 @@ features.forEach(n -> System.out.println(n));
 features.forEach(System.out::println);
 ```
 
-#### 方法引用
+**方法引用**
 
 *构造引用*
 
@@ -993,7 +997,7 @@ Stream<Double> stream = Stream.generate(Math::random);
 TreeSet<String> set = new TreeSet<>(String::compareTo);
 ```
 
-#### Filter & Predicate
+**Filter** & Predicate
 
 常规用法
 
@@ -1036,7 +1040,7 @@ names.stream()
     .forEach((n) -> System.out.print("nName, which starts with 'J' and four letter long is : " + n));
 ```
 
-#### Map&Reduce
+**Map&Reduce**
 
 map将集合类(例如列表)元素进行转换的。还有一个 reduce() 函数可以将所有值合并成一个
 
@@ -1046,7 +1050,7 @@ double bill = costBeforeTax.stream().map((cost) -> cost + .12*cost).reduce((sum,
 System.out.println("Total : " + bill);
 ```
 
-#### Collectors
+**Collectors**
 
 ```java
 // 将字符串换成大写并用逗号链接起来
@@ -1061,7 +1065,7 @@ System.out.println(G7Countries);
 - Collectors.toMap(MemberModel::getUid, Function.identity())
 - Collectors.toMap(ImageModel::getAid, o -> IMAGE_ADDRESS_PREFIX + o.getUrl())
 
-#### flatMap
+**flatMap**
 
 将多个Stream连接成一个Stream
 
@@ -1071,7 +1075,7 @@ List<Integer> result= Stream.of(Arrays.asList(1,3),Arrays.asList(5,6)).flatMap(a
 
 结果: [1, 3, 5, 6]
 
-#### distinct
+**distinct**
 
 去重
 
@@ -1081,7 +1085,7 @@ List<Long> likeTidList = likeDOs.stream().map(LikeDO::getTid)
                 .distinct().collect(Collectors.toList());
 ```
 
-#### count
+**count**
 
 计总数
 
@@ -1092,7 +1096,7 @@ int countOfAdult=persons.stream()
                        .count();
 ```
 
-#### Match
+**Match**
 
 ```java
 boolean anyStartsWithA =
@@ -1117,7 +1121,7 @@ boolean noneStartsWithZ =
 System.out.println(noneStartsWithZ);      // true
 ```
 
-#### min,max,summaryStatistics
+**min,max,summaryStatistics**
 
 最小值，最大值
 
@@ -1157,7 +1161,7 @@ System.out.println("Sum of all prime numbers : " + stats.getSum());
 System.out.println("Average of all prime numbers : " + stats.getAverage());
 ```
 
-#### peek
+**peek**
 
 可以使用peek方法，peek方法可只包含一个空的方法体，只要能设置断点即可，但有些IDE不允许空，可以如下文示例，简单写一个打印逻辑。
 
@@ -1399,6 +1403,73 @@ List<String> phones=new ArrayList<String>();
 ```
 
 
+
+### 1.4.3 Optional
+
+在 Java 中，`Optional` 是一个容器对象，可以包含或者不包含一个非空值。它可以帮助我们避免对空指针异常的处理，并提供了一种优雅的方式来处理可能为 null 的值。下面是 `Optional` 的一些常用函数用法：
+
+1. **创建 Optional 对象**：
+```java
+Optional<String> optionalValue = Optional.of("Hello"); // 创建一个包含非空值的 Optional 对象
+Optional<String> emptyOptional = Optional.empty(); // 创建一个空的 Optional 对象
+Optional<String> nullableOptional = Optional.ofNullable(null); // 创建一个可能为 null 的 Optional 对象
+```
+
+2. **判断是否包含值**：
+```java
+optionalValue.isPresent(); // 返回 true，因为 optionalValue 包含一个值
+emptyOptional.isPresent(); // 返回 false，因为 emptyOptional 不包含值
+```
+
+3. **获取值**：
+```java
+String value = optionalValue.get(); // 获取 optionalValue 中的值，如果值为空会抛出 NoSuchElementException
+```
+
+4. **如果值存在则执行操作**：
+```java
+optionalValue.ifPresent(val -> System.out.println("Value is: " + val)); // 如果值存在，则执行指定操作
+```
+
+5. **如果值为空则返回默认值**：
+```java
+String result = emptyOptional.orElse("Default Value"); // 如果 emptyOptional 为空，则返回指定的默认值
+```
+
+6. **如果值为空则执行操作**：
+```java
+emptyOptional.orElseGet(() -> "Default Value"); // 如果 emptyOptional 为空，则执行指定的 Supplier 操作来获取值
+```
+
+7. **如果值为空则抛出异常**：
+```java
+emptyOptional.orElseThrow(() -> new RuntimeException("Value is not present")); // 如果 emptyOptional 为空，则抛出指定异常
+```
+
+8. **转换值**：
+```java
+Optional<Integer> length = optionalValue.map(String::length); // 将 String 类型的值映射为其长度
+```
+
+9. **过滤值**：
+```java
+Optional<String> filteredValue = optionalValue.filter(val -> val.length() > 5); // 过滤出长度大于 5 的值
+```
+
+10. **扁平化处理**：
+```java
+Optional<String> flatMappedValue = optionalValue.flatMap(val -> Optional.of(val.toUpperCase())); // 扁平化处理，将值转换为大写
+```
+
+11. **自定义操作**：
+```java
+String result = optionalValue.orElseGet(() -> {
+    // 自定义操作，如果值为空则执行这里的逻辑
+    return "Custom Default Value";
+});
+```
+
+`Optional` 提供了一种更加安全和优雅的方式来处理可能为 null 的值，避免了繁琐的空指针异常处理。通过合理使用 `Optional`，可以提高代码的可读性和健壮性。
 
 ## 1.5 JAVA 9
 

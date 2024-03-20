@@ -19,7 +19,8 @@
 - 小技巧1：看通过率判别哪个相对简单
 - 小技巧2：测一下结果（下策）
 
-
+- https://pintia.cn/problem-sets/994805260223102976/exam/problems/type/7 
+- https://pintia.cn/problem-sets/994805342720868352/exam/problems/type/7 
 
 # 一、链表
 
@@ -435,15 +436,16 @@ struct Node {
 
 const int maxn = 100;
 int heap[maxn];
-
-//最大堆
+// index from 1. ----> for root i :   l= 2*i.   r =2*i+1
+// index from 0. ----> for root i :   l= 2*i+1.   r =2*i+2
+// 最大堆
 void downAdjust(int low, int high) {
     int i = low, j = i * 2;
     while (j <= high) {
         if (j + 1 <= high && heap[j + 1] > heap[j])
             j = j + 1;
         if (heap[j] > heap[i]) {
-            swap(heap[j], heap[i]);
+            swap(heap[j], heap[i]);// t = h[j] , h[j]=h[i],h[i]=t;
             i = j;
             j = i * 2;
         } else {
@@ -486,6 +488,7 @@ bool operator >( Node a, Node b ){
   return a.x> b.x; 
 }
 int main(){
+  //priority_queue<Node,vector<Node> > q;
   priority_queue<Node,vector<Node>,greater<Node> > q;
   for( int i= 0; i< 10; ++i )
     q.push( Node( rand(), rand() ) );
@@ -625,7 +628,27 @@ int main() {
 
 ### 3.2.2 算法题目
 
- [PAT A1034 Head of a Gang]
+**建议看一下：[dfs、回溯专题刷题总结](https://leetcode.cn/circle/discuss/sZEj8D/)**
+
+
+
+ [PAT A1034 Head of a Gang](https://pintia.cn/problem-sets/994805342720868352/exam/problems/994805456881434624?type=7&page=0)
+
+[112 路径总和-E](https://leetcode.cn/problems/path-sum/description/)
+
+[111 二叉树最小深度-E](https://leetcode.cn/problems/minimum-depth-of-binary-tree/description/)
+
+[463 岛屿周长-E](https://leetcode.cn/problems/island-perimeter/description/)
+
+[787 K站中转内最便宜的航班-M](https://leetcode.cn/problems/cheapest-flights-within-k-stops/description/)
+
+[310 最小高度树-M](https://leetcode.cn/problems/minimum-height-trees/description/)
+
+[200 岛屿数量-M](https://leetcode.cn/problems/number-of-islands/description/)
+
+[124 二叉树中的最大路径和-H](https://leetcode.cn/problems/binary-tree-maximum-path-sum/description/)
+
+
 
 ## 3.3 BFS
 
@@ -676,7 +699,17 @@ int main() {
 
 ### 3.3.2 算法题目
 
+推荐看一下：[代码随想录图论开更！广度优先搜索理论基础](https://leetcode.cn/circle/discuss/V3FulB/)
+
  [PAT A1076 Forwards on Weibo]
+
+[417 太平洋大西洋水流问题-M](https://leetcode.cn/problems/pacific-atlantic-water-flow/description/)
+
+[130 被围绕的区域-M](https://leetcode.cn/problems/surrounded-regions/description/)
+
+[199 二叉树的右视图-M](https://leetcode.cn/problems/binary-tree-right-side-view/description/)
+
+
 
 ## 3.4 最短路径
 
@@ -718,7 +751,8 @@ void dijkstra(vector<vector<int>>& graph, int src) {
 
         for (int v = 0; v < V; ++v) {
             if (!visited[v] && graph[u][v] && dist[u] != INT_MAX && dist[u] + graph[u][v] < dist[v]) {
-                dist[v] = dist[u] + graph[u][v];
+                
+              dist[v] = dist[u] + graph[u][v];
             }
         }
     }
@@ -965,11 +999,13 @@ int main() {
 
 ### 3.4.5 算法题目
 
-### 3.4.5 算法题目
+ [PAT A1003 Emergency](https://pintia.cn/problem-sets/994805342720868352/exam/problems/994805523835109376?type=7&page=0)
 
- [PAT A1003 Emergency]
+ [PAT A1030 Travel Plan](https://pintia.cn/problem-sets/994805342720868352/exam/problems/994805464397627392?type=7&page=0)
 
- [PAT A1030 Travel Plan]
+
+
+力扣最短路径相关题目和题解：https://github.com/SharingSource/LogicStack-LeetCode/wiki
 
 ## 3.5 最小生成树
 
@@ -1151,6 +1187,8 @@ int main() {
 
 ### 3.5.3 算法题目
 
+力扣最小生成树相关题目和解答：https://github.com/SharingSource/LogicStack-LeetCode/wiki/%E6%9C%80%E5%B0%8F%E7%94%9F%E6%88%90%E6%A0%91
+
 # 四、动态规划
 
 
@@ -1165,17 +1203,11 @@ int main() {
 
 
 
-## 5.3 并查集
+## 5.3 大数和
 
 
 
-## 5.4 堆排序
-
-
-
-## 5.5 大数和
-
-
+## 5.4 2022年机考题
 
 
 

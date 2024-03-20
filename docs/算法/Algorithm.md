@@ -117,7 +117,69 @@ boolean isEmpty = stack.isEmpty(); // 检查栈是否为空
   
   ```
 
+---
 
+在 Java 中，`PriorityQueue` 是一个基于优先级堆的无界优先级队列。它是一个队列，其中元素按照其自然顺序或者通过提供的 `Comparator` 接口进行排序。下面是 `PriorityQueue` 的基本用法：
+
+1. **创建一个 PriorityQueue**：
+```java
+PriorityQueue<Integer> pq = new PriorityQueue<>();
+```
+
+2. **添加元素**：
+```java
+pq.offer(5); // 添加元素到队列中
+pq.offer(3);
+pq.offer(8);
+```
+
+3. **访问队首元素**：
+```java
+int peekElement = pq.peek(); // 返回队首元素，但不移除
+```
+
+4. **移除队首元素**：
+```java
+int pollElement = pq.poll(); // 返回并移除队首元素
+```
+
+5. **遍历 PriorityQueue**：
+```java
+while (!pq.isEmpty()) {
+    System.out.println(pq.poll());
+}
+```
+
+6. **自定义 Comparator**：
+```java
+PriorityQueue<Integer> pq = new PriorityQueue<>((a, b) -> b - a); // 使用自定义比较器，实现最大堆
+```
+
+7. **使用自定义对象**：
+如果要在 `PriorityQueue` 中存储自定义对象，需要确保自定义对象实现了 `Comparable` 接口或者提供了相应的 `Comparator`。
+
+```java
+class Person implements Comparable<Person> {
+    String name;
+    int age;
+
+    public Person(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    @Override
+    public int compareTo(Person other) {
+        return this.age - other.age;
+    }
+}
+
+PriorityQueue<Person> personQueue = new PriorityQueue<>();
+personQueue.offer(new Person("Alice", 25));
+personQueue.offer(new Person("Bob", 30));
+```
+
+`PriorityQueue` 的底层实现是基于堆结构，因此插入和删除元素的时间复杂度为 O(log n)，获取队首元素的时间复杂度为 O(1)。通过合理使用 `PriorityQueue`，可以轻松实现按照优先级排序的数据结构。
 
 ## 1.3 Map
 
