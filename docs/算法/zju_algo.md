@@ -1191,19 +1191,273 @@ int main() {
 
 # 四、动态规划
 
+## 4.1 最长公共子序列
+
+> 给定两个字符串（或数字序列）A 和 B，求一个字符串，使得这个字符串是 A 和 B 的最长公共部分(子序列可以不连续)。
+>
+> A= "3124567"
+>
+> B="13568"
+>
+> Dp(i)(j)=A(0,i) & B(0,j) ======> dp(lenA)(lenB) = 
+>
+> 1. A[lenA]=B[lenB] ===> dp(lenA)(lenB)=dp(lenA-1)dp(lenB-1)+1 
+> 2. A[lenA]!=B[lenB] ====> dp(lenA)(lenB)=max( dp(lenA-1)(lenB), dp(lenA)(lenB-1) )
+
+```java
+int lenA = strlen(A + 1); 
+//由于读入时下标从 1 开始，因此读取长度也从+1 开始
+int lenBstrlen(B + 1);
+//边界
+for (int i = 0; i <= lenA; i++) {
+  dp[i][0] = 0;
+}
+for (int j=0; j <= lenB; j++){
+  dp[0] [j] = 0;
+}
+//状态转移方程
+for (int i = 1; i <= lenA; i++) {
+  for(int j = 1; j <= lenB; j++) {
+    if (A[i] == B[j]){
+      dp[i][j] = dp[i-1][j-1] + 1;
+    } else {
+      dp[i][j] = max (dp[i - 1][j], dp[i][ j- 1]);
+    }
+  }
+  //dp[lenA] [lenB]是答案
+  return dp[lenA] [lenB]
+```
+
+## 4.2 最长回文子串
+
+> 给出一个字符串 S，求 S 的最长回文子串的长度。
+>
+> S="123abccba123"
+>
+> Dp(i)(j)===== i.    j.     =0,1
+>
+> Dp(i)(j)=  (S(i)==S(j)&&dp(i+1)(j-1))
+
+```java
+//边界
+ for (int i = 0; i < len; i++){
+ 		dp[i][i] = 1;
+ 		if (i < len - 1) {
+ 			if(S[i] == S[i + 1]) {
+ 				dp [i] [i + 1] = 1;
+				ans =2; //初始化时注意当前最长回文子串长度
+       }
+      }
+ }
+     //状态转移方程
+for(int L = 3; L <= len; L++) { //枚举子串的长度
+ 		for (int i =0; i+L-1< len; i++) //枚举子串的起始端点
+ 			int j=i+L-1; //子串的右端点
+ 			if(S[i] == S[j] && dp[i + 1][ j- 1] == 1) {
+ 				dp[i] [j] =1;
+				ans= L; //更新最长回文子串长度
+      }
+ 		}
+}
+   
+```
+
+
+
+## 4.3 01背包问题
+
+> 有 n 件物品，每件物品的重量为 w[i]，价值为 c[i]。现有一个容量为 V 的背包，问如何
+> 选取物品放入背包，使得背包内物品的总价值最大。其中每种物品都只有1 件。
+>
+> Dp(i)(v) = 物品从0-i ,  容量v 
+>
+> Dp(n)(V)=DP(n-1)(V)  , DP(n-1)(V-v[n])+c[n]
+
+``` java
+ for(int i=1;i<=n;i++){
+ 		for(int v=V;v>= w[i];v--){
+      //可以减少空间复杂度，逆序枚举v  dp [v]=max (dp[v],dp[v-w[i]]+c[i]);
+      dp[i][v]=max (dp[i-1][v],dp[i-1][v-w[i]]+c[i]);
+   }
+ }
+```
+
+
+
+
+
+## 4.4 完全背包问题
+
+> 有 n 种物品，每种物品的单件重量为 w[i]，价值为 c[i]。现有一个容量为 V 的背包，问
+> 如何选取物品放入背包,使得背包内物品的总价值最大。其中每种物品都有无穷件。
+>
+> Dp(i)(v) = 物品从0-i ,  容量v 
+>
+> Dp(n)(V)=DP(n-1)(V)  , DP(n)(V-w[n])+c[n]
+
+```java
+for(int i=1;i<=n;i++){
+    for(int v= w[i];v<= V;v++){ 
+      dp[i][v]=max (dp[i-1][v],dp[i][v-w[i]]+c[i]);
+      //可以简化，正向枚举 dp[v]=max (dp[v], dp[v-w [i]]+c[i]);
+    }
+}
+```
+
+## 4.5 算法题目
+
+### 4.5.1 线性DP
+
+> https://github.com/SharingSource/LogicStack-LeetCode/wiki/%E7%BA%BF%E6%80%A7-DP
+
+[119 杨辉三角 2-E](https://leetcode.cn/problems/pascals-triangle-ii/description/)
+
+[198 打家劫舍-M](https://leetcode.cn/problems/house-robber/description/)
+
+[213 打家劫舍2-M](https://leetcode.cn/problems/house-robber-ii/description/)
+
+[688 骑士再棋盘上的概率-M](https://leetcode.cn/problems/knight-probability-in-chessboard/description/)
+
+[45 跳跃游戏 2-M](https://leetcode.cn/problems/jump-game-ii/description/)
+
+[978 最长湍流字数组-M](https://leetcode.cn/problems/longest-turbulent-subarray/description/)
+
+### 4.5.2 背包DP
+
+> https://github.com/SharingSource/LogicStack-LeetCode/wiki/%E8%83%8C%E5%8C%85-DP
+
+[279 完全平方数-M](https://leetcode.cn/problems/perfect-squares/description/)
+
+[322 零钱兑换-M](https://leetcode.cn/problems/coin-change/description/)
+
+### 4.5.3 序列DP
+
+> https://github.com/SharingSource/LogicStack-LeetCode/wiki/%E5%BA%8F%E5%88%97-DP
+
+[139 单词拆分-M](https://leetcode.cn/problems/word-break/description/)
+
+[334 递增的三元子序列-M](https://leetcode.cn/problems/increasing-triplet-subsequence/description/)
+
+
+
 
 
 # 五、补充
 
 ## 5.1 二分
 
+```C++
+//A[]为递增序列，x 为欲查询的数，函数返回第一个大于 × 的元素的位置
+//二分上下界为左闭右闭的[left, right],传入的初值为[0,n]
+ int upper_bound(int A[], int left, int right, int x){
+ 		int mid;
+ 		//mid为 left 和 right 的中点
+		 while (left < right) ( //对[left,right]来说, left==right意味着找到唯一位置
+       mid = (left + right) / 2;
+       if(A[mid] > x){
+        //取中点
+        //中间的数大于 ×
+        right = mid;
+        //往左子区间[left，mid]查找
+      else { //中间的数小于等于 ×
+        left = mid + 1;
+        //往右子区间[mid+1, right]查找
+      }
+       return left;
+  }
+```
+
 
 
 ## 5.2 快排
 
+- 挖坑法 1 2 3 4 5 6 7
+
+```c++
+int partion(int A[], int low, int high) {
+    int temp = A[low];
+    int l = low, h = high;
+    while (l < h) {
+        while (l < h && temp <= A[h]) {
+            h--;
+        }
+        A[l] = A[h];
+        while (l < h && temp >= A[l]) {
+            l++;
+        }
+        A[h] = A[l];
+    }
+    A[l] = temp;
+    return l;
+}
+
+void quick_Sort(int A[], int low, int high) {
+    if (low < high) {
+        int pos = partion(A, low, high);
+        quick_Sort(A, low, pos - 1);
+        quick_Sort(A, pos + 1, high);
+    }
+}
+```
+
+- 交换法
+
+```java
+int partion(int A[], int low, int high) {
+    int pivot = A[low];
+    int l = low, h = high;
+  	int temp;
+    while (l < h) {
+        while (l < h && pivot <= A[h]) {
+            h--;
+        }
+        while (l < h && pivot >= A[l]) {
+            l++;
+        }
+       if (l < h) {
+            temp = A[l];
+            A[l] = A[h];
+            A[h] = temp;
+        }
+    }
+    A[low] = A[l];
+    A[l]=pivot;
+    return l;
+}
+
+void quick_Sort(int A[], int low, int high) {
+    if (low < high) {
+        int pos = partion(A, low, high);
+        quick_Sort(A, low, pos - 1);
+        quick_Sort(A, pos + 1, high);
+    }
+}
+```
+
 
 
 ## 5.3 大数和
+
+算法笔记里面的大数和加分
+
+"123456789"
+
+"999999999"
+
+```c++
+s1="123456789";
+s2="999999999";
+i=s1.len-1;
+j=s2.len-1;
+s3= ""; ---->index=0
+int carry=0;
+while(i>==0&&j>=0){
+  s3[index++]=(s1[i]+s1[j]+carry)%10;
+  carry=s1[i]+s1[j]/10;
+}
+// 逆转s3
+...
+```
 
 
 

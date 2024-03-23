@@ -2340,6 +2340,39 @@ public class ThreadLocalExample {
 >
 > volatile是一种稍弱的同步机制，在访问volatile变量时不会执行加锁操作，也就不会执行线程阻塞，因此volatilei变量是一种比synchronized关键字更轻量级的同步机制。使用建议：在两个或者更多的线程需要访问的成员变量上使用volatile。当要访问的变量已在synchronized代码块中，或者为常量时，或者为常量时，没必要使用volatile。
 
+
+
+#### volatile原子可见性
+
+**Java内存模型规定在多线程情况下，线程操作主内存（类比内存条）变量，需要通过线程独有的工作内存（类比CPU高速缓存）拷贝主内存变量副本来进行。此处的所谓内存模型要区别于通常所说的虚拟机堆模型**
+
+![work-memory](./Java/work-memory.png)
+
+如果是一个大对象，并不会从主内存完全拷贝一份，而是这个被访问对象引用的对象、对象中的字段可能存在拷贝
+
+**线程独有的工作内存和进程内存（主内存）之间通过8中原子操作来实现，如下所示**
+
+![main-work-swap](./Java/main-work-swap.png)
+
+`read load` 从主存复制变量到当前工作内存
+
+`use assign` 执行代码，改变共享变量值，可以多次出现
+
+`store write` 用工作内存数据刷新主存相关内容
+
+这些操作并不是原子性，也就是在`read load`之后，如果主内存变量发生修改之后，线程工作内存中的值由于已经加载，不会产生对应的变化，所以计算出来的结果会和预期不一样，对于volatile修饰的变量，jvm虚拟机只是保证从主内存加载到线程工作内存的值是最新的。
+
+#### volatile的禁止指令重排序
+
+**volatile止指令重排序的实现原理**
+
+`volatile`变量的禁止指令重排序是基于内存屏障（Memory Barrier）实现**【synchronized不具有此功能】**。内存屏障又称内存栅栏，是一个CPU指令，内存屏障会导致JVM无法优化屏障内的指令集。
+
+- 对`volatile`变量的写指令后会加入写屏障，对共享变量的改动，都同步到主存当中
+- 对`volatile`变量的读指令前会加入读屏障，对共享变量的读取，加载的是主存中最新数据
+
+> 如果单例模式中的懒汉式变量没有使用volatile仅仅使用synchronized双重检测加锁依旧会因为重排序问题产生线程安全性问题[参见](https://mynamelancelot.github.io/java/concurrent.html#lazy-questions)。
+
 **注意点**
 
 1. volatile变量是一种稍弱的同步机制在访问volatile变量时不会执行加锁操作，因此也就不会使执行线程阻塞，因此volatile变量是一种比synchronized关键字更轻量级的同步机制。
@@ -2355,6 +2388,69 @@ public class ThreadLocalExample {
 **总结**
 
 在需要同步的时候，第一选择应该是synchronized关键字，这是最安全的方式，尝试其他任何方式都是有风险的。尤其在、jdK1.5之后，对synchronized同步机制做了很多优化，如：自适应的自旋锁、锁粗化、锁消除、轻量级锁等，使得它的性能明显有了很大的提升。
+
+---
+
+下面分别给出符合和不符合`volatile`变量应用条件的例子：
+
+**符合条件的例子**：
+1. **对变量的写入操作不依赖变量的当前值**：
+```java
+public class VolatileExample {
+    private volatile boolean flag = false;
+
+    public void setFlag() {
+        flag = true;
+    }
+
+    public boolean isFlag() {
+        return flag;
+    }
+}
+```
+在这个例子中，`flag`变量的写入操作不依赖于当前值，只是简单地将其设置为`true`。这种情况下适合使用`volatile`修饰。
+
+**不符合条件的例子**：
+1. **变量的写入操作依赖变量的当前值**：
+```java
+public class NonVolatileExample {
+    private volatile int count = 0;
+
+    public void increment() {
+        count++;
+    }
+
+    public int getCount() {
+        return count;
+    }
+}
+```
+在这个例子中，`count`变量的写入操作依赖于当前值的增加。多个线程同时调用`increment`方法可能会导致竞态条件，因此不适合使用`volatile`修饰。
+
+2. **变量包含在具有其他变量的不变式中**：
+```java
+public class InvariantExample {
+    private volatile int x = 0;
+    private int y = 0;
+
+    public void updateX() {
+        x = y + 1;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public void updateY() {
+        y = 10;
+    }
+
+    public int getY() {
+        return y;
+    }
+}
+```
+在这个例子中，`x`变量的更新依赖于`y`变量的值，两者存在关联。如果使用`volatile`修饰`x`，可能会导致多线程环境下`x`和`y`之间的关系出现问题，不适合使用`volatile`修饰`x`。
 
 ### 2.4.6 可重入锁
 
@@ -2788,7 +2884,336 @@ public class SafeCollectionIteration extends Object {
 
 ## 2.6 锁机制优化
 
-### 2.6.1 锁池和等待池
+> https://juejin.cn/post/6844903759047294983#heading-22
+
+Java 中的并发锁大致分为隐式锁和显式锁两种。隐式锁就是我们最常使用的 synchronized 关键字，显式锁主要包含两个接口：Lock 和 ReadWriteLock，主要实现类分别为 ReentrantLock 和 ReentrantReadWriteLock，这两个类都是基于 AQS(AbstractQueuedSynchronizer) 实现的。还有的地方将 CAS 也称为一种锁，在包括 AQS 在内的很多并发相关类中，CAS 都扮演了很重要的角色。
+
+- 悲观锁和乐观锁
+
+悲观锁和独占锁是一个意思，它假设一定会发生冲突，因此获取到锁之后会阻塞其他等待线程。这么做的好处是简单安全，但是挂起线程和恢复线程都需要转入内核态进行，这样做会带来很大的性能开销。悲观锁的代表是 synchronized。然而在真实环境中，大部分时候都不会产生冲突。悲观锁会造成很大的浪费。而乐观锁不一样，它假设不会产生冲突，先去尝试执行某项操作，失败了再进行其他处理（一般都是不断循环重试）。这种锁不会阻塞其他的线程，也不涉及上下文切换，性能开销小。代表实现是 CAS。
+
+- 公平锁和非公平锁
+
+公平锁是指各个线程在加锁前先检查有无排队的线程，按排队顺序去获得锁。 非公平锁是指线程加锁前不考虑排队问题，直接尝试获取锁，获取不到再去队尾排队。值得注意的是，在 AQS 的实现中，一旦线程进入排队队列，即使是非公平锁，线程也得乖乖排队。
+
+- 可重入锁和不可重入锁
+
+如果一个线程已经获取到了一个锁，那么它可以访问被这个锁锁住的所有代码块。不可重入锁与之相反。
+
+### 2.6.1 Synchronized 关键字
+
+Synchronized 是一种独占锁。在修饰静态方法时，锁的是类对象，如 Object.class。修饰非静态方法时，锁的是对象，即 this。修饰方法块时，锁的是括号里的对象。 每个对象有一个锁和一个等待队列，锁只能被一个线程持有，其他需要锁的线程需要阻塞等待。锁被释放后，对象会从队列中取出一个并唤醒，唤醒哪个线程是不确定的，不保证公平性。
+
+#### 类锁与对象锁
+
+synchronized 修饰静态方法时，锁的是类对象,如 Object.class。修饰非静态方法时，锁的是对象，即 this。 多个线程是可以同时执行同一个synchronized实例方法的，只要它们访问的对象是不同的。
+
+synchronized 锁住的是对象而非代码，只要访问的是同一个对象的 synchronized 方法，即使是不同的代码，也会被同步顺序访问。
+
+此外，需要说明的，synchronized方法不能防止非synchronized方法被同时执行，所以，一般在保护变量时，需要在所有访问该变量的方法上加上synchronized。
+
+#### 实现原理
+
+synchronized 是基于 Java 对象头和 Monitor 机制来实现的。
+
+- Java 对象头：一个对象在内存中包含三部分：对象头，实例数据和对齐填充。其中 Java 对象头包含两部分：
+
+  - Class Metadata Address （类型指针）。存储类的元数据的指针。虚拟机通过这个指针找到它是哪个类的实例。
+
+  - Mark Word（标记字段）。存出一些对象自身运行时的数据。包括哈希码，GC 分代年龄，锁状态标志等。
+
+- Monitor：Mark Word 有一个字段指向 monitor 对象。monitor 中记录了锁的持有线程，等待的线程队列等信息。前面说的每个对象都有一个锁和一个等待队列，就是在这里实现的。 monitor 对象由 C++ 实现。其中有三个关键字段：
+
+  - _owner 记录当前持有锁的线程
+
+  - _EntryList 是一个队列，记录所有阻塞等待锁的线程
+
+  - _WaitSet 也是一个队列，记录调用 wait() 方法并还未被通知的线程。
+
+- Monitor的操作机制如下：
+
+  - 多个线程竞争锁时，会先进入 EntryList 队列。竞争成功的线程被标记为 Owner。其他线程继续在此队列中阻塞等待。
+
+  - 如果 Owner 线程调用 wait() 方法，则其释放对象锁并进入 WaitSet 中等待被唤醒。Owner 被置空，EntryList 中的线程再次竞争锁。
+
+  - 如果 Owner 线程执行完了，便会释放锁，Owner 被置空，EntryList 中的线程再次竞争锁。
+
+#### JVM 对 synchronized 的处理
+
+上面了解了 monitor 的机制，那虚拟机是如何将 synchronized 和 monitor 关联起来的呢？分两种情况：
+
+- 如果同步的是代码块，编译时会直接在同步代码块前加上 monitorenter 指令，代码块后加上 monitorexit 指令。这称为显示同步。
+- 如果同步的是方法，虚拟机会为方法设置 ACC_SYNCHRONIZED 标志。调用的时候 JVM 根据这个标志判断是否是同步方法。
+
+#### JVM 对 synchronized 的优化
+
+synchronized 是重量级锁，由于消耗太大，虚拟机对其做了一些优化。
+
+- 自旋锁与自适应自旋
+  - 在许多应用中，锁定状态只会持续很短的时间，为了这么一点时间去挂起恢复线程，不值得。我们可以让等待线程执行一定次数的循环，在循环中去获取锁。这项技术称为自旋锁，它可以节省系统切换线程的消耗，但仍然要占用处理器。在 JDK1.4.2 中，自选的次数可以通过参数来控制。 JDK 1.6又引入了自适应的自旋锁，不再通过次数来限制，而是由前一次在同一个锁上的自旋时间及锁的拥有者的状态来决定。
+
+- 锁消除
+  - 虚拟机在运行时，如果发现一段被锁住的代码中不可能存在共享数据，就会将这个锁清除。
+
+- 锁粗化
+  - 当虚拟机检测到有一串零碎的操作都对同一个对象加锁时，会把锁扩展到整个操作序列外部。如 StringBuffer 的 append 操作。
+
+- 轻量级锁
+  - 对绝大部分的锁来说，在整个同步周期内都不存在竞争。如果没有竞争，轻量级锁可以使用 CAS 操作避免使用互斥量的开销。
+
+- 偏向锁
+  - 偏向锁的核心思想是，如果一个线程获得了锁，那么锁就进入偏向模式，当这个线程再次请求锁时，无需再做任何同步操作，即可获取锁。
+
+### 2.6.2 CAS
+
+#### 操作模型
+
+CAS 是 compare and swap 的简写，即比较并交换。它是指一种操作机制，而不是某个具体的类或方法。在 Java 平台上对这种操作进行了包装。在 Unsafe 类中，调用代码如下：
+
+```java
+unsafe.compareAndSwapInt(this, valueOffset, expect, update);
+```
+
+它需要三个参数，分别是内存位置 V，旧的预期值 A 和新的值 B。操作时，先从内存位置读取到值，然后和预期值A比较。如果相等，则将此内存位置的值改为新值 B，返回 true。如果不相等，说明和其他线程冲突了，则不做任何改变，返回 false。
+
+这种机制在不阻塞其他线程的情况下避免了并发冲突，比独占锁的性能高很多。 CAS 在 Java 的原子类和并发包中有大量使用。
+
+#### 重试机制（循环 CAS）
+
+**有很多文章说，CAS 操作失败后会一直重试直到成功，这种说法很不严谨。**
+
+第一，CAS 本身并未实现失败后的处理机制，它只负责返回成功或失败的布尔值，后续由调用者自行处理。只不过我们最常用的处理方式是重试而已。
+
+第二，这句话很容易理解错，被理解成重新比较并交换。实际上失败的时候，原值已经被修改，如果不更改期望值，再怎么比较都会失败。而新值同样需要修改。
+
+所以正确的方法是，使用一个死循环进行 CAS 操作，成功了就结束循环返回，失败了就重新从内存读取值和计算新值，再调用 CAS。看下 AtomicInteger 的源码就什么都懂了：
+
+```java
+public final int incrementAndGet () {
+    for (;;) {
+        int current = get();
+        int next = current + 1;
+        if (compareAndSet(current, next))
+            return next;
+    }
+}
+```
+
+#### 底层实现
+
+CAS 主要分三步，读取-比较-修改。其中比较是在检测是否有冲突，如果检测到没有冲突后，其他线程还能修改这个值，那么 CAS 还是无法保证正确性。所以最关键的是要保证比较-修改这两步操作的原子性。
+
+CAS 底层是靠调用 CPU 指令集的 cmpxchg 完成的，它是 x86 和 Intel 架构中的 compare and exchange 指令。在多核的情况下，这个指令也不能保证原子性，需要在前面加上  lock 指令。lock 指令可以保证一个 CPU 核心在操作期间独占一片内存区域。那么 这又是如何实现的呢？
+
+在处理器中，一般有两种方式来实现上述效果：总线锁和缓存锁。在多核处理器的结构中，CPU 核心并不能直接访问内存，而是统一通过一条总线访问。总线锁就是锁住这条总线，使其他核心无法访问内存。这种方式代价太大了，会导致其他核心停止工作。而缓存锁并不锁定总线，只是锁定某部分内存区域。当一个 CPU 核心将内存区域的数据读取到自己的缓存区后，它会锁定缓存对应的内存区域。锁住期间，其他核心无法操作这块内存区域。
+
+CAS 就是通过这种方式实现比较和交换操作的原子性的。**值得注意的是， CAS 只是保证了操作的原子性，并不保证变量的可见性，因此变量需要加上 volatile 关键字。**
+
+#### ABA 问题
+
+上面提到，CAS 保证了比较和交换的原子性。但是从读取到开始比较这段期间，其他核心仍然是可以修改这个值的。如果核心将 A 修改为 B，CAS 可以判断出来。但是如果核心将 A 修改为 B 再修改回 A。那么 CAS 会认为这个值并没有被改变，从而继续操作。这是和实际情况不符的。解决方案是加一个版本号。
+
+### 2.6.3 可重入锁 ReentrantLock
+
+ReentrantLock 使用代码实现了和 synchronized 一样的语义，包括可重入，保证内存可见性和解决竞态条件问题等。相比 synchronized，它还有如下好处：
+
+- 支持以非阻塞方式获取锁
+- 可以响应中断
+- 可以限时
+- 支持了公平锁和非公平锁
+
+基本用法如下：
+
+```java
+public class Counter {
+    private final Lock lock = new ReentrantLock();
+    private volatile int count;
+
+    public void incr() {
+        lock.lock();
+        try {
+            count++;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public int getCount() {
+        return count;
+    }
+}
+```
+
+ReentrantLock 内部有两个内部类，分别是 FairSync 和 NoFairSync，对应公平锁和非公平锁。他们都继承自 Sync。Sync 又继承自AQS。
+
+### 2.6.4 AQS
+
+AQS 全称 AbstractQueuedSynchronizer。AQS 中有两个重要的成员：
+
+- 成员变量 state。用于表示锁现在的状态，用 volatile 修饰，保证内存一致性。同时所用对 state 的操作都是使用 CAS 进行的。state 为0表示没有任何线程持有这个锁，线程持有该锁后将 state 加1，释放时减1。多次持有释放则多次加减。
+- 还有一个双向链表，链表除了头结点外，每一个节点都记录了线程的信息，代表一个等待线程。这是一个 FIFO 的链表。
+
+下面以 ReentrantLock 非公平锁的代码看看 AQS 的原理。
+
+#### 请求锁
+
+请求锁时有三种可能：
+
+1. 如果没有线程持有锁，则请求成功，当前线程直接获取到锁。
+2. 如果当前线程已经持有锁，则使用 CAS 将 state 值加1，表示自己再次申请了锁，释放锁时减1。这就是可重入性的实现。
+3. 如果由其他线程持有锁，那么将自己添加进等待队列。
+
+```java
+final void lock() {
+    if (compareAndSetState(0, 1))   
+        setExclusiveOwnerThread(Thread.currentThread()); //没有线程持有锁时，直接获取锁，对应情况1
+    else
+        acquire(1);
+}
+
+public final void acquire(int arg) {
+    if (!tryAcquire(arg) && //在此方法中会判断当前持有线程是否等于自己，对应情况2
+        acquireQueued(addWaiter(Node.EXCLUSIVE), arg)) //将自己加入队列中，对应情况3
+        selfInterrupt();
+}
+```
+
+#### 创建 Node 节点并加入链表
+
+如果没竞争到锁，这时候就要进入等待队列。队列是默认有一个 head 节点的，并且不包含线程信息。上面情况3中，addWaiter 会创建一个 Node，并添加到链表的末尾，Node 中持有当前线程的引用。同时还有一个成员变量 waitStatus，表示线程的等待状态，初始值为0。我们还需要关注两个值：
+
+- CANCELLED，值为1，表示取消状态，就是说我不要这个锁了，请你把我移出去。
+- SINGAL，值为-1，表示下一个节点正在挂起等待，注意是下一个节点，不是当前节点。
+
+同时，加到链表末尾的操作使用了 CAS+死循环的模式，很有代表性，拿出来看一看：
+
+```java
+Node node = new Node(mode);
+for (;;) {
+    Node oldTail = tail;
+    if (oldTail != null) {
+        U.putObject(node, Node.PREV, oldTail);
+        if (compareAndSetTail(oldTail, node)) {
+            oldTail.next = node;
+            return node;
+        }
+    } else {
+        initializeSyncQueue();
+    }
+}
+```
+
+可以看到，在死循环里调用了 CAS 的方法。如果多个线程同时调用该方法，那么每次循环都只有一个线程执行成功，其他线程进入下一次循环，重新调用。N个线程就会循环N次。这样就在无锁的模式下实现了并发模型。
+
+#### 挂起等待
+
+- 如果此节点的上一个节点是头部节点，则再次尝试获取锁，获取到了就移除并返回。获取不到就进入下一步；
+- 判断前一个节点的 waitStatus，如果是 SINGAL，则返回 true，并调用 LockSupport.park() 将线程挂起；
+- 如果是 CANCELLED，则将前一个节点移除；
+- 如果是其他值，则将前一个节点的 waitStatus 标记为 SINGAL，进入下一次循环。
+
+可以看到，一个线程最多有两次机会，还竞争不到就去挂起等待。
+
+```java
+final boolean acquireQueued(final Node node, int arg) {
+    try {
+        boolean interrupted = false;
+        for (;;) {
+            final Node p = node.predecessor();
+            if (p == head && tryAcquire(arg)) {
+                setHead(node);
+                p.next = null; // help GC
+                return interrupted;
+            }
+            if (shouldParkAfterFailedAcquire(p, node) &&
+                parkAndCheckInterrupt())
+                interrupted = true;
+        }
+    } catch (Throwable t) {
+        cancelAcquire(node);
+        throw t;
+    }
+}
+```
+
+#### 释放锁
+
+- 调用 tryRelease，此方法由子类实现。实现非常简单，如果当前线程是持有锁的线程，就将 state 减1。减完后如果 state 大于0，表示当前线程仍然持有锁，返回 false。如果等于0，表示已经没有线程持有锁，返回 true，进入下一步；
+- 如果头部节点的 waitStatus 不等于0，则调用LockSupport.unpark()唤醒其下一个节点。头部节点的下一个节点就是等待队列中的第一个线程，这反映了 AQS 先进先出的特点。另外，即使是非公平锁，进入队列之后，还是得按顺序来。
+
+```java
+public final boolean release(int arg) {
+    if (tryRelease(arg)) { //将 state 减1
+        Node h = head;
+        if (h != null && h.waitStatus != 0)
+            unparkSuccessor(h);
+        return true;
+    }
+    return false;
+}
+
+private void unparkSuccessor(Node node) {
+    int ws = node.waitStatus;
+    if (ws < 0)
+        node.compareAndSetWaitStatus(ws, 0);
+        
+    Node s = node.next;
+    if (s == null || s.waitStatus > 0) { 
+        s = null;
+        for (Node p = tail; p != node && p != null; p = p.prev)
+            if (p.waitStatus <= 0)
+                s = p;
+    }
+    if (s != null) //唤醒第一个等待的线程
+        LockSupport.unpark(s.thread);
+}
+```
+
+#### 公平锁如何实现
+
+上面分析的是非公平锁，那公平锁呢？很简单，在竞争锁之前判断一下等待队列中有没有线程在等待就行了。
+
+```java
+protected final boolean tryAcquire(int acquires) {
+    final Thread current = Thread.currentThread();
+    int c = getState();
+    if (c == 0) {
+        if (!hasQueuedPredecessors() && //判断等待队列是否有节点
+            compareAndSetState(0, acquires)) {
+            setExclusiveOwnerThread(current);
+            return true;
+        }
+    }
+    ......
+    return false;
+}
+```
+
+### 2.6.4 可重入读写锁 ReentrantReadWriteLock
+
+#### 读写锁机制
+
+理解 ReentrantLock 和 AQS 之后，再来理解读写锁就很简单了。读写锁有一个读锁和一个写锁，分别对应读操作和锁操作。锁的特性如下：
+
+- 只有一个线程可以获取到写锁。在获取写锁时，只有没有任何线程持有任何锁才能获取成功；
+- 如果有线程正持有写锁，其他任何线程都获取不到任何锁；
+- 没有线程持有写锁时，可以有多个线程获取到读锁。
+
+上面锁的特点保证了可以并发读取，这大大提高了效率，在实际开发中非常有用。那么在具体是如何实现的呢？
+
+#### 实现原理
+
+读写锁虽然有两个锁，但实际上只有一个等待队列。
+
+- 获取写锁时，要保证没有任何线程持有锁；
+- 写锁释放后，会唤醒队列第一个线程，可能是读锁和写锁；
+- 获取读锁时，先判断写锁有没有被持有，没有就可以获取成功；
+- 获取读锁成功后，会将队列中等待读锁的线程挨个唤醒，知道遇到等待写锁的线程位置；
+- 释放读锁时，要检查读锁数，如果为0，则唤醒队列中的下一个线程，否则不进行操作。
+
+
+
+### 2.6.5 锁池和等待池
 
 > 虽然java底层使用队列实现的,但是用池来描述会更容易理解,后面会看到
 >
@@ -3600,6 +4025,165 @@ Java8 中的 ConcurrnetHashMap 使用的 Synchronized 锁加 CAS 的机制。结
 
 ![16ef52f1cf5e2104~tplv-t2oaga2asx-jj-mark_3024_0_0_0_q75](./Java/16ef52f1cf5e2104~tplv-t2oaga2asx-jj-mark_3024_0_0_0_q75.png)
 
+### 5.1.5 Obejct方法
+
+
+
+### 5.1.6 Java中 HashMap的实现
+
+> **JDK 1.7** ： Table数组+ Entry链表；
+> **JDK1.8** : Table数组+ Entry链表/红黑树；(为什么要使用红黑树？)
+>
+> https://javabetter.cn/collection/hashmap.html
+
+**重要变量介绍**：
+
+ps：都是重要的变量记忆理解一下最好。
+
+- `DEFAULT_INITIAL_CAPACITY` Table数组的初始化长度： `1 << 4``2^4=16`（为什么要是 2的n次方？）
+- `MAXIMUM_CAPACITY` Table数组的最大长度： `1<<30``2^30=1073741824`
+- `DEFAULT_LOAD_FACTOR` 负载因子：默认值为`0.75`。 当元素的总个数>当前数组的长度 * 负载因子。数组会进行扩容，扩容为原来的两倍（todo：为什么是两倍？）
+- `TREEIFY_THRESHOLD` 链表树化阙值： 默认值为 `8` 。表示在一个node（Table）节点下的值的个数大于8时候，会将链表转换成为红黑树。
+- `UNTREEIFY_THRESHOLD` 红黑树链化阙值： 默认值为 `6` 。 表示在进行扩容期间，单个Node节点下的红黑树节点的个数小于6时候，会将红黑树转化成为链表。
+- `MIN_TREEIFY_CAPACITY = 64` 最小树化阈值，当Table所有元素超过改值，才会进行树化（为了防止前期阶段频繁扩容和树化过程冲突）。
+
+---
+
+#### **实现原理图** 
+
+我们都知道，在HashMap中，采用数组+链表的方式来实现对数据的储存。
+
+![v2-3e203e5dcf8c12e7ebf137c344615aa4_1440w](./Java/v2-3e203e5dcf8c12e7ebf137c344615aa4_1440w.webp)
+
+**第一问：** 为什么使用链表+数组：要知道为什么使用链表首先需要知道Hash冲突是如何来的：
+
+答： 由于我们的数组的值是限制死的，我们在对key值进行散列取到下标以后，放入到数组中时，难免出现两个key值不同，但是却放入到下标相同的**格子**中，此时我们就可以使用链表来对其进行链式的存放。
+**第二问** 我⽤LinkedList代替数组结构可以吗？
+对于题目的意思是说，在源码中我们是这样的
+
+```text
+Entry[] table=new Entry[capacity];
+// entry就是一个链表的节点
+```
+
+现在进行替换，进行如下的实现
+
+```text
+List<Entry> table=new LinkedList<Entry>();
+```
+
+是否可以行得通？ 答案当然是肯定的。
+**第三问** 那既然可以使用进行替换处理，为什么有偏偏使用到数组呢？
+因为⽤数组效率最⾼！ 在HashMap中，定位节点的位置是利⽤元素的key的哈希值对数组⻓度取模得到。此时，我们已得到节点的位置。显然数组的查 找效率⽐`LinkedList`⼤（底层是链表结构）。
+那`ArrayList`，底层也是数组，查找也快啊，为啥不⽤ArrayList? 因为采⽤基本数组结构，扩容机制可以⾃⼰定义，HashMap中数组扩容刚好是**2的次幂**，在做取模运算的效率⾼。 ⽽ArrayList的扩容机制是1.5倍扩容（这一点我相信学习过的都应该清楚），那ArrayList为什么是1.5倍扩容这就不在本⽂说明了。
+
+---
+
+#### Hash冲突得到下标值
+
+我们都知道在HashMap中 使用数组加链表，这样问题就来了，数组使用起来是有下标的，但是我们平时使用HashMap都是这样使用的：
+
+```text
+HashMap<Integer,String> hashMap=new HashMap<>();
+hashMap.put(2,"dd");
+```
+
+可以看到的是并没有特地为我们存放进来的值指定下标，那是因为我们的hashMap对存放进来的key值进行了hashcode()，生成了一个值，但是这个值很大，我们不可以直接作为下标，此时我们想到了可以使用取余的方法，例如这样：
+
+```text
+key.hashcode()%Table.length；
+```
+
+即可以得到对于任意的一个key值，进行这样的操作以后，其值都落在`0-Table.length-1` 中，但是 HashMap的源码却不是这样做？
+**它**对其进行了与操作，对Table的表长度减一再与生产的hash值进行相与：
+
+```java
+if ((p = tab[i = (n - 1) & hash]) == null)
+            tab[i] = newNode(hash, key, value, null);
+```
+
+这里我们也就得知为什么Table数组的长度要一直都为`2的n次方`，只有这样，减一进行相与时候，才能够达到最大的`n-1`值。
+**举个例子来反证一下：**
+我们现在 数组的长度为 15 减一为 14 ，二进制表示 `0000 1110` 进行相与时候，最后一位永远是0，这样就可能导致，不能够完完全全的进行Table数组的使用。违背了我们最开始的想要对Table数组进行**最大限度的无序使用**的原则，因为HashMap为了能够存取高效，，要尽量较少碰撞，就是要尽量把数据分配均匀，每个链表⻓度⼤致相同。
+**此时还有一点需要注意的是： 我们对key值进行hashcode以后，进行相与时候都是只用到了后四位，前面的很多位都没有能够得到使用,这样也可能会导致我们所生成的下标值不能够完全散列。**
+`解决方案：`将生成的hashcode值的高16位于低16位进行异或运算，这样得到的值再进行相与，一得到最散列的下标值。
+
+```java
+static final int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+    }
+```
+
+---
+
+#### 拉链法
+
+注意，`e.next = newTable[i]`，也就是使用了单链表的头插入方式，同一位置上新元素总会被放在链表的头部位置；这样先放在一个索引上的元素最终会被放到链表的尾部，这就会导致**在旧数组中同一个链表上的元素，通过重新计算索引位置后，有可能被放到了新数组的不同位置上**。
+
+就这点上，Java 8 做了很大的优化（下面会讲）。
+
+现在假设 hash 算法就是简单的用键的哈希值（一个 int 值）和数组大小取模（也就是 `hashCode % table.length`）。
+
+继续假设：
+
+- 数组 table 的长度为 2
+- 键的哈希值为 3、7、5
+
+取模运算后，哈希冲突都到 table[1] 上了，因为余数为 1。那么扩容前的样子如下图所示。
+
+![hashmap-resize-01](./Java/hashmap-resize-01.png)
+
+数组的容量为 2， key 3、7、5 都在 table[1] 的链表上。
+
+假设负载因子（后面会细讲） loadFactor 为 1，也就是当元素的个数大于 table 的长度时进行扩容。
+
+扩容后的数组容量为 4。
+
+- key 3 取模（3%4）后是 3，放在 table[3] 上。
+- key 7 取模（7%4）后是 3，放在 table[3] 上的链表头部。
+- key 5 取模（5%4）后是 1，放在 table[1] 上。
+
+![hashmap-resize-02](./Java/hashmap-resize-02.png)
+
+按照我们的预期，扩容后的 7 仍然应该在 3 这条链表的后面，但实际上呢？ 7 跑到 3 这条链表的头部了。
+
+针对 JDK 7 中的这个情况，JDK 8 做了哪些优化呢？
+
+看下面这张图。
+
+![hashmap-resize-03](./Java/hashmap-resize-03.png)
+
+n 为 table 的长度，默认值为 16。
+
+- n-1 也就是二进制的 0000 1111（1X20+1X21+1X22+1X23=1+2+4+8=15）；
+- key1 哈希值的最后 8 位为 0000 0101
+- key2 哈希值的最后 8 位为 0001 0101（和 key1 不同）
+- 做与运算后发生了哈希冲突，索引都在（0000 0101）上。
+
+扩容后为 32。
+
+- n-1 也就是二进制的 0001 1111（1X20+1X21+1X22+1X23+1X24=1+2+4+8+16=31），扩容前是 0000 1111。
+- key1 哈希值的低位为 0000 0101
+- key2 哈希值的低位为 0001 0101（和 key1 不同）
+- key1 做与运算后，索引为 0000 0101。
+- key2 做与运算后，索引为 0001 0101。
+
+新的索引就会发生这样的变化：
+
+- 原来的索引是 5（*0* 0101）
+- 原来的容量是 16
+- 扩容后的容量是 32
+- 扩容后的索引是 21（*1* 0101），也就是 5+16，也就是原来的索引+原来的容量
+
+![img](https://cdn.tobebetterjavaer.com/tobebetterjavaer/images/collection/hashmap-resize-04.png)
+
+也就是说，JDK 8 不需要像 JDK 7 那样重新计算 hash，只需要看原来的hash值新增的那个bit是1还是0就好了，是0的话就表示索引没变，是1的话，索引就变成了“原索引+原来的容量”。
+
+![hashmap-resize-05](./Java/hashmap-resize-05.png)
+
+JDK 8 的这个设计非常巧妙，既省去了重新计算hash的时间，同时，由于新增的1 bit是0还是1是随机的，因此扩容的过程，可以均匀地把之前的节点分散到新的位置上。
+
 ## 5.2 并发
 
 ### 5.2.1 什么情况线程会进入 WAITING 状态？
@@ -3760,22 +4344,177 @@ public class MyClass {
 
 
 
-### 5.2.9 Java8 新特性有哪些了解?
+### 5.2.9 JAVA中的管程monitor
 
-- 接口的默认方法。
-- Lambda 表达式。
-- 函数式接口。
-- 方法和构造函数引用。
-- Lamda 表达式作用域。
-- 内置函数式接口。
-- Optional。
-- Streams(流)。
-- ParallelStreams(并行流)。
-- Maps。
-- DateAPI(日期相关 API)。
-- Annotations(注解)。
+> https://www.cnblogs.com/binarylei/p/12544002.html
+
+并发编程这个技术领域已经发展了半个世纪了，相关的理论和技术纷繁复杂。那有没有一种核心技术可以很方便地解决我们的并发问题呢？事实上，锁机制的实现方案有两种：
+
+- **信号量(Semaphere)**：操作系统提供的一种协调共享资源访问的方法。和用软件实现的同步比较，软件同步是平等线程间的的一种同步协商机制，不能保证原子性。而信号量则由操作系统进行管理，地位高于进程，操作系统保证信号量的原子性。
+- **管程(Monitor)**：解决信号量在临界区的 PV 操作上的配对的麻烦，把配对的 PV 操作集中在一起，生成的一种并发编程方法。其中使用了条件变量这种同步机制。
+
+![1322310-20200320081430470-1065805408](./Java/1322310-20200320081430470-1065805408.png)
+
+**说明：** 信号量将共享变量 S 封装起来，对共享变量 S 的所有操作都只能通过 PV 进行，这是不是和面向对象的思想是不是很像呢？事实上，封装共享变量是并发编程的常用手段。在信号量中，当 P 操作无法获取到锁时，将当前线程添加到**同步队列(syncQueue)**中。当其余线程 V 释放锁时，从同步队列中唤醒等待线程。但当有多个线程通过信号量 PV 配对时会异常复杂，所以管程中引入了**等待队列(waitQueue)**的概念，进一步封装这些复杂的操作。
+
+---
+
+**管程**
+
+在管程的发展史上，先后出现过三种不同的管程模型，分别是：Hasen 模型、Hoare 模型和 MESA 模型。其中，现在广泛应用的是 MESA 模型，并且 Java 管程的实现参考的也是 MESA 模型。所以今天我们重点介绍一下 MESA 模型。在并发编程领域，有两大核心问题：一个是互斥，即同一时刻只允许一个线程访问共享资源；另一个是同步，即线程之间如何通信、协作。这两大问题，管程都是能够解决的。
+
+在上述用信号量实现生产者-消费者模式的代码中，为了实现阻塞队列的功能，即等待-通知(wait-notify)，除了使用互斥锁 mutex 外，还需要两个判断队满和队空的资源信号量 fullBuffers 和 emptyBuffers，使用起来不仅复杂，还容易出错。
+
+管程在信号量的基础上，更进一步，增加了条件同步，将上述复杂的操作封起来。
+
+JUC AQS 也是基于管程实现的，我们基于 ReentrantLock 实现一个阻塞队列，重点比较和信号量的区别。阻塞队列有两个操作分别是入队和出队，这两个方法都是先获取互斥锁，类比管程模型中的入口。
+
+1. 对于入队操作，如果队列已满，就需要等待直到队列不满，即 notFull.await();。
+2. 对于出队操作，如果队列为空，就需要等待直到队列不空，即 notEmpty.await();。
+3. 如果入队成功，那么队列就不空了，就需要通知条件变量：队列不空 notEmpty 对应的等待队列。
+4. 如果出队成功，那就队列就不满了，就需要通知条件变量：队列不满 notFull 对应的等待队列。
 
 
+
+---
+
+**信号量实现同步：**
+
+```java
+private class BoundedBuffer {
+    private int n = 100;
+    private Semaphore mutex = new Semaphore(1);
+    private Semaphore notFull = new Semaphore(n);
+    private Semaphore notEmpty = new Semaphore(0);
+
+    public void product() throws InterruptedException {
+        notFull.P();      // 缓冲区满时，生产者线程必须等待
+        mutex.P();
+        // ...
+        mutex.V();
+        notEmpty.V();      // 唤醒等待的消费者线程
+    }
+
+    public void consume() throws InterruptedException {
+        notEmpty.P();      // 缓冲区空时，消费都线程等待
+        mutex.P();
+        // ...
+        mutex.V();
+        notFull.V();      // 唤醒等待的生产者线程
+    }
+}
+```
+
+**MESA管程实现同步：**
+
+```java
+public class BlockedQueue<T> {
+    final Lock lock = new ReentrantLock();
+    // 条件变量：队列不满
+    final Condition notFull = lock.newCondition();
+    // 条件变量：队列不空
+    final Condition notEmpty = lock.newCondition();
+
+    // 入队
+    void enq(T x) {
+        lock.lock();
+        try {
+            while (队列已满) {
+                // 等待队列不满
+                notFull.await();
+            }
+            // add x to queue
+            // 入队后,通知可出队
+            notEmpty.signal();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    // 出队
+    void deq() {
+        lock.lock();
+        try {
+            while (队列已空) {
+                // 等待队列不空
+                notEmpty.await();
+            }
+            // remove the first element from queue
+            // 出队后，通知可入队
+            notFull.signal();
+        } finally {
+            lock.unlock();
+        }
+    }
+}
+```
+
+#### wait() 的正确姿势
+
+对于 MESA 管程来说，有一个编程范式，就是需要在一个 while 循环里面调用 wait()。这个是 MESA 管程特有的。所谓范式，就是前人总结的经验。
+
+```java
+while (条件不满足) {
+    wait();
+}
+```
+
+Hasen 模型、Hoare 模型和 MESA 模型的一个核心区别就是当条件满足后，如何通知相关线程。管程要求同一时刻只允许一个线程执行，那当线程 T2 的操作使线程 T1 等待的条件满足时，T1 和 T2 究竟谁可以执行呢？
+
+1. Hasen 模型里面，要求 notify() 放在代码的最后，这样 T2 通知完 T1 后，T2 就结束了，然后 T1 再执行，这样就能保证同一时刻只有一个线程执行。
+2. Hoare 模型里面，T2 通知完 T1 后，T2 阻塞，T1 马上执行；等 T1 执行完，再唤醒 T2，也能保证同一时刻只有一个线程执行。但是相比 Hasen 模型，T2 多了一次阻塞唤醒操作。
+3. MESA 管程里面，T2 通知完 T1 后，T2 还是会接着执行，T1 并不立即执行，仅仅是从条件变量的等待队列进到入口等待队列里面。这样做的好处是 notify() 不用放到代码的最后，T2 也没有多余的阻塞唤醒操作。但是也有个副作用，就是**当 T1 再次执行的时候，可能曾经满足的条件现在已经不满足了**，所以需要以循环方式检验条件变量。
+
+**思考1：wait() 方法，在 Hasen 模型和 Hoare 模型里面，都是没有参数的，而在 MESA 模型里面，增加了超时参数，你觉得这个参数有必要吗？**
+
+有必要。Hasen 是执行完再去唤醒另外一个线程，能够保证线程的执行。Hoare 是中断当前线程，唤醒另外一个线程，执行玩再去唤醒，也能够保证完成。而 MESA 是进入等待队列，不一定有机会能够执行，产生饥饿现象。
+
+#### notify() 何时可以使用
+
+除非经过深思熟虑，**否则尽量使用 notifyAll()，不要使用 notify()。**
+
+那什么时候可以使用 notify() 呢？需要满足以下三个条件：
+
+1. 所有等待线程拥有相同的等待条件；
+2. 所有等待线程被唤醒后，执行相同的操作；
+3. 只需要唤醒一个线程。
+
+比如上面阻塞队列的例子中，对于“队列不满”这个条件变量，其阻塞队列里的线程都是在等待“队列不满”这个条件，反映在代码里就是下面这 3 行代码。对所有等待线程来说，都是执行这 3 行代码，重点是 **while 里面的等待条件是完全相同的。**
+
+#### AQS 和 synchronized 原理
+
+JUC AQS 就是基于管程实现的，内部包含两个队列，一个是同步队列，一个是等待队列：
+
+1. 同步队列：锁被占用时，会将该线程添加到同步队列中。当锁释放后，会从队列中唤醒一个线程，又分为公平和非公平两种。
+2. 等待队列：当调用 await 是，会将该线程添加到等待队列中。当其它线程调用 notify 时，会将该线程从等待队列移动到同步队列中，重新竞争锁。
+
+synchronized 也是基于管程实现的，核心的数据结构见 ObjectMonitor。AQS 和 synchronized 都是管程 MESA 模型在 Java 中的应用。一切都套路，有章可循。
+
+
+
+### 5.2.10 AQS和synchronized的区别
+
+> https://juejin.cn/post/6844903759047294983
+
+
+
+### 5.2.11 线程之间怎么传递数据
+
+在 Java 中，线程之间可以通过以下几种方式来传递数据：
+
+1. **共享变量**：线程之间可以通过共享变量来传递数据。多个线程可以访问同一个共享变量，通过对共享变量的读写操作来进行数据传递。需要注意的是，对共享变量的访问需要进行同步操作，以避免并发访问导致的数据不一致性问题。
+
+2. **线程间通信**：Java 提供了一些线程间通信的机制，如 wait()、notify()、notifyAll() 方法、Lock、Condition 等。通过这些机制，一个线程可以等待另一个线程的通知，从而实现数据传递。
+
+3. **ThreadLocal**：ThreadLocal 是一种线程本地变量，每个线程都有自己独立的变量副本。通过 ThreadLocal 可以在不同线程之间传递数据，每个线程可以访问自己的变量副本，实现线程间数据隔离。
+
+4. **BlockingQueue**：BlockingQueue 是一个阻塞队列，可以用于在线程之间传递数据。一个线程可以将数据放入队列，另一个线程可以从队列中取出数据，实现数据传递。
+
+5. **Future 和 Callable**：Future 和 Callable 是 Java 并发包中的两个接口，可以用于在一个线程中执行任务并返回结果给另一个线程。通过 Future 对象可以获取异步任务的执行结果。
+
+6. **其他方式**：还有一些其他方式可以用于线程间数据传递，如使用 CountDownLatch、Semaphore、CyclicBarrier 等同步工具类，或者通过共享内存、文件、数据库等外部存储来传递数据。
+
+根据具体的场景和需求，可以选择合适的方式来实现线程间数据传递。需要根据线程安全性、数据传递的频率、数据量大小等因素来选择合适的方式。
 
 ## 5.3 JVM
 
@@ -4202,3 +4941,19 @@ Lambda 表达式使用更简洁的语法，可以直接将代码块作为参数�
 生成的字节码：Lambda 表达式会生成更少的字节码，因此可以更快地执行，而匿名内部类会生成更多的字节码，因此可能会导致性能问题；
 访问外部变量：Lambda 表达式可以访问它所在方法的局部变量，但是这些变量需要声明为final或等效于final的变量。而匿名内部类可以访问所在方法的局部变量，但是这些变量必须声明为 final。
 
+
+
+### Java8 新特性有哪些了解?
+
+- 接口的默认方法。
+- Lambda 表达式。
+- 函数式接口。
+- 方法和构造函数引用。
+- Lamda 表达式作用域。
+- 内置函数式接口。
+- Optional。
+- Streams(流)。
+- ParallelStreams(并行流)。
+- Maps。
+- DateAPI(日期相关 API)。
+- Annotations(注解)。
