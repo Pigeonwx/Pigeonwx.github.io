@@ -47,8 +47,6 @@ list.clear();
           oldCapacity >> 1 
   ```
 
-### 
-
 ### 1.2.2 Stack 
 
 ```java
@@ -168,7 +166,6 @@ for (Map.Entry<String, Integer> entry : myMap.entrySet()) {
 myMap.remove("Charlie"); // 删除键 "Charlie" 对应的键值对
 Set<String> keys = myMap.keySet();
 Collection<Integer> values = myMap.values();
-
 ```
 
 #### TreeMap ceiling&floor
@@ -326,7 +323,6 @@ vector.clear();
   list.add(1);
   list.add(2);
   list.add(3);
-  
   Collections.reverse(list);
   ```
 
@@ -337,7 +333,7 @@ vector.clear();
 > java.util.Collections中的静态方法的Collection.sort()主要是针对集合框架中的动态数组，链表，树，哈希表等（ ArrayList、LinkedList、HashSet、LinkedHashSet、HashMap、LinkedHashMap ）进行排序。
 
 ```java
-Collections.sort(s,new new Comparator <student>(){
+Collections.sort(s, new Comparator <student>(){
         public int compare(student p1,student p2){
             if (p1.getGrade()>p2.getGrade())
                 return 1;
@@ -355,7 +351,7 @@ Collections.sort(s,new new Comparator <student>(){
 #### Arrays 排序
 
 ```java
-Arrays.sort(s,new new Comparator <student>(){
+Arrays.sort(s, new Comparator <student>(){
         public int compare(student p1,student p2){
             if (p1.getGrade()>p2.getGrade())
                 return 1;
@@ -509,7 +505,7 @@ interface Hello {
 
 动态代理实际上是JVM在运行期动态创建class字节码并加载的过程，它并没有什么黑魔法，把上面的动态代理改写为静态实现类大概长这样：
 
-```
+```java
 public class HelloDynamicProxy implements Hello {
     InvocationHandler handler;
     public HelloDynamicProxy(InvocationHandler handler) {
@@ -579,7 +575,7 @@ list.forEach((String s) -> System.out.println("*" + s + "*"));
 
 - lambda内部可以使用静态、非静态和局部变量，这称为lambda内的变量捕获。
 - Lambda表达式在Java中又称为闭包或匿名函数，所以如果有同事把它叫闭包的时候，不用惊讶。
-- Lambda方法在编译器内部被翻译成私有方法，并派发 invokedynamic 字节码指令来进行调用。可以使用JDK中的 javap 工具来反编译class文件。使用 javap -p 或 javap -c -v 命令来看一看lambda表达式生成的字节码。大致应该长这样:
+- Lambda方法在编译器内部被翻译成私有方法，并派发 invoke dynamic 字节码指令来进行调用。可以使用JDK中的 javap 工具来反编译class文件。使用 javap -p 或 javap -c -v 命令来看一看lambda表达式生成的字节码。大致应该长这样:
 
 ```java
 private static java.lang.Object lambda$0(java.lang.String);
@@ -4184,6 +4180,24 @@ n 为 table 的长度，默认值为 16。
 
 JDK 8 的这个设计非常巧妙，既省去了重新计算hash的时间，同时，由于新增的1 bit是0还是1是随机的，因此扩容的过程，可以均匀地把之前的节点分散到新的位置上。
 
+### 5.1.7 接口和抽象类的区别
+
+Java中接口（Interface）和抽象类（Abstract Class）的主要区别包括以下几点：
+
+1. 接口可以定义方法的签名但不能包含方法的实现，而抽象类可以包含抽象方法（没有实现）和具体方法（有实现）。
+2. 类可以实现多个接口，但只能继承一个抽象类。
+3. 接口中的方法默认是public和abstract的，而抽象类中可以包含各种访问修饰符的方法。
+4. 接口中不能包含实例变量，而抽象类可以包含实例变量。
+5. 接口用于定义类的行为，而抽象类用于定义类的结构。
+
+总的来说，如果需要定义一组相关的行为而不关心具体的实现细节，可以使用接口；如果需要定义一些通用的方法，同时也希望提供一些默认的实现，可以使用抽象类。
+
+- 在Java中，接口中的变量（字段）默认是public、static、final的，也就是说接口中的变量是常量，不可以被修改。接口中的变量必须被初始化，且在接口中不能包含实例变量（非static变量）。
+
+- 抽象类中的变量可以是实例变量（非static变量），可以有各种访问修饰符，也可以是静态变量、常量等。抽象类中的变量可以被子类继承和修改。
+
+综上所述，接口中的变量有固定的特性，而抽象类中的变量则更加灵活。
+
 ## 5.2 并发
 
 ### 5.2.1 什么情况线程会进入 WAITING 状态？
@@ -4943,17 +4957,23 @@ Lambda 表达式使用更简洁的语法，可以直接将代码块作为参数�
 
 
 
-### Java8 新特性有哪些了解?
+### 5.5.7 Java 程序运行的各阶段
 
-- 接口的默认方法。
-- Lambda 表达式。
-- 函数式接口。
-- 方法和构造函数引用。
-- Lamda 表达式作用域。
-- 内置函数式接口。
-- Optional。
-- Streams(流)。
-- ParallelStreams(并行流)。
-- Maps。
-- DateAPI(日期相关 API)。
-- Annotations(注解)。
+一个Java程序的运行可以分为以下几个阶段：
+
+1. 编写代码：开发人员编写Java源代码文件（.java文件），包括类的定义、方法实现等。
+
+2. 编译代码：使用Java编译器（javac）将源代码文件编译成字节码文件（.class文件），这个阶段会进行语法检查、语义检查和生成字节码。
+
+3. 类加载：在运行Java程序时，Java虚拟机（JVM）会加载字节码文件，进行类加载的过程，包括加载、链接和初始化。
+
+4. 链接：在链接阶段，包括验证、准备和解析三个步骤。验证阶段确保字节码符合规范；准备阶段为类的静态变量分配内存并赋默认值；解析阶段将符号引用转换为直接引用。
+
+5. 初始化：在类加载完成后，会执行类的初始化阶段，包括执行静态变量的赋值和静态代码块的执行。
+
+6. 执行程序：JVM会根据程序的入口点（main方法）开始执行程序，按照代码的逻辑顺序执行各个方法和语句。
+
+7. 结束程序：程序执行完毕或遇到异常时，程序结束运行，JVM会释放资源并结束进程。
+
+这些阶段构成了Java程序从编写到执行的完整生命周期。
+
