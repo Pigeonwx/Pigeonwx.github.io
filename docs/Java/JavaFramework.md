@@ -196,7 +196,7 @@
 
 - ```xml
                                        Person.xml 
-                
+                                
   <mapper namespace="Person"> 
         <select id="getPerson" resultType="examples.domain.Person"> 
   	SELECT PER_ID as id, 
@@ -1475,6 +1475,8 @@ Bean初始化步骤注入就发生在第二步，**属性赋值**，结合这个
 
 ![spring-6ece8a46-25b1-459b-8cfa-19fc696dd7d6](./JavaFramework/spring-6ece8a46-25b1-459b-8cfa-19fc696dd7d6.png)
 
+### 2.6.9 bean创建顺序
+
 ## 2.7 Spring事务
 
 ### 2.7.1 事务分类
@@ -1517,6 +1519,8 @@ Spring框架实现事务的方式主要包括编程式事务管理和声明式�
    ```
 
 Spring框架提供了不同的事务管理器（如JDBC、Hibernate、JPA、JTA等）来适应不同的数据访问技术。开发人员可以根据应用的需要选择合适的事务管理器。Spring的事务管理还支持不同的事务传播行为，如REQUIRED、REQUIRES_NEW、NESTED等，以定义方法之间的事务关系。这些特性使得Spring事务管理非常强大和灵活，适用于各种不同的应用场景。
+
+
 
 ### 2.7.2 Spring 的事务隔离级别
 

@@ -884,7 +884,122 @@ public class FloydWarshallAlgorithm {
 
 ```
 
+### 3.1.3 Bellman-Ford算法
 
+```java
+class Graph {
+    int V, E;
+    Edge edge[];
+ 
+    class Edge {
+        int src, dest, weight;
+        Edge() {
+            src = dest = weight = 0;
+        }
+    };
+ 
+    Graph(int v, int e) {
+        V = v;
+        E = e;
+        edge = new Edge[e];
+        for (int i=0; i<e; ++i)
+            edge[i] = new Edge();
+    }
+ 
+    void BellmanFord(Graph graph, int src) {
+        int V = graph.V, E = graph.E;
+        int dist[] = new int[V];
+ 
+        for (int i=0; i<V; ++i)
+            dist[i] = Integer.MAX_VALUE;
+        dist[src] = 0;
+ 
+        for (int i=1; i<V; ++i) {
+            for (int j=0; j<E; ++j) {
+                int u = graph.edge[j].src;
+                int v = graph.edge[j].dest;
+                int weight = graph.edge[j].weight;
+                if (dist[u] != Integer.MAX_VALUE && dist[u] + weight < dist[v])
+                    dist[v] = dist[u] + weight;
+            }
+        }
+ 
+        for (int j=0; j<E; ++j) {
+            int u = graph.edge[j].src;
+            int v = graph.edge[j].dest;
+            int weight = graph.edge[j].weight;
+            if (dist[u] != Integer.MAX_VALUE && dist[u] + weight < dist[v])
+                System.out.println("Graph contains negative weight cycle");
+        }
+ 
+        printArr(dist, V);
+    }
+ 
+    void printArr(int dist[], int V) {
+        System.out.println("Vertex Distance from Source");
+        for (int i=0; i<V; ++i)
+            System.out.println(i + "\t\t" + dist[i]);
+    }
+}
+```
+
+### 3.1.4 SPFA算法
+
+```java
+class Graph {
+    int V, E;
+    List<List<Pair<Integer, Integer>>> adj;
+ 
+    Graph(int v, int e) {
+        V = v;
+        E = e;
+        adj = new ArrayList<>(V);
+        for (int i = 0; i < V; i++)
+            adj.add(new ArrayList<>());
+    }
+ 
+    void addEdge(int u, int v, int w) {
+        adj.get(u).add(new Pair<>(v, w));
+    }
+ 
+    void SPFA(int src) {
+        int dist[] = new int[V];
+        Arrays.fill(dist, Integer.MAX_VALUE);
+        dist[src] = 0;
+ 
+        Queue<Integer> queue = new LinkedList<>();
+        boolean inQueue[] = new boolean[V];
+        queue.add(src);
+        inQueue[src] = true;
+ 
+        while (!queue.isEmpty()) {
+            int u = queue.poll();
+            inQueue[u] = false;
+ 
+            for (Pair<Integer, Integer> neighbor : adj.get(u)) {
+                int v = neighbor.getKey();
+                int w = neighbor.getValue();
+ 
+                if (dist[u] + w < dist[v]) {
+                    dist[v] = dist[u] + w;
+                    if (!inQueue[v]) {
+                        queue.add(v);
+                        inQueue[v] = true;
+                    }
+                }
+            }
+        }
+ 
+        printArr(dist, V);
+    }
+ 
+    void printArr(int dist[], int V) {
+        System.out.println("Vertex Distance from Source");
+        for (int i = 0; i < V; ++i)
+            System.out.println(i + "\t\t" + dist[i]);
+    }
+}
+```
 
 ## 3.2 动态规划
 
@@ -1499,5 +1614,4 @@ matrix\[i][j] -> matrix\[n-i-1][n-j-1]，
 matrix\[i][j] -> matrix\[n-j-1][i]，
 可以观察到，我们希望原来的行i不变，且要交换行列位置。
 因此可以分解为：左右对称 + 主对角线对称 或者 主对角线对称 + 上下对称。
-
 
