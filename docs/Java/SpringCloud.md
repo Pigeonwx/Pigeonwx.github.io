@@ -30,7 +30,7 @@ SpringCloud 是 Spring 官方推出的微服务治理框架。
 
 ![spring-2b988a72-0739-4fed-b271-eaf12589444f](./SpringCloud/spring-2b988a72-0739-4fed-b271-eaf12589444f.png)
 
-![streams](/Users/xiangjianhang/pigeonwx.github.io/docs/Java/SpringCloud/streams.png)
+![streams](./SpringCloud/streams.png)
 
 ## 1.2 微服务架构例子
 
@@ -48,11 +48,11 @@ SpringCloud 是 Spring 官方推出的微服务治理框架。
 
 - **通用微服务架构**
 
-![截屏2024-04-12 17.25.42](/Users/xiangjianhang/pigeonwx.github.io/docs/Java/SpringCloud/截屏2024-04-12 17.25.42.png)
+![截屏2024-04-12 17.25.42](./SpringCloud/截屏2024-04-12 17.25.42.png)
 
 - **传统核心组件**
 
-![截屏2024-04-12 17.27.56](/Users/xiangjianhang/pigeonwx.github.io/docs/Java/SpringCloud/截屏2024-04-12 17.27.56.png)
+![截屏2024-04-12 17.27.56](./SpringCloud/截屏2024-04-12 17.27.56.png)
 
 ## 1.4 Spring Cloud 版本
 
@@ -60,11 +60,11 @@ SpringCloud 是 Spring 官方推出的微服务治理框架。
 
 > https://github.com/spring-cloud/spring-cloud-release/wiki
 
-![截屏2024-04-16 20.03.10](/Users/xiangjianhang/pigeonwx.github.io/docs/Java/SpringCloud/截屏2024-04-16 20.03.10.png)
+![截屏2024-04-16 20.03.10](./SpringCloud/截屏2024-04-16 20.03.10.png)
 
 ### 1.4.2 组件的更替
 
-![截屏2024-04-16 19.53.57](/Users/xiangjianhang/pigeonwx.github.io/docs/Java/SpringCloud/截屏2024-04-16 19.53.57.png)
+![截屏2024-04-16 19.53.57](./SpringCloud/截屏2024-04-16 19.53.57.png)
 
 
 
