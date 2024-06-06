@@ -1868,3 +1868,590 @@ select id,name from t where city="杭州" order by name limit 10100;
 select id,name from t where city="苏州" order by name limit 10100。
 ```
 然后，再用归并排序的方法取得按name顺序第10001~10100的name、id的值，然后拿着这100个id到数据库中去查出所有记录。上面这些方法，需要你根据性能需求和开发的复杂度做出权衡。
+
+---
+
+## 2.9 如何正确地显示随机消息？
+我在上一篇文章，为你讲解完order by语句的几种执行模式后，就想到了之前一个做英语学习App的朋友碰到过的一个性能问题。今天这篇文章，我就从这个性能问题说起，和你说说MySQL中的另外一种排序需求，希望能够加深你对MySQL排序逻辑的理解。
+
+这个英语学习App首页有一个随机显示单词的功能，也就是根据每个用户的级别有一个单词表，然后这个用户每次访问首页的时候，都会随机滚动显示三个单词。他们发现随着单词表变大，选单词这个逻辑变得越来越慢，甚至影响到了首页的打开速度。
+
+现在，如果让你来设计这个SQL语句，你会怎么写呢？
+
+为了便于理解，我对这个例子进行了简化：去掉每个级别的用户都有一个对应的单词表这个逻辑，直接就是从一个单词表中随机选出三个单词。这个表的建表语句和初始数据的命令如下：
+```
+mysql> CREATE TABLE `words` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `word` varchar(64) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+
+delimiter ;;
+create procedure idata()
+begin
+  declare i int;
+  set i=0;
+  while i<10000 do
+    insert into words(word) values(concat(char(97+(i div 1000)), char(97+(i % 1000 div 100)), char(97+(i % 100 div 10)), char(97+(i % 10))));
+    set i=i+1;
+  end while;
+end;;
+delimiter ;
+
+call idata();
+```
+为了便于量化说明，我在这个表里面插入了10000行记录。接下来，我们就一起看看要随机选择3个单词，有什么方法实现，存在什么问题以及如何改进。
+
+### 2.9.1 内存临时表
+首先，你会想到用order by rand()来实现这个逻辑。
+```
+mysql> select word from words order by rand() limit 3;
+```
+这个语句的意思很直白，随机排序取前3个。虽然这个SQL语句写法很简单，但执行流程却有点复杂的。我们先用explain命令来看看这个语句的执行情况。
+![alt text](MySql-45/59a4fb0165b7ce1184e41f2d061ce350.png)
+图1 使用explain命令查看语句的执行情况
+Extra字段显示Using temporary，表示的是需要使用临时表；Using filesort，表示的是需要执行排序操作。因此这个Extra的意思就是，需要临时表，并且需要在临时表上排序。
+
+然后，我再问你一个问题，你觉得对于临时内存表的排序来说，它会选择哪一种算法呢？回顾一下上一篇文章的一个结论：对于InnoDB表来说，执行全字段排序会减少磁盘访问，因此会被优先选择。我强调了“InnoDB表”，你肯定想到了，对于内存表，回表过程只是简单地根据数据行的位置，直接访问内存得到数据，根本不会导致多访问磁盘。优化器没有了这一层顾虑，那么它会优先考虑的，就是用于排序的行越小越好了，所以，MySQL这时就会选择rowid排序。
+
+理解了这个算法选择的逻辑，我们再来看看语句的执行流程。同时，通过今天的这个例子，我们来尝试分析一下语句的扫描行数。这条语句的执行流程是这样的：
+
+1. 创建一个临时表。这个临时表使用的是memory引擎，表里有两个字段，第一个字段是double类型，为了后面描述方便，记为字段R，第二个字段是varchar(64)类型，记为字段W。并且，这个表没有建索引。
+2. 从words表中，按主键顺序取出所有的word值。对于每一个word值，调用rand()函数生成一个大于0小于1的随机小数，并把这个随机小数和word分别存入临时表的R和W字段中，到此，扫描行数是10000。
+3. 现在临时表有10000行数据了，接下来你要在这个没有索引的内存临时表上，按照字段R排序。
+4. 初始化 sort_buffer。sort_buffer中有两个字段，一个是double类型，另一个是整型。
+5. 从内存临时表中一行一行地取出R值和位置信息（我后面会和你解释这里为什么是“位置信息”），分别存入sort_buffer中的两个字段里。这个过程要对内存临时表做全表扫描，此时扫描行数增加10000，变成了20000。
+6. 在sort_buffer中根据R的值进行排序。注意，这个过程没有涉及到表操作，所以不会增加扫描行数。
+7. 排序完成后，取出前三个结果的位置信息，依次到内存临时表中取出word值，返回给客户端。这个过程中，访问了表的三行数据，总扫描行数变成了20003。
+
+> 慢查询日志：https://www.51cto.com/article/743063.html
+
+接下来，我们通过慢查询日志（slow log）来验证一下我们分析得到的扫描行数是否正确。
+```
+# Query_time: 0.900376  Lock_time: 0.000347 Rows_sent: 3 Rows_examined: 20003
+SET timestamp=1541402277;
+select word from words order by rand() limit 3;
+```
+其中，Rows_examined：20003就表示这个语句执行过程中扫描了20003行，也就验证了我们分析得出的结论。
+
+这里插一句题外话，在平时学习概念的过程中，你可以经常这样做，先通过原理分析算出扫描行数，然后再通过查看慢查询日志，来验证自己的结论。我自己就是经常这么做，这个过程很有趣，分析对了开心，分析错了但是弄清楚了也很开心。
+
+现在，我来把完整的排序执行流程图画出来。
+![alt text](MySql-45/2abe849faa7dcad0189b61238b849ffc.png)
+
+图中的pos就是位置信息，你可能会觉得奇怪，这里的“位置信息”是个什么概念？在上一篇文章中，我们对InnoDB表排序的时候，明明用的还是ID字段。这时候，我们就要回到一个基本概念：MySQL的表是用什么方法来定位“一行数据”的。
+
+在前面第4和第5篇介绍索引的文章中，有几位同学问到，如果把一个InnoDB表的主键删掉，是不是就没有主键，就没办法回表了？其实不是的。如果你创建的表没有主键，或者把一个表的主键删掉了，那么InnoDB会自己生成一个长度为6字节的rowid来作为主键。这也就是排序模式里面，rowid名字的来历。实际上它表示的是：每个引擎用来唯一标识数据行的信息。
+
+- 对于有主键的InnoDB表来说，这个rowid就是主键ID；
+- 对于没有主键的InnoDB表来说，这个rowid就是由系统生成的；
+- MEMORY引擎不是索引组织表。在这个例子里面，你可以认为它就是一个数组。因此，这个rowid其实就是数组的下标。
+
+到这里，我来稍微小结一下：order by rand()使用了内存临时表，内存临时表排序的时候使用了rowid排序方法。
+
+---
+
+### 2.9.2 磁盘临时表
+那么，是不是所有的临时表都是内存表呢？其实不是的。tmp_table_size这个配置限制了内存临时表的大小，默认值是16M。如果临时表大小超过了tmp_table_size，那么内存临时表就会转成磁盘临时表。磁盘临时表使用的引擎默认是InnoDB，是由参数internal_tmp_disk_storage_engine控制的。
+
+当使用磁盘临时表的时候，对应的就是一个没有显式索引的InnoDB表的排序过程。为了复现这个过程，我把tmp_table_size设置成1024，把sort_buffer_size设置成 32768, 把 max_length_for_sort_data 设置成16。
+```
+set tmp_table_size=1024;
+set sort_buffer_size=32768;
+set max_length_for_sort_data=16;
+/* 打开 optimizer_trace，只对本线程有效 */
+SET optimizer_trace='enabled=on'; 
+
+/* 执行语句 */
+select word from words order by rand() limit 3;
+
+/* 查看 OPTIMIZER_TRACE 输出 */
+SELECT * FROM `information_schema`.`OPTIMIZER_TRACE`\G
+```
+
+![alt text](MySql-45/78d2db9a4fdba81feadccf6e878b4aab.png)
+然后，我们来看一下这次OPTIMIZER_TRACE的结果。因为将max_length_for_sort_data设置成16，小于word字段的长度定义，所以我们看到sort_mode里面显示的是rowid排序，这个是符合预期的，参与排序的是随机值R字段和rowid字段组成的行。
+
+这时候你可能心算了一下，发现不对。R字段存放的随机值就8个字节，rowid是6个字节（至于为什么是6字节，就留给你课后思考吧），数据总行数是10000，这样算出来就有140000字节，超过了sort_buffer_size 定义的 32768字节了。但是，number_of_tmp_files的值居然是0，难道不需要用临时文件吗？
+
+这个SQL语句的排序确实没有用到临时文件，采用是MySQL 5.6版本引入的一个新的排序算法，即：优先队列排序算法。接下来，我们就看看为什么没有使用临时文件的算法，也就是归并排序算法，而是采用了优先队列排序算法。
+
+其实，我们现在的SQL语句，只需要取R值最小的3个rowid。但是，如果使用归并排序算法的话，虽然最终也能得到前3个值，但是这个算法结束后，已经将10000行数据都排好序了。也就是说，后面的9997行也是有序的了。但，我们的查询并不需要这些数据是有序的。所以，想一下就明白了，这浪费了非常多的计算量。而优先队列算法，就可以精确地只得到三个最小值，执行流程如下：
+
+1. 对于这10000个准备排序的(R,rowid)，先取前三行，构造成一个堆；
+（对数据结构印象模糊的同学，可以先设想成这是一个由三个元素组成的数组）
+
+2. 取下一个行(R’,rowid’)，跟当前堆里面最大的R比较，如果R’小于R，把这个(R,rowid)从堆中去掉，换成(R’,rowid’)；
+
+3. 重复第2步，直到第10000个(R’,rowid’)完成比较。
+
+这里我简单画了一个优先队列排序过程的示意图。
+![alt text](MySql-45/e9c29cb20bf9668deba8981e444f6897.png)
+图6 优先队列排序算法示例
+
+图6是模拟6个(R,rowid)行，通过优先队列排序找到最小的三个R值的行的过程。整个排序过程中，为了最快地拿到当前堆的最大值，总是保持最大值在堆顶，因此这是一个最大堆。图5的OPTIMIZER_TRACE结果中，filesort_priority_queue_optimization这个部分的chosen=true，就表示使用了优先队列排序算法，这个过程不需要临时文件，因此对应的number_of_tmp_files是0。
+
+这个流程结束后，我们构造的堆里面，就是这个10000行里面R值最小的三行。然后，依次把它们的rowid取出来，去临时表里面拿到word字段，这个过程就跟上一篇文章的rowid排序的过程一样了。我们再看一下上面一篇文章的SQL查询语句：
+```
+select city,name,age from t where city='杭州' order by name limit 1000  ;
+```
+你可能会问，这里也用到了limit，为什么没用优先队列排序算法呢？原因是，这条SQL语句是limit 1000，如果使用优先队列算法的话，需要维护的堆的大小就是1000行的(name,rowid)，超过了我设置的sort_buffer_size大小，所以只能使用归并排序算法。总之，不论是使用哪种类型的临时表，order by rand()这种写法都会让计算过程非常复杂，需要大量的扫描行数，因此排序过程的资源消耗也会很大。
+
+再回到我们文章开头的问题，怎么正确地随机排序呢？
+
+---
+
+### 2.9.3 随机排序方法
+我们先把问题简化一下，如果只随机选择1个word值，可以怎么做呢？思路上是这样的：
+
+1. 取得这个表的主键id的最大值M和最小值N;
+2. 用随机函数生成一个最大值到最小值之间的数 X = (M-N)*rand() + N;
+3. 取不小于X的第一个ID的行。
+
+我们把这个算法，暂时称作随机算法1。这里，我直接给你贴一下执行语句的序列:
+```
+mysql> select max(id),min(id) into @M,@N from t ;
+set @X= floor((@M-@N+1)*rand() + @N);
+select * from t where id >= @X limit 1;
+```
+这个方法效率很高，因为取max(id)和min(id)都是不需要扫描索引的，而第三步的select也可以用索引快速定位，可以认为就只扫描了3行。但实际上，这个算法本身并不严格满足题目的随机要求，因为ID中间可能有空洞，因此选择不同行的概率不一样，不是真正的随机。比如你有4个id，分别是1、2、4、5，如果按照上面的方法，那么取到 id=4的这一行的概率是取得其他行概率的两倍。如果这四行的id分别是1、2、40000、40001呢？这个算法基本就能当bug来看待了。所以，为了得到严格随机的结果，你可以用下面这个流程:
+
+1. 取得整个表的行数，并记为C。
+2. 取得 Y = floor(C * rand())。 floor函数在这里的作用，就是取整数部分。
+3. 再用limit Y,1 取得一行。
+
+我们把这个算法，称为随机算法2。下面这段代码，就是上面流程的执行语句的序列。
+```
+mysql> select count(*) into @C from t;
+set @Y = floor(@C * rand());
+set @sql = concat("select * from t limit ", @Y, ",1");
+prepare stmt from @sql;
+execute stmt;
+DEALLOCATE prepare stmt;
+```
+由于limit 后面的参数不能直接跟变量，所以我在上面的代码中使用了prepare+execute的方法。你也可以把拼接SQL语句的方法写在应用程序中，会更简单些。这个随机算法2，解决了算法1里面明显的概率不均匀问题。
+
+MySQL处理limit Y,1 的做法就是按顺序一个一个地读出来，丢掉前Y个，然后把下一个记录作为返回结果，因此这一步需要扫描Y+1行。再加上，第一步扫描的C行，总共需要扫描C+Y+1行，执行代价比随机算法1的代价要高。当然，随机算法2跟直接order by rand()比起来，执行代价还是小很多的。
+
+你可能问了，如果按照这个表有10000行来计算的话，C=10000，要是随机到比较大的Y值，那扫描行数也跟20000差不多了，接近order by rand()的扫描行数，为什么说随机算法2的代价要小很多呢？我就把这个问题留给你去课后思考吧。现在，我们再看看，如果我们按照随机算法2的思路，要随机取3个word值呢？你可以这么做：
+
+1. 取得整个表的行数，记为C；
+2. 根据相同的随机方法得到Y1、Y2、Y3；
+3. 再执行三个limit Y, 1语句得到三行数据。
+
+我们把这个算法，称作随机算法3。下面这段代码，就是上面流程的执行语句的序列。
+```
+mysql> select count(*) into @C from t;
+set @Y1 = floor(@C * rand());
+set @Y2 = floor(@C * rand());
+set @Y3 = floor(@C * rand());
+select * from t limit @Y1，1； //在应用代码里面取Y1、Y2、Y3值，拼出SQL后执行
+select * from t limit @Y2，1；
+select * from t limit @Y3，1；
+```
+
+---
+
+### 2.9.4 小结
+今天这篇文章，我是借着随机排序的需求，跟你介绍了MySQL对临时表排序的执行过程。如果你直接使用order by rand()，这个语句需要Using temporary 和 Using filesort，查询的执行代价往往是比较大的。所以，在设计的时候你要尽量避开这种写法。
+
+今天的例子里面，我们不是仅仅在数据库内部解决问题，还会让应用代码配合拼接SQL语句。在实际应用的过程中，比较规范的用法就是：尽量将业务逻辑写在业务代码中，让数据库只做“读写数据”的事情。因此，这类方法的应用还是比较广泛的。最后，我给你留下一个思考题吧。
+
+上面的随机算法3的总扫描行数是 C+(Y1+1)+(Y2+1)+(Y3+1)，实际上它还是可以继续优化，来进一步减少扫描行数的。我的问题是，如果你是这个需求的开发人员，你会怎么做，来减少扫描行数呢？说说你的方案，并说明你的方案需要的扫描行数。
+
+**解答：**
+这里我给出一种方法，取Y1、Y2和Y3里面最大的一个数，记为M，最小的一个数记为N，然后执行下面这条SQL语句：
+```
+mysql> select * from t limit N, M-N+1;
+```
+再加上取整个表总行数的C行，这个方案的扫描行数总共只需要C+M+1行。当然也可以先取回id值，在应用中确定了三个id值以后，再执行三次where id=X的语句也是可以的。@倪大人 同学在评论区就提到了这个方法。
+
+---
+
+## 2.10 为什么这些SQL语句逻辑相同，性能却差异巨大？
+在MySQL中，有很多看上去逻辑相同，但性能却差异巨大的SQL语句。对这些语句使用不当的话，就会不经意间导致整个数据库的压力变大。我今天挑选了三个这样的案例和你分享。希望再遇到相似的问题时，你可以做到举一反三、快速解决问题。
+
+### 2.10.1 案例一：条件字段函数操作
+假设你现在维护了一个交易系统，其中交易记录表tradelog包含交易流水号（tradeid）、交易员id（operator）、交易时间（t_modified）等字段。为了便于描述，我们先忽略其他字段。这个表的建表语句如下：
+```
+mysql> CREATE TABLE `tradelog` (
+  `id` int(11) NOT NULL,
+  `tradeid` varchar(32) DEFAULT NULL,
+  `operator` int(11) DEFAULT NULL,
+  `t_modified` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `tradeid` (`tradeid`),
+  KEY `t_modified` (`t_modified`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+假设，现在已经记录了从2016年初到2018年底的所有数据，运营部门有一个需求是，要统计发生在所有年份中7月份的交易记录总数。这个逻辑看上去并不复杂，你的SQL语句可能会这么写：
+```
+mysql> select count(*) from tradelog where month(t_modified)=7;
+```
+由于t_modified字段上有索引，于是你就很放心地在生产库中执行了这条语句，但却发现执行了特别久，才返回了结果。如果你问DBA同事为什么会出现这样的情况，他大概会告诉你：如果对字段做了函数计算，就用不上索引了，这是MySQL的规定。
+
+现在你已经学过了InnoDB的索引结构了，可以再追问一句为什么？为什么条件是where t_modified='2018-7-1’的时候可以用上索引，而改成where month(t_modified)=7的时候就不行了？下面是这个t_modified索引的示意图。方框上面的数字就是month()函数对应的值。
+![alt text](MySql-45/3e30d9a5e67f711f5af2e2599e800286.png)
+图1 t_modified索引示意图
+
+如果你的SQL语句条件用的是where t_modified='2018-7-1’的话，引擎就会按照上面绿色箭头的路线，快速定位到 t_modified='2018-7-1’需要的结果。实际上，B+树提供的这个快速定位能力，来源于同一层兄弟节点的有序性。但是，如果计算month()函数的话，你会看到传入7的时候，在树的第一层就不知道该怎么办了。也就是说，对索引字段做函数操作，可能会破坏索引值的有序性，因此优化器就决定放弃走树搜索功能。需要注意的是，优化器并不是要放弃使用这个索引。
+
+在这个例子里，放弃了树搜索功能，优化器可以选择遍历主键索引，也可以选择遍历索引t_modified，优化器对比索引大小后发现，索引t_modified更小，遍历这个索引比遍历主键索引来得更快。因此最终还是会选择索引t_modified。接下来，我们使用explain命令，查看一下这条SQL语句的执行结果。
+![alt text](MySql-45/27c2f5ff3549b18ba37a28f4919f3655.png)
+
+图2 explain 结果
+
+key="t_modified"表示的是，使用了t_modified这个索引；我在测试表数据中插入了10万行数据，rows=100335，说明这条语句扫描了整个索引的所有值；Extra字段的Using index，表示的是使用了覆盖索引。
+
+也就是说，由于在t_modified字段加了month()函数操作，导致了全索引扫描。为了能够用上索引的快速定位能力，我们就要把SQL语句改成基于字段本身的范围查询。按照下面这个写法，优化器就能按照我们预期的，用上t_modified索引的快速定位能力了。
+```
+mysql> select count(*) from tradelog where
+    -> (t_modified >= '2016-7-1' and t_modified<'2016-8-1') or
+    -> (t_modified >= '2017-7-1' and t_modified<'2017-8-1') or 
+    -> (t_modified >= '2018-7-1' and t_modified<'2018-8-1');
+```
+当然，如果你的系统上线时间更早，或者后面又插入了之后年份的数据的话，你就需要再把其他年份补齐。到这里我给你说明了，由于加了month()函数操作，MySQL无法再使用索引快速定位功能，而只能使用全索引扫描。不过优化器在个问题上确实有“偷懒”行为，即使是对于不改变有序性的函数，也不会考虑使用索引。比如，对于select * from tradelog where id + 1 = 10000这个SQL语句，这个加1操作并不会改变有序性，但是MySQL优化器还是不能用id索引快速定位到9999这一行。所以，需要你在写SQL语句的时候，手动改写成 where id = 10000 -1才可以。
+
+### 2.10.2 案例二：隐式类型转换
+接下来我再跟你说一说，另一个经常让程序员掉坑里的例子。我们一起看一下这条SQL语句：
+```
+mysql> select * from tradelog where tradeid=110717;
+```
+交易编号tradeid这个字段上，本来就有索引，但是explain的结果却显示，这条语句需要走全表扫描。你可能也发现了，tradeid的字段类型是varchar(32)，而输入的参数却是整型，所以需要做类型转换。那么，现在这里就有两个问题：
+
+1. 数据类型转换的规则是什么？
+2. 为什么有数据类型转换，就需要走全索引扫描？
+
+先来看第一个问题，你可能会说，数据库里面类型这么多，这种数据类型转换规则更多，我记不住，应该怎么办呢？这里有一个简单的方法，看 select “10” > 9的结果：
+
+1. 如果规则是“将字符串转成数字”，那么就是做数字比较，结果应该是1；
+2. 如果规则是“将数字转成字符串”，那么就是做字符串比较，结果应该是0。
+
+验证结果如图3所示。
+![alt text](MySql-45/2b67fc38f1651e2622fe21d49950b214.png)
+
+图3 MySQL中字符串和数字转换的效果示意图
+
+从图中可知，select “10” > 9返回的是1，所以你就能确认MySQL里的转换规则了：在MySQL中，字符串和数字做比较的话，是将字符串转换成数字。这时，你再看这个全表扫描的语句：
+```
+mysql> select * from tradelog where tradeid=110717;
+```
+就知道对于优化器来说，这个语句相当于：
+```
+mysql> select * from tradelog where  CAST(tradid AS signed int) = 110717;
+```
+也就是说，这条语句触发了我们上面说到的规则：对索引字段做函数操作，优化器会放弃走树搜索功能。现在，我留给你一个小问题，id的类型是int，如果执行下面这个语句，是否会导致全表扫描呢？
+```
+select * from tradelog where id="83126";
+```
+你可以先自己分析一下，再到数据库里面去验证确认。接下来，我们再来看一个稍微复杂点的例子。
+
+---
+
+### 2.10.3 案例三：隐式字符编码转换
+假设系统里还有另外一个表trade_detail，用于记录交易的操作细节。为了便于量化分析和复现，我往交易日志表tradelog和交易详情表trade_detail这两个表里插入一些数据。
+```
+mysql> CREATE TABLE `trade_detail` (
+  `id` int(11) NOT NULL,
+  `tradeid` varchar(32) DEFAULT NULL,
+  `trade_step` int(11) DEFAULT NULL, /*操作步骤*/
+  `step_info` varchar(32) DEFAULT NULL, /*步骤信息*/
+  PRIMARY KEY (`id`),
+  KEY `tradeid` (`tradeid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+insert into tradelog values(1, 'aaaaaaaa', 1000, now());
+insert into tradelog values(2, 'aaaaaaab', 1000, now());
+insert into tradelog values(3, 'aaaaaaac', 1000, now());
+
+insert into trade_detail values(1, 'aaaaaaaa', 1, 'add');
+insert into trade_detail values(2, 'aaaaaaaa', 2, 'update');
+insert into trade_detail values(3, 'aaaaaaaa', 3, 'commit');
+insert into trade_detail values(4, 'aaaaaaab', 1, 'add');
+insert into trade_detail values(5, 'aaaaaaab', 2, 'update');
+insert into trade_detail values(6, 'aaaaaaab', 3, 'update again');
+insert into trade_detail values(7, 'aaaaaaab', 4, 'commit');
+insert into trade_detail values(8, 'aaaaaaac', 1, 'add');
+insert into trade_detail values(9, 'aaaaaaac', 2, 'update');
+insert into trade_detail values(10, 'aaaaaaac', 3, 'update again');
+insert into trade_detail values(11, 'aaaaaaac', 4, 'commit');
+```
+这时候，如果要查询id=2的交易的所有操作步骤信息，SQL语句可以这么写：
+```
+mysql> select d.* from tradelog l, trade_detail d where d.tradeid=l.tradeid and l.id=2; /*语句Q1*/
+```
+![alt text](MySql-45/adfe464af1d15f3261b710a806c0fa22.png)
+图4 语句Q1的explain 结果
+
+我们一起来看下这个结果：
+1. 第一行显示优化器会先在交易记录表tradelog上查到id=2的行，这个步骤用上了主键索引，rows=1表示只扫描一行；
+2. 第二行key=NULL，表示没有用上交易详情表trade_detail上的tradeid索引，进行了全表扫描。
+
+在这个执行计划里，是从tradelog表中取tradeid字段，再去trade_detail表里查询匹配字段。因此，我们把tradelog称为驱动表，把trade_detail称为被驱动表，把tradeid称为关联字段。接下来，我们看下这个explain结果表示的执行流程：
+![alt text](MySql-45/8289c184c8529acea0269a7460dc62a9.png)
+图5 语句Q1的执行过程
+
+图中：
+- 第1步，是根据id在tradelog表里找到L2这一行；
+- 第2步，是从L2中取出tradeid字段的值；
+- 第3步，是根据tradeid值到trade_detail表中查找条件匹配的行。explain的结果里面第二行的key=NULL表示的就是，这个过程是通过遍历主键索引的方式，一个一个地判断tradeid的值是否匹配。
+进行到这里，你会发现第3步不符合我们的预期。因为表trade_detail里tradeid字段上是有索引的，我们本来是希望通过使用tradeid索引能够快速定位到等值的行。但，这里并没有。
+
+如果你去问DBA同学，他们可能会告诉你，因为这两个表的字符集不同，一个是utf8，一个是utf8mb4，所以做表连接查询的时候用不上关联字段的索引。这个回答，也是通常你搜索这个问题时会得到的答案。但是你应该再追问一下，为什么字符集不同就用不上索引呢？我们说问题是出在执行步骤的第3步，如果单独把这一步改成SQL语句的话，那就是：
+```
+mysql> select * from trade_detail where tradeid=$L2.tradeid.value; 
+```
+其中，$L2.tradeid.value的字符集是utf8mb4。参照前面的两个例子，你肯定就想到了，字符集utf8mb4是utf8的超集，所以当这两个类型的字符串在做比较的时候，MySQL内部的操作是，先把utf8字符串转成utf8mb4字符集，再做比较。
+
+这个设定很好理解，utf8mb4是utf8的超集。类似地，在程序设计语言里面，做自动类型转换的时候，为了避免数据在转换过程中由于截断导致数据错误，也都是“按数据长度增加的方向”进行转换的。因此， 在执行上面这个语句的时候，需要将被驱动数据表里的字段一个个地转换成utf8mb4，再跟L2做比较。
+
+也就是说，实际上这个语句等同于下面这个写法：
+```
+select * from trade_detail  where CONVERT(traideid USING utf8mb4)=$L2.tradeid.value; 
+```
+CONVERT()函数，在这里的意思是把输入的字符串转成utf8mb4字符集。这就再次触发了我们上面说到的原则：对索引字段做函数操作，优化器会放弃走树搜索功能。
+
+到这里，你终于明确了，字符集不同只是条件之一，连接过程中要求在被驱动表的索引字段上加函数操作，是直接导致对被驱动表做全表扫描的原因。作为对比验证，我给你提另外一个需求，“查找trade_detail表里id=4的操作，对应的操作者是谁”，再来看下这个语句和它的执行计划。
+```
+mysql>select l.operator from tradelog l , trade_detail d where d.tradeid=l.tradeid and d.id=4;
+```
+![alt text](MySql-45/92cb498ceb3557e41700fae53ce9bd11.png)
+图6 explain 结果
+
+这个语句里trade_detail 表成了驱动表，但是explain结果的第二行显示，这次的查询操作用上了被驱动表tradelog里的索引(tradeid)，扫描行数是1。这也是两个tradeid字段的join操作，为什么这次能用上被驱动表的tradeid索引呢？我们来分析一下。
+
+假设驱动表trade_detail里id=4的行记为R4，那么在连接的时候（图5的第3步），被驱动表tradelog上执行的就是类似这样的SQL 语句：
+```
+select operator from tradelog  where traideid =$R4.tradeid.value; 
+```
+这时候$R4.tradeid.value的字符集是utf8, 按照字符集转换规则，要转成utf8mb4，所以这个过程就被改写成：
+```
+select operator from tradelog  where traideid =CONVERT($R4.tradeid.value USING utf8mb4); 
+```
+你看，这里的CONVERT函数是加在输入参数上的，这样就可以用上被驱动表的traideid索引。理解了原理以后，就可以用来指导操作了。如果要优化语句
+```
+select d.* from tradelog l, trade_detail d where d.tradeid=l.tradeid and l.id=2;
+```
+的执行过程，有两种做法：
+
+- 比较常见的优化方法是，把trade_detail表上的tradeid字段的字符集也改成utf8mb4，这样就没有字符集转换的问题了。
+```
+alter table trade_detail modify tradeid varchar(32) CHARACTER SET utf8mb4 default null;
+```
+- 如果能够修改字段的字符集的话，是最好不过了。但如果数据量比较大， 或者业务上暂时不能做这个DDL的话，那就只能采用修改SQL语句的方法了。
+```
+mysql> select d.* from tradelog l , trade_detail d where d.tradeid=CONVERT(l.tradeid USING utf8) and l.id=2; 
+```
+
+![alt text](MySql-45/aa844a7bf35d330b9ec96fc159331bd6.png)
+图7 SQL语句优化后的explain结果
+这里，我主动把 l.tradeid转成utf8，就避免了被驱动表上的字符编码转换，从explain结果可以看到，这次索引走对了。
+
+---
+
+### 2.10.4 补充
+要理解`utf8mb4`是`utf8`的超集，我们首先需要了解Unicode、`utf8`和`utf8mb4`之间的关系。
+
+- Unicode 和 UTF-8
+
+Unicode是一个字符集，它旨在为世界上所有的书写系统中的每一个字符提供一个唯一的编号。而UTF-8（8-bit Unicode Transformation Format）是实现Unicode的一种编码方式，它可以用1到4个字节表示一个字符，具有很好的兼容性和灵活性。这意味着UTF-8既可以编码ASCII字符（使用1个字节），也可以编码其他语言和符号（使用2到4个字节）。
+
+- UTF-8 和 MySQL的 utf8
+
+在MySQL 5.5.3之前，MySQL引入了一个称为`utf8`的字符编码，用于存储UTF-8编码的文本。然而，这个`utf8`编码并不支持全部的Unicode字符。具体来说，MySQL的`utf8`只能处理最多3个字节长的UTF-8字符，这意味着它只能表示Unicode代码点直到`U+FFFF`的字符。
+
+- UTF-8 和 utf8mb4
+
+为了完全支持全部的Unicode字符（包括那些需要4个字节才能表示的字符），MySQL 5.5.3及之后的版本引入了`utf8mb4`编码。`utf8mb4`意味着“UTF-8 Multibyte 4”，也即每个字符最多使用4个字节进行编码。这使得`utf8mb4`能够支持包括emoji表情符号在内的所有Unicode字符。
+
+- utf8mb4 是 utf8 的超集
+
+说`utf8mb4`是`utf8`的超集，意味着`utf8mb4`包含了`utf8`所有的功能和特性，并且扩展了这些功能和特性，以支持那些需要4个字节来编码的Unicode字符。简而言之：
+
+- 所有`utf8`能表示的字符，`utf8mb4`都能表示。
+- `utf8mb4`可以表示`utf8`不能表示的字符（也即那些代码点超过`U+FFFF`的Unicode字符，包括许多emoji符号）。
+
+因此，如果你的数据库需要完全支持Unicode，包括emoji等符号，或者是为了保持最好的兼容性和未来兼容性，使用`utf8mb4`而不是`utf8`是推荐的做法。
+
+---
+
+### 2.10.5 小结
+今天我给你举了三个例子，其实是在说同一件事儿，即：对索引字段做函数操作，可能会破坏索引值的有序性，因此优化器就决定放弃走树搜索功能。第二个例子是隐式类型转换，第三个例子是隐式字符编码转换，它们都跟第一个例子一样，因为要求在索引字段上做函数操作而导致了全索引扫描。
+
+MySQL的优化器确实有“偷懒”的嫌疑，即使简单地把where id+1=1000改写成where id=1000-1就能够用上索引快速查找，也不会主动做这个语句重写。因此，每次你的业务代码升级时，把可能出现的、新的SQL语句explain一下，是一个很好的习惯。
+
+最后，又到了思考题时间。今天我留给你的课后问题是，你遇到过别的、类似今天我们提到的性能问题吗？你认为原因是什么，又是怎么解决的呢？
+
+---
+
+## 2.11 为什么我只查一行的语句，也执行这么慢？
+一般情况下，如果我跟你说查询性能优化，你首先会想到一些复杂的语句，想到查询需要返回大量的数据。但有些情况下，“查一行”，也会执行得特别慢。今天，我就跟你聊聊这个有趣的话题，看看什么情况下，会出现这个现象。
+
+需要说明的是，如果MySQL数据库本身就有很大的压力，导致数据库服务器CPU占用率很高或ioutil（IO利用率）很高，这种情况下所有语句的执行都有可能变慢，不属于我们今天的讨论范围。为了便于描述，我还是构造一个表，基于这个表来说明今天的问题。这个表有两个字段id和c，并且我在里面插入了10万行记录。
+```
+mysql> CREATE TABLE `t` (
+  `id` int(11) NOT NULL,
+  `c` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+
+delimiter ;;
+create procedure idata()
+begin
+  declare i int;
+  set i=1;
+  while(i<=100000) do
+    insert into t values(i,i);
+    set i=i+1;
+  end while;
+end;;
+delimiter ;
+
+call idata();
+```
+接下来，我会用几个不同的场景来举例，有些是前面的文章中我们已经介绍过的知识点，你看看能不能一眼看穿，来检验一下吧。
+
+---
+
+### 2.11.1 第一类：查询长时间不返回
+如图1所示，在表t执行下面的SQL语句：
+```
+mysql> select * from t where id=1;
+```
+查询结果长时间不返回。一般碰到这种情况的话，大概率是表t被锁住了。接下来分析原因的时候，一般都是首先执行一下show processlist命令，看看当前语句处于什么状态。然后我们再针对每种状态，去分析它们产生的原因、如何复现，以及如何处理。
+
+#### 等MDL锁
+如图2所示，就是使用show processlist命令查看Waiting for table metadata lock的示意图。
+![alt text](MySql-45/5008d7e9e22be88a9c80916df4f4b328.png)
+图2 Waiting for table metadata lock状态示意图
+
+出现这个状态表示的是，现在有一个线程正在表t上请求或者持有MDL写锁，把select语句堵住了。在第6篇文章《全局锁和表锁 ：给表加个字段怎么有这么多阻碍？》中，我给你介绍过一种复现方法。但需要说明的是，那个复现过程是基于MySQL 5.6版本的。而MySQL 5.7版本修改了MDL的加锁策略，所以就不能复现这个场景了。不过，在MySQL 5.7版本下复现这个场景，也很容易。如图3所示，我给出了简单的复现步骤。
+![alt text](MySql-45/742249a31b83f4858c51bfe106a5daca.png)
+图3 MySQL 5.7中Waiting for table metadata lock的复现步骤
+
+session A 通过lock table命令持有表t的MDL写锁，而session B的查询需要获取MDL读锁。所以，session B进入等待状态。这类问题的处理方式，就是找到谁持有MDL写锁，然后把它kill掉。但是，由于在show processlist的结果里面，session A的Command列是“Sleep”，导致查找起来很不方便。不过有了performance_schema和sys系统库以后，就方便多了。（MySQL启动时需要设置performance_schema=on，相比于设置为off会有10%左右的性能损失)
+
+通过查询sys.schema_table_lock_waits这张表，我们就可以直接找出造成阻塞的process id，把这个连接用kill 命令断开即可。
+![alt text](MySql-45/74fb24ba3826e3831eeeff1670990c01.png)
+图4 查获加表锁的线程id
+
+#### 等flush
+接下来，我给你举另外一种查询被堵住的情况。我在表t上，执行下面的SQL语句：
+```
+mysql> select * from information_schema.processlist where id=1;
+```
+这里，我先卖个关子。你可以看一下图5。我查出来这个线程的状态是Waiting for table flush，你可以设想一下这是什么原因。
+![alt text](MySql-45/2d8250398bc7f8f7dce8b6b1923c3724.png)
+图5 Waiting for table flush状态示意图
+
+这个状态表示的是，现在有一个线程正要对表t做flush操作。MySQL里面对表做flush操作的用法，一般有以下两个：
+```
+flush tables t with read lock;
+flush tables with read lock;
+```
+这两个flush语句，如果指定表t的话，代表的是只关闭表t；如果没有指定具体的表名，则表示关闭MySQL里所有打开的表。但是正常这两个语句执行起来都很快，除非它们也被别的线程堵住了。
+
+所以，出现Waiting for table flush状态的可能情况是：有一个flush tables命令被别的语句堵住了，然后它又堵住了我们的select语句。现在，我们一起来复现一下这种情况，复现步骤如图6所示：
+![alt text](MySql-45/2bbc77cfdb118b0d9ef3fdd679d0a69c.png)
+图6 Waiting for table flush的复现步骤
+
+在session A中，我故意每行都调用一次sleep(1)，这样这个语句默认要执行10万秒，在这期间表t一直是被session A“打开”着。然后，session B的flush tables t命令再要去关闭表t，就需要等session A的查询结束。这样，session C要再次查询的话，就会被flush 命令堵住了。
+
+图7是这个复现步骤的show processlist结果。这个例子的排查也很简单，你看到这个show processlist的结果，肯定就知道应该怎么做了。
+![alt text](MySql-45/398407014180be4146c2d088fc07357e.png)
+
+#### 等行锁
+现在，经过了表级锁的考验，我们的select 语句终于来到引擎里了。
+```
+mysql> select * from t where id=1 lock in share mode; 
+```
+上面这条语句的用法你也很熟悉了，我们在第8篇《事务到底是隔离的还是不隔离的？》文章介绍当前读时提到过。由于访问id=1这个记录时要加读锁，如果这时候已经有一个事务在这行记录上持有一个写锁，我们的select语句就会被堵住。复现步骤和现场如下：
+![alt text](MySql-45/3e68326b967701c59770612183277475.png)
+图 8 行锁复现
+
+![alt text](MySql-45/3c266e23fc307283aa94923ecbbc738f.png)
+图 9 行锁show processlist 现场
+
+显然，session A启动了事务，占有写锁，还不提交，是导致session B被堵住的原因。这个问题并不难分析，但问题是怎么查出是谁占着这个写锁。如果你用的是MySQL 5.7版本，可以通过sys.innodb_lock_waits 表查到。查询方法是：
+```
+mysql> select * from t sys.innodb_lock_waits where locked_table='`test`.`t`'\G
+```
+![alt text](MySql-45/d8603aeb4eaad3326699c13c46379118.png)
+图10 通过sys.innodb_lock_waits 查行锁
+
+可以看到，这个信息很全，4号线程是造成堵塞的罪魁祸首。而干掉这个罪魁祸首的方式，就是KILL QUERY 4或KILL 4。不过，这里不应该显示“KILL QUERY 4”。这个命令表示停止4号线程当前正在执行的语句，而这个方法其实是没有用的。因为占有行锁的是update语句，这个语句已经是之前执行完成了的，现在执行KILL QUERY，无法让这个事务去掉id=1上的行锁。
+
+实际上，KILL 4才有效，也就是说直接断开这个连接。这里隐含的一个逻辑就是，连接被断开的时候，会自动回滚这个连接里面正在执行的线程，也就释放了id=1上的行锁。
+
+---
+
+### 2.11.2 第二类：查询慢
+经过了重重封“锁”，我们再来看看一些查询慢的例子。先来看一条你一定知道原因的SQL语句：
+```
+mysql> select * from t where c=50000 limit 1;
+```
+由于字段c上没有索引，这个语句只能走id主键顺序扫描，因此需要扫描5万行。作为确认，你可以看一下慢查询日志。注意，这里为了把所有语句记录到slow log里，我在连接后先执行了 set long_query_time=0，将慢查询日志的时间阈值设置为0。
+![alt text](MySql-45/d8b2b5f97c60ae4fc4a03c616847503c.png)
+图11 全表扫描5万行的slow log
+
+Rows_examined显示扫描了50000行。你可能会说，不是很慢呀，11.5毫秒就返回了，我们线上一般都配置超过1秒才算慢查询。但你要记住：坏查询不一定是慢查询。我们这个例子里面只有10万行记录，数据量大起来的话，执行时间就线性涨上去了。扫描行数多，所以执行慢，这个很好理解。
+
+但是接下来，我们再看一个只扫描一行，但是执行很慢的语句。如图12所示，是这个例子的slow log。可以看到，执行的语句是
+```
+mysql> select * from t where id=1；
+```
+虽然扫描行数是1，但执行时间却长达800毫秒。
+![alt text](MySql-45/66f26bb885401e8e460451ff6b0c0746.png)
+图12 扫描一行却执行得很慢
+
+是不是有点奇怪呢，这些时间都花在哪里了？如果我把这个slow log的截图再往下拉一点，你可以看到下一个语句，select * from t where id=1 lock in share mode，执行时扫描行数也是1行，执行时间是0.2毫秒。
+![alt text](MySql-45/bde83e269d9fa185b27900c8aa8137d2.png)
+图 13 加上lock in share mode的slow log
+
+看上去是不是更奇怪了？按理说lock in share mode还要加锁，时间应该更长才对啊。可能有的同学已经有答案了。如果你还没有答案的话，我再给你一个提示信息，图14是这两个语句的执行输出结果。
+![alt text](MySql-45/1fbb84bb392b6bfa93786fe032690b1c.png)
+
+图14 两个语句的输出结果
+
+第一个语句的查询结果里c=1，带lock in share mode的语句返回的是c=1000001。看到这里应该有更多的同学知道原因了。如果你还是没有头绪的话，也别着急。我先跟你说明一下复现步骤，再分析原因。
+![alt text](MySql-45/84667a3449dc846e393142600ee7a2ff.png)
+图15 复现步骤
+
+你看到了，session A先用start transaction with consistent snapshot命令启动了一个事务，之后session B才开始执行update 语句。session B执行完100万次update语句后，id=1这一行处于什么状态呢？你可以从图16中找到答案。
+![alt text](MySql-45/46bb9f5e27854678bfcaeaf0c3b8a98c.png)
+图16 id=1的数据状态
+
+session B更新完100万次，生成了100万个回滚日志(undo log)。带lock in share mode的SQL语句，是当前读，因此会直接读到1000001这个结果，所以速度很快；而select * from t where id=1这个语句，是一致性读，因此需要从1000001开始，依次执行undo log，执行了100万次以后，才将1这个结果返回。注意，undo log里记录的其实是“把2改成1”，“把3改成2”这样的操作逻辑，画成减1的目的是方便你看图。
+
+---
+
+### 2.11.3 小结
+今天我给你举了在一个简单的表上，执行“查一行”，可能会出现的被锁住和执行慢的例子。这其中涉及到了表锁、行锁和一致性读的概念。在实际使用中，碰到的场景会更复杂。但大同小异，你可以按照我在文章中介绍的定位方法，来定位并解决问题。最后，我给你留一个问题吧。
+
+**问题：**
+我们在举例加锁读的时候，用的是这个语句，select * from t where id=1 lock in share mode。由于id上有索引，所以可以直接定位到id=1这一行，因此读锁也是只加在了这一行上。但如果是下面的SQL语句，
+```
+begin;
+select * from t where c=5 for update;
+commit;
+```
+这个语句序列是怎么加锁的呢？加的锁又是什么时候释放呢？答案见下一节
+
+
+## 2.12 幻读是什么，幻读有什么问题？
+为了便于说明问题，这一篇文章，我们就先使用一个小一点儿的表。建表和初始化语句如下（为了便于本期的例子说明，我把上篇文章中用到的表结构做了点儿修改）：
+```
+CREATE TABLE `t` (
+  `id` int(11) NOT NULL,
+  `c` int(11) DEFAULT NULL,
+  `d` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `c` (`c`)
+) ENGINE=InnoDB;
+```
+insert into t values(0,0,0),(5,5,5),
+(10,10,10),(15,15,15),(20,20,20),(25,25,25);
+
+这个表除了主键id外，还有一个索引c，初始化语句在表中插入了6行数据。比较好理解的是，这个语句会命中d=5的这一行，对应的主键id=5，因此在select 语句执行完成后，id=5这一行会加一个写锁，而且由于两阶段锁协议，这个写锁会在执行commit语句的时候释放。由于字段d上没有索引，因此这条查询语句会做全表扫描。那么，其他被扫描到的，但是不满足条件的5行记录上，会不会被加锁呢？
+
+我们知道，InnoDB的默认事务隔离级别是可重复读，所以本文接下来没有特殊说明的部分，都是设定在可重复读隔离级别下。
