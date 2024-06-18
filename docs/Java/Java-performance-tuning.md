@@ -217,7 +217,789 @@
 假设你现在负责一个电商系统，马上就有新品上线了，还要有抢购活动，那么你会将哪些功能做微基准性能测试，哪些功能做宏基准性能测试呢？
 
 # 二、Java 编程性能调优
+## 2.1 字符串性能优化不容小觑，百M内存轻松存储几十G数据
+今天我们就从最基础的String字符串优化讲起。String对象是我们使用最频繁的一个对象类型，但它的性能问题却是最容易被忽略的。String对象作为Java语言中重要的数据类型，是内存中占据空间最大的一个对象。高效地使用字符串，可以提升系统的整体性能。接下来我们就从String对象的实现、特性以及实际使用中的优化这三个方面入手，深入了解。
 
+在开始之前，我想先问你一个小问题，也是我在招聘时，经常会问到面试者的一道题。虽是老生常谈了，但错误率依然很高，当然也有一些面试者答对了，但能解释清楚答案背后原理的人少之又少。问题如下：
+
+通过三种不同的方式创建了三个对象，再依次两两匹配，每组被匹配的两个对象是否相等？代码如下：
+```
+String str1= "abc";
+String str2= new String("abc");
+String str3= str2.intern();
+assertSame(str1==str2);
+assertSame(str2==str3);
+assertSame(str1==str3)
+```
+
+### 2.1.1 String对象是如何实现的？
+在Java语言中，Sun公司的工程师们对String对象做了大量的优化，来节约内存空间，提升String对象在系统中的性能。一起来看看优化过程，如下图所示：
+![alt text](Java-performance-tuning/357f1cb1263fd0b5b3e4ccb6b971c96d.jpg)
+
+1. 在Java6以及之前的版本中，String对象是对char数组进行了封装实现的对象，主要有四个成员变量：char数组、偏移量offset、字符数量count、哈希值hash。String对象是通过offset和count两个属性来定位char[]数组，获取字符串。这么做可以高效、快速地共享数组对象，同时节省内存空间，但这种方式很有可能会导致内存泄漏。
+
+2. 从Java7版本开始到Java8版本，Java对String类做了一些改变。String类中不再有offset和count两个变量了。这样的好处是String对象占用的内存稍微少了些，同时，String.substring方法也不再共享char[]，从而解决了使用该方法可能导致的内存泄漏问题。
+
+3. 从Java9版本开始，工程师将char[]字段改为了byte[]字段，又维护了一个新的属性coder，它是一个编码格式的标识。工程师为什么这样修改呢？我们知道一个char字符占16位，2个字节。这个情况下，存储单字节编码内的字符（占一个字节的字符）就显得非常浪费。JDK1.9的String类为了节约内存空间，于是使用了占8位，1个字节的byte数组来存放字符串。而新属性coder的作用是，在计算字符串长度或者使用indexOf（）函数时，我们需要根据这个字段，判断如何计算字符串长度。coder属性默认有0和1两个值，0代表Latin-1（单字节编码），1代表UTF-16。如果String判断字符串只包含了Latin-1，则coder属性值为0，反之则为1。
+
+---
+
+### 2.1.2 String对象的不可变性
+了解了String对象的实现后，你有没有发现在实现代码中String类被final关键字修饰了，而且变量char数组也被final修饰了。我们知道类被final修饰代表该类不可继承，而char[]被final+private修饰，代表了String对象不可被更改。Java实现的这个特性叫作String对象的不可变性，即String对象一旦创建成功，就不能再对它进行改变。
+
+#### Java这样做的好处在哪里呢？
+第一，保证String对象的安全性。假设String对象是可变的，那么String对象将可能被恶意修改。
+
+第二，保证hash属性值不会频繁变更，确保了唯一性，使得类似HashMap容器才能实现相应的key-value缓存功能。
+
+第三，可以实现字符串常量池。在Java中，通常有两种创建字符串对象的方式，一种是通过字符串常量的方式创建，如String str=“abc”；另一种是字符串变量通过new形式的创建，如String str = new String(“abc”)。
+
+当代码中使用第一种方式创建字符串对象时，JVM首先会检查该对象是否在字符串常量池中，如果在，就返回该对象引用，否则新的字符串将在常量池中被创建。这种方式可以减少同一个值的字符串对象的重复创建，节约内存。
+
+String str = new String(“abc”)这种方式，首先在编译类文件时，"abc"常量字符串将会放入到常量结构中，在类加载时，“abc"将会在常量池中创建；其次，在调用new时，JVM命令将会调用String的构造函数，同时引用常量池中的"abc” 字符串，在堆内存中创建一个String对象；最后，str将引用String对象。
+
+**这里附上一个你可能会想到的经典反例。**
+
+平常编程时，对一个String对象str赋值“hello”，然后又让str值为“world”，这个时候str的值变成了“world”。那么str值确实改变了，为什么我还说String对象不可变呢？
+
+首先，我来解释下什么是对象和对象引用。Java初学者往往对此存在误区，特别是一些从PHP转Java的同学。在Java中要比较两个对象是否相等，往往是用==，而要判断两个对象的值是否相等，则需要用equals方法来判断。这是因为str只是String对象的引用，并不是对象本身。对象在内存中是一块内存地址，str则是一个指向该内存地址的引用。所以在刚刚我们说的这个例子中，第一次赋值的时候，创建了一个“hello”对象，str引用指向“hello”地址；第二次赋值的时候，又重新创建了一个对象“world”，str引用指向了“world”，但“hello”对象依然存在于内存中。也就是说str并不是对象，而只是一个对象引用。真正的对象依然还在内存中，没有被改变。
+
+### 2.1.3 String对象的优化
+了解了String对象的实现原理和特性，接下来我们就结合实际场景，看看如何优化String对象的使用，优化的过程中又有哪些需要注意的地方。
+
+#### 1. 如何构建超大字符串？
+编程过程中，字符串的拼接很常见。前面我讲过String对象是不可变的，如果我们使用String对象相加，拼接我们想要的字符串，是不是就会产生多个对象呢？例如以下代码：
+```
+String str= "ab" + "cd" + "ef";
+```
+分析代码可知：首先会生成ab对象，再生成abcd对象，最后生成abcdef对象，从理论上来说，这段代码是低效的。但实际运行中，我们发现只有一个对象生成，这是为什么呢？难道我们的理论判断错了？我们再来看编译后的代码，你会发现编译器自动优化了这行代码，如下：
+```
+String str= "abcdef";
+```
+上面我介绍的是字符串常量的累计，我们再来看看字符串变量的累计又是怎样的呢？
+```
+String str = "abcdef";
+
+for(int i=0; i<1000; i++) {
+      str = str + i;
+}
+```
+
+上面的代码编译后，你可以看到编译器同样对这段代码进行了优化。不难发现，Java在进行字符串的拼接时，偏向使用StringBuilder，这样可以提高程序的效率。
+
+```
+String str = "abcdef";
+
+for(int i=0; i<1000; i++) {
+              str = (new StringBuilder(String.valueOf(str))).append(i).toString();
+}
+```
+综上已知：即使使用+号作为字符串的拼接，也一样可以被编译器优化成StringBuilder的方式。但再细致些，你会发现在编译器优化的代码中，每次循环都会生成一个新的StringBuilder实例，同样也会降低系统的性能。所以平时做字符串拼接的时候，我建议你还是要显示地使用String Builder来提升系统性能。
+
+如果在多线程编程中，String对象的拼接涉及到线程安全，你可以使用StringBuffer。但是要注意，由于StringBuffer是线程安全的，涉及到锁竞争，所以从性能上来说，要比StringBuilder差一些。
+
+#### 2. 如何使用String.intern节省内存？
+讲完了构建字符串，我们再来讨论下String对象的存储问题。先看一个案例。Twitter每次发布消息状态的时候，都会产生一个地址信息，以当时Twitter用户的规模预估，服务器需要32G的内存来存储地址信息。
+```
+public class Location {
+    private String city;
+    private String region;
+    private String countryCode;
+    private double longitude;
+    private double latitude;
+} 
+```
+考虑到其中有很多用户在地址信息上是有重合的，比如，国家、省份、城市等，这时就可以将这部分信息单独列出一个类，以减少重复，代码如下：
+```
+public class SharedLocation {
+
+	private String city;
+	private String region;
+	private String countryCode;
+}
+
+public class Location {
+
+	private SharedLocation sharedLocation;
+	double longitude;
+	double latitude;
+}
+```
+通过优化，数据存储大小减到了20G左右。但对于内存存储这个数据来说，依然很大，怎么办呢？这个案例来自一位Twitter工程师在QCon全球软件开发大会上的演讲，他们想到的解决方法，就是使用String.intern来节省内存空间，从而优化String对象的存储。
+
+具体做法就是，在每次赋值的时候使用String的intern方法，如果常量池中有相同值，就会重复使用该对象，返回对象引用，这样一开始的对象就可以被回收掉。这种方式可以使重复性非常高的地址信息存储大小从20G降到几百兆。
+```
+SharedLocation sharedLocation = new SharedLocation();
+
+sharedLocation.setCity(messageInfo.getCity().intern());		sharedLocation.setCountryCode(messageInfo.getRegion().intern());
+sharedLocation.setRegion(messageInfo.getCountryCode().intern());
+
+Location location = new Location();
+location.set(sharedLocation);
+location.set(messageInfo.getLongitude());
+location.set(messageInfo.getLatitude());
+
+```
+为了更好地理解，我们再来通过一个简单的例子，回顾下其中的原理：
+```
+String a =new String("abc").intern();
+String b = new String("abc").intern();
+          
+if(a==b) {
+    System.out.print("a==b");
+}
+
+输出结果：
+
+a==b
+```
+在字符串常量中，默认会将对象放入常量池；在字符串变量中，对象是会创建在堆内存中，同时也会在常量池中创建一个字符串对象，String对象中的char数组将会引用常量池中的char数组，并返回堆内存对象引用。
+
+如果调用intern方法，会去查看字符串常量池中是否有等于该对象的字符串的引用，如果没有，在JDK1.6版本中会复制堆中的字符串到常量池中，并返回该字符串引用，堆内存中原有的字符串由于没有引用指向它，将会通过垃圾回收器回收。
+
+在JDK1.7版本以后，由于常量池已经合并到了堆中，所以不会再复制具体字符串了，只是会把首次遇到的字符串的引用添加到常量池中；如果有，就返回常量池中的字符串引用。
+以一张图来总结String字符串的创建分配内存地址情况：
+![alt text](Java-performance-tuning/b1995253db45cd5e5b7bc1ded7cbdd50.jpg)
+
+使用intern方法需要注意的一点是，一定要结合实际场景。因为常量池的实现是类似于一个HashTable的实现方式，HashTable存储的数据越大，遍历的时间复杂度就会增加。如果数据过大，会增加整个字符串常量池的负担。
+
+#### 3.如何使用字符串的分割方法？
+最后我想跟你聊聊字符串的分割，这种方法在编码中也很最常见。Split()方法使用了正则表达式实现了其强大的分割功能，而正则表达式的性能是非常不稳定的，使用不恰当会引起回溯问题，很可能导致CPU居高不下。
+
+所以我们应该慎重使用Split()方法，我们可以用String.indexOf()方法代替Split()方法完成字符串的分割。如果实在无法满足需求，你就在使用Split()方法时，对回溯问题加以重视就可以了。
+
+---
+
+### 2.1.4 总结
+这一讲中，我们认识到做好String字符串性能优化，可以提高系统的整体性能。在这个理论基础上，Java版本在迭代中通过不断地更改成员变量，节约内存空间，对String对象进行优化。我们还特别提到了String对象的不可变性，正是这个特性实现了字符串常量池，通过减少同一个值的字符串对象的重复创建，进一步节约内存。
+
+但也是因为这个特性，我们在做长字符串拼接时，需要显示使用StringBuilder，以提高字符串的拼接性能。最后，在优化方面，我们还可以使用intern方法，让变量字符串对象重复使用常量池中相同值的对象，进而节约内存。
+
+最后再分享一个个人观点。那就是千里之堤，溃于蚁穴。日常编程中，我们往往可能就是对一个小小的字符串了解不够深入，使用不够恰当，从而引发线上事故。
+
+比如，在我之前的工作经历中，就曾因为使用正则表达式对字符串进行匹配，导致并发瓶颈，这里也可以将其归纳为字符串使用的性能问题。具体实战分析，我将在04讲中为你详解。
+
+**思考题**
+通过今天的学习，你知道文章开头那道面试题的答案了吗？背后的原理是什么？
+
+**补充**
+[string的存储](https://blog.csdn.net/mkfka/article/details/108047023)
+
+---
+## 2.2 慎重使用正则表达式
+上一讲，我在讲String对象优化时，提到了Split()方法，该方法使用的正则表达式可能引起回溯问题，今天我们就来深入了解下，这究竟是怎么回事？开始之前，我们先来看一个案例，可以帮助你更好地理解内容。
+
+在一次小型项目开发中，我遇到过这样一个问题。为了宣传新品，我们开发了一个小程序，按照之前评估的访问量，这次活动预计参与用户量30W+，TPS（每秒事务处理量）最高3000左右。
+
+这个结果来自我对接口做的微基准性能测试。我习惯使用ab工具（通过yum -y install httpd-tools可以快速安装）在另一台机器上对http请求接口进行测试。
+
+我可以通过设置-n请求数/-c并发用户数来模拟线上的峰值请求，再通过TPS、RT（每秒响应时间）以及每秒请求时间分布情况这三个指标来衡量接口的性能，如下图所示（图中隐藏部分为我的服务器地址）：
+![alt text](Java-performance-tuning/9c48880c13fd89bc48c0bd756a00561b.png)
+就在做性能测试的时候，我发现有一个提交接口的TPS一直上不去，按理说这个业务非常简单，存在性能瓶颈的可能性并不大。我迅速使用了排除法查找问题。首先将方法里面的业务代码全部注释，留一个空方法在这里，再看性能如何。这种方式能够很好地区分是框架性能问题，还是业务代码性能问题。
+
+我快速定位到了是业务代码问题，就马上逐一查看代码查找原因。我将插入数据库操作代码加上之后，TPS稍微下降了，但还是没有找到原因。最后，就只剩下Split() 方法操作了，果然，我将Split()方法加入之后，TPS明显下降了。
+
+可是一个Split()方法为什么会影响到TPS呢？下面我们就来了解下正则表达式的相关内容，学完了答案也就出来了。
+
+### 2.2.1 什么是正则表达式？
+很基础，这里带你简单回顾一下。正则表达式是计算机科学的一个概念，很多语言都实现了它。正则表达式使用一些特定的元字符来检索、匹配以及替换符合规则的字符串。构造正则表达式语法的元字符，由普通字符、标准字符、限定字符（量词）、定位字符（边界字符）组成。详情可见下图：
+![alt text](Java-performance-tuning/6ede246f783be477d3219f4218543691.jpg)
+
+---
+
+### 2.2.2 正则表达式引擎
+正则表达式是一个用正则符号写出的公式，程序对这个公式进行语法分析，建立一个语法分析树，再根据这个分析树结合正则表达式的引擎生成执行程序（这个执行程序我们把它称作状态机，也叫状态自动机），用于字符匹配。而这里的正则表达式引擎就是一套核心算法，用于建立状态机。
+
+目前实现正则表达式引擎的方式有两种：DFA自动机（Deterministic Final Automaton 确定有限状态自动机）和NFA自动机（Non deterministic Finite Automaton 非确定有限状态自动机）。对比来看，构造DFA自动机的代价远大于NFA自动机，但DFA自动机的执行效率高于NFA自动机。
+
+假设一个字符串的长度是n，如果用DFA自动机作为正则表达式引擎，则匹配的时间复杂度为O(n)；如果用NFA自动机作为正则表达式引擎，由于NFA自动机在匹配过程中存在大量的分支和回溯，假设NFA的状态数为s，则该匹配算法的时间复杂度为O（ns）。
+
+NFA自动机的优势是支持更多功能。例如，捕获group、环视、占有优先量词等高级功能。这些功能都是基于子表达式独立进行匹配，因此在编程语言里，使用的正则表达式库都是基于NFA实现的。那么NFA自动机到底是怎么进行匹配的呢？我以下面的字符和表达式来举例说明。
+```
+text=“aabcab”
+regex=“bc”
+```
+NFA自动机会读取正则表达式的每一个字符，拿去和目标字符串匹配，匹配成功就换正则表达式的下一个字符，反之就继续和目标字符串的下一个字符进行匹配。分解一下过程。
+
+首先，读取正则表达式的第一个匹配符和字符串的第一个字符进行比较，b对a，不匹配；继续换字符串的下一个字符，也是a，不匹配；继续换下一个，是b，匹配。然后，同理，读取正则表达式的第二个匹配符和字符串的第四个字符进行比较，c对c，匹配；继续读取正则表达式的下一个字符，然而后面已经没有可匹配的字符了，结束。这就是NFA自动机的匹配过程，虽然在实际应用中，碰到的正则表达式都要比这复杂，但匹配方法是一样的。
+
+---
+
+### 2.2.3 NFA自动机的回溯
+用NFA自动机实现的比较复杂的正则表达式，在匹配过程中经常会引起回溯问题。大量的回溯会长时间地占用CPU，从而带来系统性能开销。我来举例说明。
+```
+text=“abbc”
+regex=“ab{1,3}c”
+```
+
+这个例子，匹配目的比较简单。匹配以a开头，以c结尾，中间有1-3个b字符的字符串。NFA自动机对其解析的过程是这样的：
+
+首先，读取正则表达式第一个匹配符a和字符串第一个字符a进行比较，a对a，匹配。
+
+然后，读取正则表达式第二个匹配符b{1,3} 和字符串的第二个字符b进行比较，匹配。但因为 b{1,3} 表示1-3个b字符串，NFA自动机又具有贪婪特性，所以此时不会继续读取正则表达式的下一个匹配符，而是依旧使用 b{1,3} 和字符串的第三个字符b进行比较，结果还是匹配。
+
+那么发生回溯以后，匹配过程怎么继续呢？程序会读取正则表达式的下一个匹配符c，和字符串中的第四个字符c进行比较，结果匹配，结束。
+
+---
+
+### 2.2.4 如何减少回溯问题？
+既然回溯会给系统带来性能开销，那我们如何应对呢？如果你有仔细看上面那个案例的话，你会发现NFA自动机的贪婪特性就是导火索，这和正则表达式的匹配模式息息相关，一起来了解一下。
+
+#### 1.贪婪模式（Greedy）
+
+顾名思义，就是在数量匹配中，如果单独使用+、 ? 、* 或{min,max} 等量词，正则表达式会匹配尽可能多的内容。例如，上边那个例子：
+```
+text=“abbc”
+regex=“ab{1,3}c”
+```
+就是在贪婪模式下，NFA自动机读取了最大的匹配范围，即匹配3个b字符。匹配发生了一次失败，就引起了一次回溯。如果匹配结果是“abbbc”，就会匹配成功。
+```
+text=“abbbc”
+regex=“ab{1,3}c”
+```
+
+#### 2.懒惰模式（Reluctant）
+
+在该模式下，正则表达式会尽可能少地重复匹配字符。如果匹配成功，它会继续匹配剩余的字符串。例如，在上面例子的字符后面加一个“？”，就可以开启懒惰模式。
+```
+text=“abc”
+regex=“ab{1,3}?c”
+```
+匹配结果是“abc”，该模式下NFA自动机首先选择最小的匹配范围，即匹配1个b字符，因此就避免了回溯问题。懒惰模式是无法完全避免回溯的，我们再通过一个例子来了解下懒惰模式在什么情况下会发生回溯问题。
+```
+text=“abbc”
+regex=“ab{1,3}?c”
+```
+以上匹配结果依然是成功的，这又是为什么呢？我们可以通过懒惰模式的匹配过程来了解下原因。
+
+首先，读取正则表达式第一个匹配符a和字符串第一个字符a进行比较，a对a，匹配。然后，读取正则表达式第二个匹配符 b{1,3} 和字符串的第二个字符b进行比较，匹配。
+
+其次，由于懒惰模式下，正则表达式会尽可能少地重复匹配字符，匹配字符串中的下一个匹配字符b不会继续与b{1,3}进行匹配，从而选择放弃最大匹配b字符，转而匹配正则表达式中的下一个字符c。
+
+此时你会发现匹配字符c与正则表达式中的字符c是不匹配的，这个时候会发生一次回溯，这次的回溯与贪婪模式中的回溯刚好相反，懒惰模式的回溯是回溯正则表达式中一个匹配字符，与上一个字符再进行匹配。如果匹配，则将匹配字符串的下一个字符和正则表达式的下一个字符。
+
+#### 3.独占模式（Possessive）
+
+同贪婪模式一样，独占模式一样会最大限度地匹配更多内容；不同的是，在独占模式下，匹配失败就会结束匹配，不会发生回溯问题。还是上边的例子，在字符后面加一个“+”，就可以开启独占模式。
+```
+text=“abbc”
+regex=“ab{1,3}+bc”
+```
+结果是不匹配，结束匹配，不会发生回溯问题。同样，独占模式也不能避免回溯的发生，我们再拿最开始的这个例子来分析下：
+```
+text=“abbc”
+regex=“ab{1,3}+c”
+```
+结果是匹配的，这是因为与贪婪模式一样，独占模式一样会最大限度地匹配更多内容，即匹配完所有的b之后，再去匹配c，则匹配成功了。讲到这里，你应该非常清楚了，在很多情况下使用懒惰模式和独占模式可以减少回溯的发生。还有开头那道“一个split()方法为什么会影响到TPS”的存疑，你应该也清楚了吧？我使用了split()方法提取域名，并检查请求参数是否符合规定。split()在匹配分组时遇到特殊字符产生了大量回溯，我当时是在正则表达式后加了一个需要匹配的字符和“+”，解决了这个问题。
+```
+\\?(([A-Za-z0-9-~_=%]++\\&{0,1})+)
+```
+
+### 2.2.5 正则表达式的优化
+正则表达式带来的性能问题，给我敲了个警钟，在这里我也希望分享给你一些心得。任何一个细节问题，都有可能导致性能问题，而这背后折射出来的是我们对这项技术的了解不够透彻。所以我鼓励你学习性能调优，要掌握方法论，学会透过现象看本质。下面我就总结几种正则表达式的优化方法给你。
+
+#### 1.少用贪婪模式，多用独占模式
+贪婪模式会引起回溯问题，我们可以使用独占模式来避免回溯。前面详解过了，这里我就不再解释了。
+
+#### 2.减少分支选择
+分支选择类型“(X|Y|Z)”的正则表达式会降低性能，我们在开发的时候要尽量减少使用。如果一定要用，我们可以通过以下几种方式来优化：
+
+首先，我们需要考虑选择的顺序，将比较常用的选择项放在前面，使它们可以较快地被匹配；
+
+其次，我们可以尝试提取共用模式，例如，将“(abcd|abef)”替换为“ab(cd|ef)”，后者匹配速度较快，因为NFA自动机会尝试匹配ab，如果没有找到，就不会再尝试任何选项；
+
+最后，如果是简单的分支选择类型，我们可以用三次index代替“(X|Y|Z)”，如果测试的话，你就会发现三次index的效率要比“(X|Y|Z)”高出一些。
+
+#### 3.减少捕获嵌套
+在讲这个方法之前，我先简单介绍下什么是捕获组和非捕获组。捕获组是指把正则表达式中，子表达式匹配的内容保存到以数字编号或显式命名的数组中，方便后面引用。一般一个()就是一个捕获组，捕获组可以进行嵌套。非捕获组则是指参与匹配却不进行分组编号的捕获组，其表达式一般由（?:exp）组成。
+
+在正则表达式中，每个捕获组都有一个编号，编号0代表整个匹配到的内容。我们可以看下面的例子：
+```
+public static void main( String[] args )
+{
+    String text = "<input high=\"20\" weight=\"70\">test</input>";
+    String reg="(<input.*?>)(.*?)(</input>)";
+    Pattern p = Pattern.compile(reg);
+    Matcher m = p.matcher(text);
+    while(m.find()) {
+    System.out.println(m.group(0));//整个匹配到的内容
+    System.out.println(m.group(1));//(<input.*?>)
+    System.out.println(m.group(2));//(.*?)
+    System.out.println(m.group(3));//(</input>)
+    }
+}
+```
+运行结果：
+```
+<input high=\"20\" weight=\"70\">test</input>
+<input high=\"20\" weight=\"70\">
+test
+</input>
+```
+如果你并不需要获取某一个分组内的文本，那么就使用非捕获分组。例如，使用“(?:X)”代替“(X)”，我们再看下面的例子：
+```
+public static void main( String[] args )
+{
+    String text = "<input high=\"20\" weight=\"70\">test</input>";
+    String reg="(?:<input.*?>)(.*?)(?:</input>)";
+    Pattern p = Pattern.compile(reg);
+    Matcher m = p.matcher(text);
+    while(m.find()) {
+    System.out.println(m.group(0));//整个匹配到的内容
+    System.out.println(m.group(1));//(.*?)
+    }
+}
+```
+运行结果：
+```
+<input high=\"20\" weight=\"70\">test</input>
+test
+```
+综上可知：减少不需要获取的分组，可以提高正则表达式的性能。
+
+---
+
+### 2.2.6 总结
+正则表达式虽然小，却有着强大的匹配功能。我们经常用到它，比如，注册页面手机号或邮箱的校验。但很多时候，我们又会因为它小而忽略它的使用规则，测试用例中又没有覆盖到一些特殊用例，不乏上线就中招的情况发生。
+
+综合我以往的经验来看，如果使用正则表达式能使你的代码简洁方便，那么在做好性能排查的前提下，可以去使用；如果不能，那么正则表达式能不用就不用，以此避免造成更多的性能问题。
+
+**思考题**
+除了Split()方法使用到正则表达式，其实Java还有一些方法也使用了正则表达式去实现一些功能，使我们很容易掉入陷阱。现在就请你想一想JDK里面，还有哪些工具方法用到了正则表达式？
+
+1. 排查性能热点不至于用注释大法，可以用arthas的trace
+2. 字符串默认的split方法是接受正则的，如果简单的split功能可以使用stringutils的split，这个是不用正则的，还能顺便避免npe了
+3. 啥业务场景连个小小的split都成性能热点了，瑟瑟发抖
+
+---
+
+## 2.3  ArrayList还是LinkedList? 使用不当性能差千倍
+集合作为一种存储数据的容器，是我们日常开发中使用最频繁的对象类型之一。JDK为开发者提供了一系列的集合类型，这些集合类型使用不同的数据结构来实现。因此，不同的集合类型，使用场景也不同。很多同学在面试的时候，经常会被问到集合的相关问题，比较常见的有ArrayList和LinkedList的区别。相信大部分同学都能回答上：“ArrayList是基于数组实现，LinkedList是基于链表实现。”
+
+而在回答使用场景的时候，我发现大部分同学的答案是：“ArrayList和LinkedList在新增、删除元素时，LinkedList的效率要高于 ArrayList，而在遍历的时候，ArrayList的效率要高于LinkedList。”这个回答是否准确呢？今天这一讲就带你验证。
+
+### 2.3.1 初识List接口
+在学习List集合类之前，我们先来通过这张图，看下List集合类的接口和类的实现关系：
+![alt text](Java-performance-tuning/54f564eb63a2c74723a82540668fc009.jpg)
+
+我们可以看到ArrayList、Vector、LinkedList集合类继承了AbstractList抽象类，而AbstractList实现了List接口，同时也继承了AbstractCollection抽象类。ArrayList、Vector、LinkedList又根据自我定位，分别实现了各自的功能。
+
+ArrayList和Vector使用了数组实现，这两者的实现原理差不多，LinkedList使用了双向链表实现。基础铺垫就到这里，接下来，我们就详细地分析下ArrayList和LinkedList的源码实现。
+
+---
+
+### 2.3.2 ArrayList是如何实现的？
+ArrayList很常用，先来几道测试题，自检下你对ArrayList的了解程度。
+
+问题1：我们在查看ArrayList的实现类源码时，你会发现对象数组elementData使用了transient修饰，我们知道transient关键字修饰该属性，则表示该属性不会被序列化，然而我们并没有看到文档中说明ArrayList不能被序列化，这是为什么？
+
+问题2：我们在使用ArrayList进行新增、删除时，经常被提醒“使用ArrayList做新增删除操作会影响效率”。那是不是ArrayList在大量新增元素的场景下效率就一定会变慢呢？
+
+问题3：如果让你使用for循环以及迭代循环遍历一个ArrayList，你会使用哪种方式呢？原因是什么？
+
+如果你对这几道测试都没有一个全面的了解，那就跟我一起从数据结构、实现原理以及源码角度重新认识下ArrayList吧。
+
+#### 1.ArrayList实现类
+ArrayList实现了List接口，继承了AbstractList抽象类，底层是数组实现的，并且实现了自增扩容数组大小。ArrayList还实现了Cloneable接口和Serializable接口，所以他可以实现克隆和序列化。
+
+ArrayList还实现了RandomAccess接口。你可能对这个接口比较陌生，不知道具体的用处。通过代码我们可以发现，这个接口其实是一个空接口，什么也没有实现，那ArrayList为什么要去实现它呢？其实RandomAccess接口是一个标志接口，他标志着“只要实现该接口的List类，都能实现快速随机访问”。
+```
+public class ArrayList<E> extends AbstractList<E>
+        implements List<E>, RandomAccess, Cloneable, java.io.Serializable
+```
+
+#### 2.ArrayList属性
+ArrayList属性主要由数组长度size、对象数组elementData、初始化容量default_capacity等组成， 其中初始化容量默认大小为10。
+```
+  //默认初始化容量
+    private static final int DEFAULT_CAPACITY = 10;
+    //对象数组
+    transient Object[] elementData; 
+    //数组长度
+    private int size;
+```
+从ArrayList属性来看，它没有被任何的多线程关键字修饰，但elementData被关键字transient修饰了。这就是我在上面提到的第一道测试题：transient关键字修饰该字段则表示该属性不会被序列化，但ArrayList其实是实现了序列化接口，这到底是怎么回事呢？
+
+这还得从“ArrayList是基于数组实现“开始说起，由于ArrayList的数组是基于动态扩增的，所以并不是所有被分配的内存空间都存储了数据。如果采用外部序列化法实现数组的序列化，会序列化整个数组。ArrayList为了避免这些没有存储数据的内存空间被序列化，内部提供了两个私有方法writeObject以及readObject来自我完成序列化与反序列化，从而在序列化与反序列化数组时节省了空间和时间。因此使用transient修饰数组，是防止对象数组被其他外部方法序列化。
+
+#### 3.ArrayList构造函数
+ArrayList类实现了三个构造函数，第一个是创建ArrayList对象时，传入一个初始化值；第二个是默认创建一个空数组对象；第三个是传入一个集合类型进行初始化。
+
+当ArrayList新增元素时，如果所存储的元素已经超过其已有大小，它会计算元素大小后再进行动态扩容，数组的扩容会导致整个数组进行一次内存复制。因此，我们在初始化ArrayList时，可以通过第一个构造函数合理指定数组初始大小，这样有助于减少数组的扩容次数，从而提高系统性能。
+
+```
+public ArrayList(int initialCapacity) {
+        //初始化容量不为零时，将根据初始化值创建数组大小
+        if (initialCapacity > 0) {
+            this.elementData = new Object[initialCapacity];
+        } else if (initialCapacity == 0) {//初始化容量为零时，使用默认的空数组
+            this.elementData = EMPTY_ELEMENTDATA;
+        } else {
+            throw new IllegalArgumentException("Illegal Capacity: "+
+                                               initialCapacity);
+        }
+    }
+
+    public ArrayList() {
+        //初始化默认为空数组
+        this.elementData = DEFAULTCAPACITY_EMPTY_ELEMENTDATA;
+    }
+```
+
+#### 4.ArrayList新增元素
+
+ArrayList新增元素的方法有两种，一种是直接将元素加到数组的末尾，另外一种是添加元素到任意位置。
+```
+ public boolean add(E e) {
+        ensureCapacityInternal(size + 1);  // Increments modCount!!
+        elementData[size++] = e;
+        return true;
+    }
+
+    public void add(int index, E element) {
+        rangeCheckForAdd(index);
+
+        ensureCapacityInternal(size + 1);  // Increments modCount!!
+        System.arraycopy(elementData, index, elementData, index + 1,
+                         size - index);
+        elementData[index] = element;
+        size++;
+    }
+```
+两个方法的相同之处是在添加元素之前，都会先确认容量大小，如果容量够大，就不用进行扩容；如果容量不够大，就会按照原来数组的1.5倍大小进行扩容，在扩容之后需要将数组复制到新分配的内存地址。
+```
+  private void ensureExplicitCapacity(int minCapacity) {
+        modCount++;
+
+        // overflow-conscious code
+        if (minCapacity - elementData.length > 0)
+            grow(minCapacity);
+    }
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+    private void grow(int minCapacity) {
+        // overflow-conscious code
+        int oldCapacity = elementData.length;
+        int newCapacity = oldCapacity + (oldCapacity >> 1);
+        if (newCapacity - minCapacity < 0)
+            newCapacity = minCapacity;
+        if (newCapacity - MAX_ARRAY_SIZE > 0)
+            newCapacity = hugeCapacity(minCapacity);
+        // minCapacity is usually close to size, so this is a win:
+        elementData = Arrays.copyOf(elementData, newCapacity);
+    }
+```
+当然，两个方法也有不同之处，添加元素到任意位置，会导致在该位置后的所有元素都需要重新排列，而将元素添加到数组的末尾，在没有发生扩容的前提下，是不会有元素复制排序过程的。
+
+这里你就可以找到第二道测试题的答案了。如果我们在初始化时就比较清楚存储数据的大小，就可以在ArrayList初始化时指定数组容量大小，并且在添加元素时，只在数组末尾添加元素，那么ArrayList在大量新增元素的场景下，性能并不会变差，反而比其他List集合的性能要好。
+
+#### 5.ArrayList删除元素
+ArrayList的删除方法和添加任意位置元素的方法是有些相同的。ArrayList在每一次有效的删除元素操作之后，都要进行数组的重组，并且删除的元素位置越靠前，数组重组的开销就越大。
+```
+ public E remove(int index) {
+        rangeCheck(index);
+
+        modCount++;
+        E oldValue = elementData(index);
+
+        int numMoved = size - index - 1;
+        if (numMoved > 0)
+            System.arraycopy(elementData, index+1, elementData, index,
+                             numMoved);
+        elementData[--size] = null; // clear to let GC do its work
+
+        return oldValue;
+    }
+```
+
+#### 6.ArrayList遍历元素
+由于ArrayList是基于数组实现的，所以在获取元素的时候是非常快捷的。
+```
+  public E get(int index) {
+        rangeCheck(index);
+
+        return elementData(index);
+    }
+
+    E elementData(int index) {
+        return (E) elementData[index];
+    }
+```
+
+---
+
+### 2.3.3 LinkedList是如何实现的？
+虽然LinkedList与ArrayList都是List类型的集合，但LinkedList的实现原理却和ArrayList大相径庭，使用场景也不太一样。LinkedList是基于双向链表数据结构实现的，LinkedList定义了一个Node结构，Node结构中包含了3个部分：元素内容item、前指针prev以及后指针next，代码如下。
+```
+ private static class Node<E> {
+        E item;
+        Node<E> next;
+        Node<E> prev;
+
+        Node(Node<E> prev, E element, Node<E> next) {
+            this.item = element;
+            this.next = next;
+            this.prev = prev;
+        }
+    }
+```
+
+总结一下，LinkedList就是由Node结构对象连接而成的一个双向链表。在JDK1.7之前，LinkedList中只包含了一个Entry结构的header属性，并在初始化的时候默认创建一个空的Entry，用来做header，前后指针指向自己，形成一个循环双向链表。
+
+在JDK1.7之后，LinkedList做了很大的改动，对链表进行了优化。链表的Entry结构换成了Node，内部组成基本没有改变，但LinkedList里面的header属性去掉了，新增了一个Node结构的first属性和一个Node结构的last属性。这样做有以下几点好处：
+
+- first/last属性能更清晰地表达链表的链头和链尾概念；
+- first/last方式可以在初始化LinkedList的时候节省new一个Entry；
+- first/last方式最重要的性能优化是链头和链尾的插入删除操作更加快捷了。
+这里同ArrayList的讲解一样，我将从数据结构、实现原理以及源码分析等几个角度带你深入了解LinkedList。
+
+#### 1.LinkedList实现类
+LinkedList类实现了List接口、Deque接口，同时继承了AbstractSequentialList抽象类，LinkedList既实现了List类型又有Queue类型的特点；LinkedList也实现了Cloneable和Serializable接口，同ArrayList一样，可以实现克隆和序列化。
+
+由于LinkedList存储数据的内存地址是不连续的，而是通过指针来定位不连续地址，因此，LinkedList不支持随机快速访问，LinkedList也就不能实现RandomAccess接口。
+```
+public class LinkedList<E>
+    extends AbstractSequentialList<E>
+    implements List<E>, Deque<E>, Cloneable, java.io.Serializable
+```
+
+#### 2.LinkedList属性
+我们前面讲到了LinkedList的两个重要属性first/last属性，其实还有一个size属性。我们可以看到这三个属性都被transient修饰了，原因很简单，我们在序列化的时候不会只对头尾进行序列化，所以LinkedList也是自行实现readObject和writeObject进行序列化与反序列化。
+```
+    transient int size = 0;
+    transient Node<E> first;
+    transient Node<E> last;
+```
+
+#### 3.LinkedList新增元素
+LinkedList添加元素的实现很简洁，但添加的方式却有很多种。默认的add (Ee)方法是将添加的元素加到队尾，首先是将last元素置换到临时变量中，生成一个新的Node节点对象，然后将last引用指向新节点对象，之前的last对象的前指针指向新节点对象。
+```
+ public boolean add(E e) {
+        linkLast(e);
+        return true;
+    }
+
+    void linkLast(E e) {
+        final Node<E> l = last;
+        final Node<E> newNode = new Node<>(l, e, null);
+        last = newNode;
+        if (l == null)
+            first = newNode;
+        else
+            l.next = newNode;
+        size++;
+        modCount++;
+    }
+```
+LinkedList也有添加元素到任意位置的方法，如果我们是将元素添加到任意两个元素的中间位置，添加元素操作只会改变前后元素的前后指针，指针将会指向添加的新元素，所以相比ArrayList的添加操作来说，LinkedList的性能优势明显。
+```
+ public void add(int index, E element) {
+        checkPositionIndex(index);
+
+        if (index == size)
+            linkLast(element);
+        else
+            linkBefore(element, node(index));
+    }
+
+    void linkBefore(E e, Node<E> succ) {
+        // assert succ != null;
+        final Node<E> pred = succ.prev;
+        final Node<E> newNode = new Node<>(pred, e, succ);
+        succ.prev = newNode;
+        if (pred == null)
+            first = newNode;
+        else
+            pred.next = newNode;
+        size++;
+        modCount++;
+    }
+```
+
+#### 4.LinkedList删除元素
+在LinkedList删除元素的操作中，我们首先要通过循环找到要删除的元素，如果要删除的位置处于List的前半段，就从前往后找；若其位置处于后半段，就从后往前找。这样做的话，无论要删除较为靠前或较为靠后的元素都是非常高效的，但如果List拥有大量元素，移除的元素又在List的中间段，那效率相对来说会很低。
+
+#### 5.LinkedList遍历元素
+LinkedList的获取元素操作实现跟LinkedList的删除元素操作基本类似，通过分前后半段来循环查找到对应的元素。但是通过这种方式来查询元素是非常低效的，特别是在for循环遍历的情况下，每一次循环都会去遍历半个List。所以在LinkedList循环遍历时，我们可以使用iterator方式迭代循环，直接拿到我们的元素，而不需要通过循环查找List。
+
+---
+
+### 2.3.4 总结
+前面我们已经从源码的实现角度深入了解了ArrayList和LinkedList的实现原理以及各自的特点。如果你能充分理解这些内容，很多实际应用中的相关性能问题也就迎刃而解了。就像如果现在还有人跟你说，“ArrayList和LinkedList在新增、删除元素时，LinkedList的效率要高于ArrayList，而在遍历的时候，ArrayList的效率要高于LinkedList”，你还会表示赞同吗？
+
+现在我们不妨通过几组测试来验证一下。这里因为篇幅限制，所以我就直接给出测试结果了，对应的测试代码你可以访问[Github](https://github.com/nickliuchao/collection)查看和下载。
+
+#### 1.ArrayList和LinkedList新增元素操作测试
+- 从集合头部位置新增元素
+- 从集合中间位置新增元素
+- 从集合尾部位置新增元素
+
+测试结果(花费时间)：
+- ArrayList>LinkedList
+- ArrayList<LinkedList
+- ArrayList<LinkedList
+
+通过这组测试，我们可以知道LinkedList添加元素的效率未必要高于ArrayList。
+
+由于ArrayList是数组实现的，而数组是一块连续的内存空间，在添加元素到数组头部的时候，需要对头部以后的数据进行复制重排，所以效率很低；而LinkedList是基于链表实现，在添加元素的时候，首先会通过循环查找到添加元素的位置，如果要添加的位置处于List的前半段，就从前往后找；若其位置处于后半段，就从后往前找。因此LinkedList添加元素到头部是非常高效的。同上可知，ArrayList在添加元素到数组中间时，同样有部分数据需要复制重排，效率也不是很高；LinkedList将元素添加到中间位置，是添加元素最低效率的，因为靠近中间位置，在添加元素之前的循环查找是遍历元素最多的操作。
+
+而在添加元素到尾部的操作中，我们发现，在没有扩容的情况下，ArrayList的效率要高于LinkedList。这是因为ArrayList在添加元素到尾部的时候，不需要复制重排数据，效率非常高。而LinkedList虽然也不用循环查找元素，但LinkedList中多了new对象以及变换指针指向对象的过程，所以效率要低于ArrayList。说明一下，这里我是基于ArrayList初始化容量足够，排除动态扩容数组容量的情况下进行的测试，如果有动态扩容的情况，ArrayList的效率也会降低。
+
+#### 2.ArrayList和LinkedList删除元素操作测试
+
+- 从集合头部位置删除元素
+- 从集合中间位置删除元素
+- 从集合尾部位置删除元素
+
+测试结果(花费时间)：
+- ArrayList>LinkedList
+- ArrayList<LinkedList
+- ArrayList<LinkedList
+ArrayList和LinkedList删除元素操作测试的结果和添加元素操作测试的结果很接近，这是一样的原理，我在这里就不重复讲解了。
+
+#### 3.ArrayList和LinkedList遍历元素操作测试
+- for(;;)循环
+- 迭代器迭代循环
+测试结果(花费时间)：
+
+- ArrayList<LinkedList
+- ArrayList≈LinkedList
+我们可以看到，LinkedList的for循环性能是最差的，而ArrayList的for循环性能是最好的。
+
+这是因为LinkedList基于链表实现的，在使用for循环的时候，每一次for循环都会去遍历半个List，所以严重影响了遍历的效率；ArrayList则是基于数组实现的，并且实现了RandomAccess接口标志，意味着ArrayList可以实现快速随机访问，所以for循环效率非常高。LinkedList的迭代循环遍历和ArrayList的迭代循环遍历性能相当，也不会太差，所以在遍历LinkedList时，我们要切忌使用for循环遍历。
+
+**思考题**
+
+我们通过一个使用for循环遍历删除操作ArrayList数组的例子，思考下ArrayList数组的删除操作应该注意的一些问题。
+```
+public static void main(String[] args)
+    {
+        ArrayList<String> list = new ArrayList<String>();
+        list.add("a");
+        list.add("a");
+        list.add("b");
+        list.add("b");
+        list.add("c");
+        list.add("c");
+        remove(list);//删除指定的“b”元素
+
+        for(int i=0; i<list.size(); i++)("c")()()(s : list) 
+        {
+            System.out.println("element : " + s)list.get(i)
+        }
+    }
+```
+从上面的代码来看，我定义了一个ArrayList数组，里面添加了一些元素，然后我通过remove删除指定的元素。请问以下两种写法，哪种是正确的？
+
+写法1：
+```
+public static void remove(ArrayList<String> list) 
+    {
+        Iterator<String> it = list.iterator();
+        
+        while (it.hasNext()) {
+            String str = it.next();
+            
+            if (str.equals("b")) {
+                it.remove();
+            }
+        }
+
+    }
+```
+写法2：
+```
+public static void remove(ArrayList<String> list) 
+    {
+        for (String s : list)
+        {
+            if (s.equals("b")) 
+            {
+                list.remove(s);
+            }
+        }
+    }
+```
+
+**解答**：写法1 ，写法2会抛ConcurrentModificationException，写法2用了foreach循环，checkForComodification检查不通过
+
+## 2.4 常用的性能测试工具
+常用的性能测试工具有很多，在这里我将列举几个比较实用的。
+
+对于开发人员来说，首选是一些开源免费的性能（压力）测试软件，例如ab（ApacheBench）、JMeter等；对于专业的测试团队来说，付费版的LoadRunner是首选。当然，也有很多公司是自行开发了一套量身定做的性能测试软件，优点是定制化强，缺点则是通用性差。
+
+接下来，我会为你重点介绍ab和JMeter两款测试工具的特点以及常规的使用方法。
+
+### 2.4.1 ab
+ab测试工具是Apache提供的一款测试工具，具有简单易上手的特点，在测试Web服务时非常实用。
+
+ab可以在Windows系统中使用，也可以在Linux系统中使用。这里我说下在Linux系统中的安装方法，非常简单，只需要在Linux系统中输入yum-y install httpd-tools命令，就可以了。
+
+安装成功后，输入ab命令，可以看到以下提示：
+![alt text](Java-performance-tuning/ac58706f86ebd1d7349561ae501fca0a.png)
+
+ab工具用来测试post get接口请求非常便捷，可以通过参数指定请求数、并发数、请求参数等。例如，一个测试并发用户数为10、请求数量为100的的post请求输入如下：
+```
+ab -n 100  -c 10 -p 'post.txt' -T 'application/x-www-form-urlencoded' 'http://test.api.com/test/register'
+```
+post.txt为存放post参数的文档，存储格式如下：
+```
+usernanme=test&password=test&sex=1
+```
+附上几个常用参数的含义：
+
+- -n：总请求次数（最小默认为1）；
+- -c：并发次数（最小默认为1且不能大于总请求次数，例如：10个请求，10个并发，实际就是1人请求1次）；
+- -p：post参数文档路径（-p和-T参数要配合使用）；
+- -T：header头内容类型（此处切记是大写英文字母T）。
+当我们测试一个get请求接口时，可以直接在链接的后面带上请求的参数：
+```
+ab -c 10 -n 100 http://www.test.api.com/test/login?userName=test&password=test
+```
+输出结果如下：
+![alt text](Java-performance-tuning/66e7cf2dafa91a3ae80405f97a91899b.png)
+以上输出中，有几项性能指标可以提供给你参考使用：
+
+- Requests per second：吞吐率，指某个并发用户数下单位时间内处理的请求数；
+- Time per request：上面的是用户平均请求等待时间，指处理完成所有请求数所花费的时间/（总请求数/并发用户数）；
+- Time per request：下面的是服务器平均请求处理时间，指处理完成所有请求数所花费的时间/总请求数；
+- Percentage of the requests served within a certain time：每秒请求时间分布情况，指在整个请求中，每个请求的时间长度的分布情况，例如有50%的请求响应在8ms内，66%的请求响应在10ms内，说明有16%的请求在8ms~10ms之间。
+
+---
+
+### 2.4.2.JMeter
+JMeter是Apache提供的一款功能性比较全的性能测试工具，同样可以在Windows和Linux环境下安装使用。JMeter在Windows环境下使用了图形界面，可以通过图形界面来编写测试用例，具有易学和易操作的特点。
+
+JMeter不仅可以实现简单的并发性能测试，还可以实现复杂的宏基准测试。我们可以通过录制脚本的方式，在JMeter实现整个业务流程的测试。JMeter也支持通过csv文件导入参数变量，实现用多样化的参数测试系统性能。Windows下的JMeter安装非常简单，在官网下载安装包，解压后即可使用。如果你需要打开图形化界面，那就进入到bin目录下，找到jmeter.bat文件，双击运行该文件就可以了。
+
+JMeter的功能非常全面，我在这里简单介绍下如何录制测试脚本，并使用JMeter测试业务的性能。录制JMeter脚本的方法有很多，一种是使用Jmeter自身的代理录制，另一种是使用Badboy这款软件录制，还有一种是我下面要讲的，通过安装浏览器插件的方式实现脚本的录制，这种方式非常简单，不用做任何设置。
+
+首先我们安装一个录制测试脚本的插件，叫做BlazeMeter插件。你可以在Chrome应用商店中找到它，然后点击安装， 然后使用谷歌账号登录这款插件，如果不登录，我们将无法生成JMeter文件，安装以及登录成功后的界面如下图所示：
+![alt text](Java-performance-tuning/2932afaf9eecb2cce789ad5151180a4a.png)
+最后点击开始，就可以录制脚本了。录制成功后，点击保存为JMX文件，我们就可以通过JMeter打开这个文件，看到录制的脚本了，如下图所示：
+![alt text](Java-performance-tuning/bf03e37ace494cf84171b55f9b63bdfd.png)
+这个时候，我们还需要创建一个查看结果树，用来可视化查看运行的性能结果集合：
+![alt text](Java-performance-tuning/844a2a65add49c2f4d15b10667943069.png)
+设置好结果树之后，我们可以对线程组的并发用户数以及循环调用次数进行设置：
+![alt text](Java-performance-tuning/431ae410ec4369cc81af7622a23b409b.png)
+设置成功之后，点击运行，我们可以看到运行的结果：
+![alt text](Java-performance-tuning/6ffe85677e50bb75152d45526a7ba667.png)
+
+---
+
+### 2.4.3 LoadRunner
+LoadRunner是一款商业版的测试工具，并且License的售价不低。
+
+作为一款专业的性能测试工具，LoadRunner在性能压测时，表现得非常稳定和高效。相比JMeter，LoadRunner可以模拟出不同的内网IP地址，通过分配不同的IP地址给测试的用户，模拟真实环境下的用户。这里我就不展开详述了。
+
+---
+
+### 2.4.4 总结
+三种常用的性能测试工具就介绍完了，最后我把今天的主要内容为你总结了一张图。
+![alt text](Java-performance-tuning/a70d0081607081471df4db435641b51a.jpg)
+
+
+现在测试工具非常多，包括阿里云的PTS测试工具也很好用，但每款测试工具其实都有自己的优缺点。个人建议，还是在熟练掌握其中一款测试工具的前提下，再去探索其他测试工具的使用方法会更好。
 # 三、多线程性能调优
 
 ## 3.1 多线程之锁优化（上）：深入了解Synchronized同步锁的优化方法
