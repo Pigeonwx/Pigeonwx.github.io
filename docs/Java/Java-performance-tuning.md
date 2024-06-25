@@ -1,4 +1,5 @@
 # Java 性能调优实战
+
 那这个专栏具体是怎么设计的呢？结合 Java 应用开发的知识点，我将内容分为七大模块，从上到下依次详解 Java 应用服务的每一层优化实战。
 
 模块一，概述。为你建立两个标准。一个是性能调优标准，告诉你可以通过哪些参数去衡量系统性能；另一个是调优过程标准，带你了解通过哪些严格的调优策略，我们可以排查性能问题，从而解决问题。
@@ -13,7 +14,7 @@
 
 模块六，数据库性能调优。数据库最容易成为整个系统的性能瓶颈，这里我会重点解析一些数据库的常用调优方法。
 
-模块七，实战演练场。以上六个模块的内容，都是基于某个点的调优，现在是时候把你前面所学都调动起来了，这里我将带你进入综合性能问题高频出现的应用场景，学习整体调优方法。 
+模块七，实战演练场。以上六个模块的内容，都是基于某个点的调优，现在是时候把你前面所学都调动起来了，这里我将带你进入综合性能问题高频出现的应用场景，学习整体调优方法。
 
 ---
 
@@ -31,14 +32,14 @@
 
 很多同学在使用一项技术时，只是因为这项技术好用就用了，从来不问自己：为什么这项技术可以提升系统性能？对比其他技术它好在哪儿？实现的原理又是什么呢？事实上，“知其然且知所以然”才是我们积累经验的关键。知道了一项技术背后的实现原理，我们才能在遇到性能问题时，做到触类旁通。
 
-
-
 # 一、概述
 
 我有一个朋友，有一次他跟我说，他们公司的系统从来没有经过性能调优，功能测试完成后就上线了，线上也没有出现过什么性能问题呀，那为什么很多系统都要去做性能调优呢？当时我就回答了他一句，如果你们公司做的是 12306 网站，不做系统性能优化就上线，试试看会是什么情况。如果是你，你会怎么回答呢？今天，我们就从这个话题聊起，希望能跟你一起弄明白这几个问题：我们为什么要做性能调优？什么时候开始做？做性能调优是不是有标准可参考？
 
 ## 1.1 如何制定性能调优标准？
+
 ### 1.1.1 为什么要做性能调优？
+
 一款线上产品如果没有经过性能测试，那它就好比是一颗定时炸弹，你不知道它什么时候会出现问题，你也不清楚它能承受的极限在哪儿。
 
 有些性能问题是时间累积慢慢产生的，到了一定时间自然就爆炸了；而更多的性能问题是由访问量的波动导致的，例如，活动或者公司产品用户量上升；当然也有可能是一款产品上线后就半死不活，一直没有大访问量，所以还没有引发这颗定时炸弹。
@@ -54,6 +55,7 @@
 ---
 
 ### 1.1.2 什么时候开始介入调优？
+
 解决了为什么要做性能优化的问题，那么新的问题就来了：如果需要对系统做一次全面的性能监测和优化，我们从什么时候开始介入性能调优呢？是不是越早介入越好？
 
 其实，在项目开发的初期，我们没有必要过于在意性能优化，这样反而会让我们疲于性能优化，不仅不会给系统性能带来提升，还会影响到开发进度，甚至获得相反的效果，给系统带来新的问题。
@@ -65,6 +67,7 @@
 ---
 
 ### 1.1.3 有哪些参考因素可以体现系统的性能？
+
 上面我们讲到了在项目研发的各个阶段性能调优是如何介入的，其中多次讲到了性能指标，那么性能指标到底有哪些呢？在我们了解性能指标之前，我们先来了解下哪些计算机资源会成为系统的性能瓶颈。
 
 - CPU：有的应用需要大量计算，他们会长时间、不间断地占用 CPU 资源，导致其他资源无法争夺到 CPU 而响应缓慢，从而带来系统性能问题。例如，代码递归导致的无限循环，正则表达式引起的回溯，JVM频繁的 FULL GC，以及多线程编程造成的大量上下文切换等，这些都有可能导致 CPU 资源繁忙。
@@ -80,7 +83,9 @@
 ---
 
 ## 1.1.4 性能指标
+
 ### 1.1.4.1 响应时间
+
 响应时间是衡量系统性能的重要指标之一，响应时间越短，性能越好，一般一个接口的响应时间是在毫秒级。在系统中，我们可以把响应时间自下而上细分为以下几种：
 ![alt text](Java-performance-tuning/7b9946fd1a3512ded6d2ab0e563870f7.jpg)
 
@@ -90,23 +95,28 @@
 - 客户端响应时间：对于普通的 Web、App 客户端来说，消耗时间是可以忽略不计的，但如果你的客户端嵌入了大量的逻辑处理，消耗的时间就有可能变长，从而成为系统的瓶颈。
 
 ### 1.1.4.2 吞吐量
+
 在测试中，我们往往会比较注重系统接口的 TPS（每秒事务处理量），因为 TPS 体现了接口的性能，TPS 越大，性能越好。在系统中，我们也可以把吞吐量自下而上地分为两种：磁盘吞吐量和网络吞吐量。
 
 我们先来看磁盘吞吐量，磁盘性能有两个关键衡量指标。
+
 - 一种是 IOPS（Input/Output Per Second），即每秒的输入输出量（或读写次数），这种是指单位时间内系统能处理的 I/O 请求数量，I/O 请求通常为读或写数据操作请求，关注的是随机读写性能。适应于随机读写频繁的应用，如小文件存储（图片）、OLTP 数据库、邮件服务器。
 - 另一种是数据吞吐量，这种是指单位时间内可以成功传输的数据量。对于大量顺序读写频繁的应用，传输大量连续数据，例如，电视台的视频编辑、视频点播 VOD（Video On Demand），数据吞吐量则是关键衡量指标。
 
 接下来看网络吞吐量，这个是指网络传输时没有帧丢失的情况下，设备能够接受的最大数据速率。网络吞吐量不仅仅跟带宽有关系，还跟 CPU 的处理能力、网卡、防火墙、外部接口以及 I/O 等紧密关联。而吞吐量的大小主要由网卡的处理能力、内部程序算法以及带宽大小决定。
 
 ### 1.1.4.3 计算机资源分配使用率
+
 通常由 CPU 占用率、内存使用率、磁盘 I/O、网络 I/O 来表示资源使用率。这几个参数好比一个木桶，如果其中任何一块木板出现短板，任何一项分配不合理，对整个系统性能的影响都是毁灭性的。
 
 ### 1.1.4.4 负载承受能力
+
 当系统压力上升时，你可以观察，系统响应时间的上升曲线是否平缓。这项指标能直观地反馈给你，系统所能承受的负载压力极限。例如，当你对系统进行压测时，系统的响应时间会随着系统并发数的增加而延长，直到系统无法处理这么多请求，抛出大量错误时，就到了极限。
 
 ---
 
 ## 1.1.5 总结
+
 通过今天的学习，我们知道性能调优可以使系统稳定，用户体验更佳，甚至在比较大的系统中，还能帮公司节约资源。但是在项目的开始阶段，我们没有必要过早地介入性能优化，只需在编码的时候保证其优秀、高效，以及良好的程序设计。
 
 在完成项目后，我们就可以进行系统测试了，我们可以将以下性能指标，作为性能调优的标准，响应时间、吞吐量、计算机资源分配使用率、负载承受能力。
@@ -118,9 +128,11 @@
 ---
 
 ## 1.2 如何制定性能调优策略？
+
 > 面对日渐复杂的系统，制定合理的性能测试，可以提前发现性能瓶颈，然后有针对性地制定调优策略。总结一下就是“测试-分析-调优”三步走。
 
 ### 1.2.1 性能测试攻略
+
 性能测试是提前发现性能瓶颈，保障系统性能稳定的必要措施。下面我先给你介绍两种常用的测试方法，帮助你从点到面地测试系统性能。
 
 **1.微基准性能测试**
@@ -138,6 +150,7 @@
 ---
 
 ### 1.2.2 常见问题
+
 **1.热身问题**
 当我们做性能测试时，我们的系统会运行得越来越快，后面的访问速度要比我们第一次访问的速度快上几倍。这是怎么回事呢？在 Java 编程语言和环境中，.java 文件编译成为 .class 文件后，机器还是无法直接运行 .class 文件中的字节码，需要通过解释器将字节码转换成本地机器码才能运行。为了节约内存和执行效率，代码最初被执行时，解释器会率先解释执行这段代码。
 
@@ -158,6 +171,7 @@
 ---
 
 ### 1.2.3 合理分析结果，制定调优策略
+
 这里我将“三步走”中的分析和调优结合在一起讲。
 
 我们在完成性能测试之后，需要输出一份性能测试报告，帮我们分析系统性能测试的情况。其中测试结果需要包含测试接口的平均、最大和最小吞吐量，响应时间，服务器的 CPU、内存、I/O、网络 IO 使用率，JVM 的 GC 频率等。
@@ -189,6 +203,7 @@
 ---
 
 ### 1.2.4 兜底策略，确保系统稳定性
+
 上边讲到的所有的性能调优策略，都是提高系统性能的手段，但在互联网飞速发展的时代，产品的用户量是瞬息万变的，无论我们的系统优化得有多好，还是会存在承受极限，所以为了保证系统的稳定性，我们还需要采用一些兜底策略。什么是兜底策略？
 
 第一，限流，对系统的入口设置最大访问限制。这里可以参考性能测试中探底接口的 TPS 。同时采取熔断措施，友好地返回没有成功的请求。
@@ -202,6 +217,7 @@
 ---
 
 ### 1.2.5 总结
+
 学完这讲，你应该对性能测试以及性能调优有所认识了。我们再通过一张图来回顾下今天的内容。
 ![alt text](Java-performance-tuning/f8460bb16b56e8c8897c7cf4c9f99eb8.jpg)
 
@@ -214,15 +230,19 @@
 ---
 
 ### 1.2.5 思考题
+
 假设你现在负责一个电商系统，马上就有新品上线了，还要有抢购活动，那么你会将哪些功能做微基准性能测试，哪些功能做宏基准性能测试呢？
 
 # 二、Java 编程性能调优
+
 ## 2.1 字符串性能优化不容小觑，百M内存轻松存储几十G数据
+
 今天我们就从最基础的String字符串优化讲起。String对象是我们使用最频繁的一个对象类型，但它的性能问题却是最容易被忽略的。String对象作为Java语言中重要的数据类型，是内存中占据空间最大的一个对象。高效地使用字符串，可以提升系统的整体性能。接下来我们就从String对象的实现、特性以及实际使用中的优化这三个方面入手，深入了解。
 
 在开始之前，我想先问你一个小问题，也是我在招聘时，经常会问到面试者的一道题。虽是老生常谈了，但错误率依然很高，当然也有一些面试者答对了，但能解释清楚答案背后原理的人少之又少。问题如下：
 
 通过三种不同的方式创建了三个对象，再依次两两匹配，每组被匹配的两个对象是否相等？代码如下：
+
 ```
 String str1= "abc";
 String str2= new String("abc");
@@ -233,21 +253,22 @@ assertSame(str1==str3)
 ```
 
 ### 2.1.1 String对象是如何实现的？
+
 在Java语言中，Sun公司的工程师们对String对象做了大量的优化，来节约内存空间，提升String对象在系统中的性能。一起来看看优化过程，如下图所示：
 ![alt text](Java-performance-tuning/357f1cb1263fd0b5b3e4ccb6b971c96d.jpg)
 
 1. 在Java6以及之前的版本中，String对象是对char数组进行了封装实现的对象，主要有四个成员变量：char数组、偏移量offset、字符数量count、哈希值hash。String对象是通过offset和count两个属性来定位char[]数组，获取字符串。这么做可以高效、快速地共享数组对象，同时节省内存空间，但这种方式很有可能会导致内存泄漏。
-
 2. 从Java7版本开始到Java8版本，Java对String类做了一些改变。String类中不再有offset和count两个变量了。这样的好处是String对象占用的内存稍微少了些，同时，String.substring方法也不再共享char[]，从而解决了使用该方法可能导致的内存泄漏问题。
-
 3. 从Java9版本开始，工程师将char[]字段改为了byte[]字段，又维护了一个新的属性coder，它是一个编码格式的标识。工程师为什么这样修改呢？我们知道一个char字符占16位，2个字节。这个情况下，存储单字节编码内的字符（占一个字节的字符）就显得非常浪费。JDK1.9的String类为了节约内存空间，于是使用了占8位，1个字节的byte数组来存放字符串。而新属性coder的作用是，在计算字符串长度或者使用indexOf（）函数时，我们需要根据这个字段，判断如何计算字符串长度。coder属性默认有0和1两个值，0代表Latin-1（单字节编码），1代表UTF-16。如果String判断字符串只包含了Latin-1，则coder属性值为0，反之则为1。
 
 ---
 
 ### 2.1.2 String对象的不可变性
+
 了解了String对象的实现后，你有没有发现在实现代码中String类被final关键字修饰了，而且变量char数组也被final修饰了。我们知道类被final修饰代表该类不可继承，而char[]被final+private修饰，代表了String对象不可被更改。Java实现的这个特性叫作String对象的不可变性，即String对象一旦创建成功，就不能再对它进行改变。
 
 #### Java这样做的好处在哪里呢？
+
 第一，保证String对象的安全性。假设String对象是可变的，那么String对象将可能被恶意修改。
 
 第二，保证hash属性值不会频繁变更，确保了唯一性，使得类似HashMap容器才能实现相应的key-value缓存功能。
@@ -265,18 +286,25 @@ String str = new String(“abc”)这种方式，首先在编译类文件时，"
 首先，我来解释下什么是对象和对象引用。Java初学者往往对此存在误区，特别是一些从PHP转Java的同学。在Java中要比较两个对象是否相等，往往是用==，而要判断两个对象的值是否相等，则需要用equals方法来判断。这是因为str只是String对象的引用，并不是对象本身。对象在内存中是一块内存地址，str则是一个指向该内存地址的引用。所以在刚刚我们说的这个例子中，第一次赋值的时候，创建了一个“hello”对象，str引用指向“hello”地址；第二次赋值的时候，又重新创建了一个对象“world”，str引用指向了“world”，但“hello”对象依然存在于内存中。也就是说str并不是对象，而只是一个对象引用。真正的对象依然还在内存中，没有被改变。
 
 ### 2.1.3 String对象的优化
+
 了解了String对象的实现原理和特性，接下来我们就结合实际场景，看看如何优化String对象的使用，优化的过程中又有哪些需要注意的地方。
 
 #### 1. 如何构建超大字符串？
+
 编程过程中，字符串的拼接很常见。前面我讲过String对象是不可变的，如果我们使用String对象相加，拼接我们想要的字符串，是不是就会产生多个对象呢？例如以下代码：
+
 ```
 String str= "ab" + "cd" + "ef";
 ```
+
 分析代码可知：首先会生成ab对象，再生成abcd对象，最后生成abcdef对象，从理论上来说，这段代码是低效的。但实际运行中，我们发现只有一个对象生成，这是为什么呢？难道我们的理论判断错了？我们再来看编译后的代码，你会发现编译器自动优化了这行代码，如下：
+
 ```
 String str= "abcdef";
 ```
+
 上面我介绍的是字符串常量的累计，我们再来看看字符串变量的累计又是怎样的呢？
+
 ```
 String str = "abcdef";
 
@@ -294,12 +322,15 @@ for(int i=0; i<1000; i++) {
               str = (new StringBuilder(String.valueOf(str))).append(i).toString();
 }
 ```
+
 综上已知：即使使用+号作为字符串的拼接，也一样可以被编译器优化成StringBuilder的方式。但再细致些，你会发现在编译器优化的代码中，每次循环都会生成一个新的StringBuilder实例，同样也会降低系统的性能。所以平时做字符串拼接的时候，我建议你还是要显示地使用String Builder来提升系统性能。
 
 如果在多线程编程中，String对象的拼接涉及到线程安全，你可以使用StringBuffer。但是要注意，由于StringBuffer是线程安全的，涉及到锁竞争，所以从性能上来说，要比StringBuilder差一些。
 
 #### 2. 如何使用String.intern节省内存？
+
 讲完了构建字符串，我们再来讨论下String对象的存储问题。先看一个案例。Twitter每次发布消息状态的时候，都会产生一个地址信息，以当时Twitter用户的规模预估，服务器需要32G的内存来存储地址信息。
+
 ```
 public class Location {
     private String city;
@@ -307,9 +338,11 @@ public class Location {
     private String countryCode;
     private double longitude;
     private double latitude;
-} 
+}
 ```
+
 考虑到其中有很多用户在地址信息上是有重合的，比如，国家、省份、城市等，这时就可以将这部分信息单独列出一个类，以减少重复，代码如下：
+
 ```
 public class SharedLocation {
 
@@ -325,9 +358,11 @@ public class Location {
 	double latitude;
 }
 ```
+
 通过优化，数据存储大小减到了20G左右。但对于内存存储这个数据来说，依然很大，怎么办呢？这个案例来自一位Twitter工程师在QCon全球软件开发大会上的演讲，他们想到的解决方法，就是使用String.intern来节省内存空间，从而优化String对象的存储。
 
 具体做法就是，在每次赋值的时候使用String的intern方法，如果常量池中有相同值，就会重复使用该对象，返回对象引用，这样一开始的对象就可以被回收掉。这种方式可以使重复性非常高的地址信息存储大小从20G降到几百兆。
+
 ```
 SharedLocation sharedLocation = new SharedLocation();
 
@@ -338,13 +373,14 @@ Location location = new Location();
 location.set(sharedLocation);
 location.set(messageInfo.getLongitude());
 location.set(messageInfo.getLatitude());
-
 ```
+
 为了更好地理解，我们再来通过一个简单的例子，回顾下其中的原理：
+
 ```
 String a =new String("abc").intern();
 String b = new String("abc").intern();
-          
+  
 if(a==b) {
     System.out.print("a==b");
 }
@@ -353,6 +389,7 @@ if(a==b) {
 
 a==b
 ```
+
 在字符串常量中，默认会将对象放入常量池；在字符串变量中，对象是会创建在堆内存中，同时也会在常量池中创建一个字符串对象，String对象中的char数组将会引用常量池中的char数组，并返回堆内存对象引用。
 
 如果调用intern方法，会去查看字符串常量池中是否有等于该对象的字符串的引用，如果没有，在JDK1.6版本中会复制堆中的字符串到常量池中，并返回该字符串引用，堆内存中原有的字符串由于没有引用指向它，将会通过垃圾回收器回收。
@@ -364,6 +401,7 @@ a==b
 使用intern方法需要注意的一点是，一定要结合实际场景。因为常量池的实现是类似于一个HashTable的实现方式，HashTable存储的数据越大，遍历的时间复杂度就会增加。如果数据过大，会增加整个字符串常量池的负担。
 
 #### 3.如何使用字符串的分割方法？
+
 最后我想跟你聊聊字符串的分割，这种方法在编码中也很最常见。Split()方法使用了正则表达式实现了其强大的分割功能，而正则表达式的性能是非常不稳定的，使用不恰当会引起回溯问题，很可能导致CPU居高不下。
 
 所以我们应该慎重使用Split()方法，我们可以用String.indexOf()方法代替Split()方法完成字符串的分割。如果实在无法满足需求，你就在使用Split()方法时，对回溯问题加以重视就可以了。
@@ -371,6 +409,7 @@ a==b
 ---
 
 ### 2.1.4 总结
+
 这一讲中，我们认识到做好String字符串性能优化，可以提高系统的整体性能。在这个理论基础上，Java版本在迭代中通过不断地更改成员变量，节约内存空间，对String对象进行优化。我们还特别提到了String对象的不可变性，正是这个特性实现了字符串常量池，通过减少同一个值的字符串对象的重复创建，进一步节约内存。
 
 但也是因为这个特性，我们在做长字符串拼接时，需要显示使用StringBuilder，以提高字符串的拼接性能。最后，在优化方面，我们还可以使用intern方法，让变量字符串对象重复使用常量池中相同值的对象，进而节约内存。
@@ -386,7 +425,9 @@ a==b
 [string的存储](https://blog.csdn.net/mkfka/article/details/108047023)
 
 ---
+
 ## 2.2 慎重使用正则表达式
+
 上一讲，我在讲String对象优化时，提到了Split()方法，该方法使用的正则表达式可能引起回溯问题，今天我们就来深入了解下，这究竟是怎么回事？开始之前，我们先来看一个案例，可以帮助你更好地理解内容。
 
 在一次小型项目开发中，我遇到过这样一个问题。为了宣传新品，我们开发了一个小程序，按照之前评估的访问量，这次活动预计参与用户量30W+，TPS（每秒事务处理量）最高3000左右。
@@ -402,12 +443,14 @@ a==b
 可是一个Split()方法为什么会影响到TPS呢？下面我们就来了解下正则表达式的相关内容，学完了答案也就出来了。
 
 ### 2.2.1 什么是正则表达式？
+
 很基础，这里带你简单回顾一下。正则表达式是计算机科学的一个概念，很多语言都实现了它。正则表达式使用一些特定的元字符来检索、匹配以及替换符合规则的字符串。构造正则表达式语法的元字符，由普通字符、标准字符、限定字符（量词）、定位字符（边界字符）组成。详情可见下图：
 ![alt text](Java-performance-tuning/6ede246f783be477d3219f4218543691.jpg)
 
 ---
 
 ### 2.2.2 正则表达式引擎
+
 正则表达式是一个用正则符号写出的公式，程序对这个公式进行语法分析，建立一个语法分析树，再根据这个分析树结合正则表达式的引擎生成执行程序（这个执行程序我们把它称作状态机，也叫状态自动机），用于字符匹配。而这里的正则表达式引擎就是一套核心算法，用于建立状态机。
 
 目前实现正则表达式引擎的方式有两种：DFA自动机（Deterministic Final Automaton 确定有限状态自动机）和NFA自动机（Non deterministic Finite Automaton 非确定有限状态自动机）。对比来看，构造DFA自动机的代价远大于NFA自动机，但DFA自动机的执行效率高于NFA自动机。
@@ -415,10 +458,12 @@ a==b
 假设一个字符串的长度是n，如果用DFA自动机作为正则表达式引擎，则匹配的时间复杂度为O(n)；如果用NFA自动机作为正则表达式引擎，由于NFA自动机在匹配过程中存在大量的分支和回溯，假设NFA的状态数为s，则该匹配算法的时间复杂度为O（ns）。
 
 NFA自动机的优势是支持更多功能。例如，捕获group、环视、占有优先量词等高级功能。这些功能都是基于子表达式独立进行匹配，因此在编程语言里，使用的正则表达式库都是基于NFA实现的。那么NFA自动机到底是怎么进行匹配的呢？我以下面的字符和表达式来举例说明。
+
 ```
 text=“aabcab”
 regex=“bc”
 ```
+
 NFA自动机会读取正则表达式的每一个字符，拿去和目标字符串匹配，匹配成功就换正则表达式的下一个字符，反之就继续和目标字符串的下一个字符进行匹配。分解一下过程。
 
 首先，读取正则表达式的第一个匹配符和字符串的第一个字符进行比较，b对a，不匹配；继续换字符串的下一个字符，也是a，不匹配；继续换下一个，是b，匹配。然后，同理，读取正则表达式的第二个匹配符和字符串的第四个字符进行比较，c对c，匹配；继续读取正则表达式的下一个字符，然而后面已经没有可匹配的字符了，结束。这就是NFA自动机的匹配过程，虽然在实际应用中，碰到的正则表达式都要比这复杂，但匹配方法是一样的。
@@ -426,7 +471,9 @@ NFA自动机会读取正则表达式的每一个字符，拿去和目标字符�
 ---
 
 ### 2.2.3 NFA自动机的回溯
+
 用NFA自动机实现的比较复杂的正则表达式，在匹配过程中经常会引起回溯问题。大量的回溯会长时间地占用CPU，从而带来系统性能开销。我来举例说明。
+
 ```
 text=“abbc”
 regex=“ab{1,3}c”
@@ -443,16 +490,20 @@ regex=“ab{1,3}c”
 ---
 
 ### 2.2.4 如何减少回溯问题？
+
 既然回溯会给系统带来性能开销，那我们如何应对呢？如果你有仔细看上面那个案例的话，你会发现NFA自动机的贪婪特性就是导火索，这和正则表达式的匹配模式息息相关，一起来了解一下。
 
 #### 1.贪婪模式（Greedy）
 
 顾名思义，就是在数量匹配中，如果单独使用+、 ? 、* 或{min,max} 等量词，正则表达式会匹配尽可能多的内容。例如，上边那个例子：
+
 ```
 text=“abbc”
 regex=“ab{1,3}c”
 ```
+
 就是在贪婪模式下，NFA自动机读取了最大的匹配范围，即匹配3个b字符。匹配发生了一次失败，就引起了一次回溯。如果匹配结果是“abbbc”，就会匹配成功。
+
 ```
 text=“abbbc”
 regex=“ab{1,3}c”
@@ -461,15 +512,19 @@ regex=“ab{1,3}c”
 #### 2.懒惰模式（Reluctant）
 
 在该模式下，正则表达式会尽可能少地重复匹配字符。如果匹配成功，它会继续匹配剩余的字符串。例如，在上面例子的字符后面加一个“？”，就可以开启懒惰模式。
+
 ```
 text=“abc”
 regex=“ab{1,3}?c”
 ```
+
 匹配结果是“abc”，该模式下NFA自动机首先选择最小的匹配范围，即匹配1个b字符，因此就避免了回溯问题。懒惰模式是无法完全避免回溯的，我们再通过一个例子来了解下懒惰模式在什么情况下会发生回溯问题。
+
 ```
 text=“abbc”
 regex=“ab{1,3}?c”
 ```
+
 以上匹配结果依然是成功的，这又是为什么呢？我们可以通过懒惰模式的匹配过程来了解下原因。
 
 首先，读取正则表达式第一个匹配符a和字符串第一个字符a进行比较，a对a，匹配。然后，读取正则表达式第二个匹配符 b{1,3} 和字符串的第二个字符b进行比较，匹配。
@@ -481,27 +536,35 @@ regex=“ab{1,3}?c”
 #### 3.独占模式（Possessive）
 
 同贪婪模式一样，独占模式一样会最大限度地匹配更多内容；不同的是，在独占模式下，匹配失败就会结束匹配，不会发生回溯问题。还是上边的例子，在字符后面加一个“+”，就可以开启独占模式。
+
 ```
 text=“abbc”
 regex=“ab{1,3}+bc”
 ```
+
 结果是不匹配，结束匹配，不会发生回溯问题。同样，独占模式也不能避免回溯的发生，我们再拿最开始的这个例子来分析下：
+
 ```
 text=“abbc”
 regex=“ab{1,3}+c”
 ```
+
 结果是匹配的，这是因为与贪婪模式一样，独占模式一样会最大限度地匹配更多内容，即匹配完所有的b之后，再去匹配c，则匹配成功了。讲到这里，你应该非常清楚了，在很多情况下使用懒惰模式和独占模式可以减少回溯的发生。还有开头那道“一个split()方法为什么会影响到TPS”的存疑，你应该也清楚了吧？我使用了split()方法提取域名，并检查请求参数是否符合规定。split()在匹配分组时遇到特殊字符产生了大量回溯，我当时是在正则表达式后加了一个需要匹配的字符和“+”，解决了这个问题。
+
 ```
 \\?(([A-Za-z0-9-~_=%]++\\&{0,1})+)
 ```
 
 ### 2.2.5 正则表达式的优化
+
 正则表达式带来的性能问题，给我敲了个警钟，在这里我也希望分享给你一些心得。任何一个细节问题，都有可能导致性能问题，而这背后折射出来的是我们对这项技术的了解不够透彻。所以我鼓励你学习性能调优，要掌握方法论，学会透过现象看本质。下面我就总结几种正则表达式的优化方法给你。
 
 #### 1.少用贪婪模式，多用独占模式
+
 贪婪模式会引起回溯问题，我们可以使用独占模式来避免回溯。前面详解过了，这里我就不再解释了。
 
 #### 2.减少分支选择
+
 分支选择类型“(X|Y|Z)”的正则表达式会降低性能，我们在开发的时候要尽量减少使用。如果一定要用，我们可以通过以下几种方式来优化：
 
 首先，我们需要考虑选择的顺序，将比较常用的选择项放在前面，使它们可以较快地被匹配；
@@ -511,9 +574,11 @@ regex=“ab{1,3}+c”
 最后，如果是简单的分支选择类型，我们可以用三次index代替“(X|Y|Z)”，如果测试的话，你就会发现三次index的效率要比“(X|Y|Z)”高出一些。
 
 #### 3.减少捕获嵌套
+
 在讲这个方法之前，我先简单介绍下什么是捕获组和非捕获组。捕获组是指把正则表达式中，子表达式匹配的内容保存到以数字编号或显式命名的数组中，方便后面引用。一般一个()就是一个捕获组，捕获组可以进行嵌套。非捕获组则是指参与匹配却不进行分组编号的捕获组，其表达式一般由（?:exp）组成。
 
 在正则表达式中，每个捕获组都有一个编号，编号0代表整个匹配到的内容。我们可以看下面的例子：
+
 ```
 public static void main( String[] args )
 {
@@ -529,14 +594,18 @@ public static void main( String[] args )
     }
 }
 ```
+
 运行结果：
+
 ```
 <input high=\"20\" weight=\"70\">test</input>
 <input high=\"20\" weight=\"70\">
 test
 </input>
 ```
+
 如果你并不需要获取某一个分组内的文本，那么就使用非捕获分组。例如，使用“(?:X)”代替“(X)”，我们再看下面的例子：
+
 ```
 public static void main( String[] args )
 {
@@ -550,16 +619,20 @@ public static void main( String[] args )
     }
 }
 ```
+
 运行结果：
+
 ```
 <input high=\"20\" weight=\"70\">test</input>
 test
 ```
+
 综上可知：减少不需要获取的分组，可以提高正则表达式的性能。
 
 ---
 
 ### 2.2.6 总结
+
 正则表达式虽然小，却有着强大的匹配功能。我们经常用到它，比如，注册页面手机号或邮箱的校验。但很多时候，我们又会因为它小而忽略它的使用规则，测试用例中又没有覆盖到一些特殊用例，不乏上线就中招的情况发生。
 
 综合我以往的经验来看，如果使用正则表达式能使你的代码简洁方便，那么在做好性能排查的前提下，可以去使用；如果不能，那么正则表达式能不用就不用，以此避免造成更多的性能问题。
@@ -574,11 +647,13 @@ test
 ---
 
 ## 2.3  ArrayList还是LinkedList? 使用不当性能差千倍
+
 集合作为一种存储数据的容器，是我们日常开发中使用最频繁的对象类型之一。JDK为开发者提供了一系列的集合类型，这些集合类型使用不同的数据结构来实现。因此，不同的集合类型，使用场景也不同。很多同学在面试的时候，经常会被问到集合的相关问题，比较常见的有ArrayList和LinkedList的区别。相信大部分同学都能回答上：“ArrayList是基于数组实现，LinkedList是基于链表实现。”
 
 而在回答使用场景的时候，我发现大部分同学的答案是：“ArrayList和LinkedList在新增、删除元素时，LinkedList的效率要高于 ArrayList，而在遍历的时候，ArrayList的效率要高于LinkedList。”这个回答是否准确呢？今天这一讲就带你验证。
 
 ### 2.3.1 初识List接口
+
 在学习List集合类之前，我们先来通过这张图，看下List集合类的接口和类的实现关系：
 ![alt text](Java-performance-tuning/54f564eb63a2c74723a82540668fc009.jpg)
 
@@ -589,6 +664,7 @@ ArrayList和Vector使用了数组实现，这两者的实现原理差不多，Li
 ---
 
 ### 2.3.2 ArrayList是如何实现的？
+
 ArrayList很常用，先来几道测试题，自检下你对ArrayList的了解程度。
 
 问题1：我们在查看ArrayList的实现类源码时，你会发现对象数组elementData使用了transient修饰，我们知道transient关键字修饰该属性，则表示该属性不会被序列化，然而我们并没有看到文档中说明ArrayList不能被序列化，这是为什么？
@@ -600,29 +676,35 @@ ArrayList很常用，先来几道测试题，自检下你对ArrayList的了解�
 如果你对这几道测试都没有一个全面的了解，那就跟我一起从数据结构、实现原理以及源码角度重新认识下ArrayList吧。
 
 #### 1.ArrayList实现类
+
 ArrayList实现了List接口，继承了AbstractList抽象类，底层是数组实现的，并且实现了自增扩容数组大小。ArrayList还实现了Cloneable接口和Serializable接口，所以他可以实现克隆和序列化。
 
 ArrayList还实现了RandomAccess接口。你可能对这个接口比较陌生，不知道具体的用处。通过代码我们可以发现，这个接口其实是一个空接口，什么也没有实现，那ArrayList为什么要去实现它呢？其实RandomAccess接口是一个标志接口，他标志着“只要实现该接口的List类，都能实现快速随机访问”。
+
 ```
 public class ArrayList<E> extends AbstractList<E>
         implements List<E>, RandomAccess, Cloneable, java.io.Serializable
 ```
 
 #### 2.ArrayList属性
+
 ArrayList属性主要由数组长度size、对象数组elementData、初始化容量default_capacity等组成， 其中初始化容量默认大小为10。
+
 ```
-  //默认初始化容量
+//默认初始化容量
     private static final int DEFAULT_CAPACITY = 10;
     //对象数组
     transient Object[] elementData; 
     //数组长度
     private int size;
 ```
+
 从ArrayList属性来看，它没有被任何的多线程关键字修饰，但elementData被关键字transient修饰了。这就是我在上面提到的第一道测试题：transient关键字修饰该字段则表示该属性不会被序列化，但ArrayList其实是实现了序列化接口，这到底是怎么回事呢？
 
 这还得从“ArrayList是基于数组实现“开始说起，由于ArrayList的数组是基于动态扩增的，所以并不是所有被分配的内存空间都存储了数据。如果采用外部序列化法实现数组的序列化，会序列化整个数组。ArrayList为了避免这些没有存储数据的内存空间被序列化，内部提供了两个私有方法writeObject以及readObject来自我完成序列化与反序列化，从而在序列化与反序列化数组时节省了空间和时间。因此使用transient修饰数组，是防止对象数组被其他外部方法序列化。
 
 #### 3.ArrayList构造函数
+
 ArrayList类实现了三个构造函数，第一个是创建ArrayList对象时，传入一个初始化值；第二个是默认创建一个空数组对象；第三个是传入一个集合类型进行初始化。
 
 当ArrayList新增元素时，如果所存储的元素已经超过其已有大小，它会计算元素大小后再进行动态扩容，数组的扩容会导致整个数组进行一次内存复制。因此，我们在初始化ArrayList时，可以通过第一个构造函数合理指定数组初始大小，这样有助于减少数组的扩容次数，从而提高系统性能。
@@ -649,8 +731,9 @@ public ArrayList(int initialCapacity) {
 #### 4.ArrayList新增元素
 
 ArrayList新增元素的方法有两种，一种是直接将元素加到数组的末尾，另外一种是添加元素到任意位置。
+
 ```
- public boolean add(E e) {
+public boolean add(E e) {
         ensureCapacityInternal(size + 1);  // Increments modCount!!
         elementData[size++] = e;
         return true;
@@ -666,9 +749,11 @@ ArrayList新增元素的方法有两种，一种是直接将元素加到数组�
         size++;
     }
 ```
+
 两个方法的相同之处是在添加元素之前，都会先确认容量大小，如果容量够大，就不用进行扩容；如果容量不够大，就会按照原来数组的1.5倍大小进行扩容，在扩容之后需要将数组复制到新分配的内存地址。
+
 ```
-  private void ensureExplicitCapacity(int minCapacity) {
+private void ensureExplicitCapacity(int minCapacity) {
         modCount++;
 
         // overflow-conscious code
@@ -689,14 +774,17 @@ ArrayList新增元素的方法有两种，一种是直接将元素加到数组�
         elementData = Arrays.copyOf(elementData, newCapacity);
     }
 ```
+
 当然，两个方法也有不同之处，添加元素到任意位置，会导致在该位置后的所有元素都需要重新排列，而将元素添加到数组的末尾，在没有发生扩容的前提下，是不会有元素复制排序过程的。
 
 这里你就可以找到第二道测试题的答案了。如果我们在初始化时就比较清楚存储数据的大小，就可以在ArrayList初始化时指定数组容量大小，并且在添加元素时，只在数组末尾添加元素，那么ArrayList在大量新增元素的场景下，性能并不会变差，反而比其他List集合的性能要好。
 
 #### 5.ArrayList删除元素
+
 ArrayList的删除方法和添加任意位置元素的方法是有些相同的。ArrayList在每一次有效的删除元素操作之后，都要进行数组的重组，并且删除的元素位置越靠前，数组重组的开销就越大。
+
 ```
- public E remove(int index) {
+public E remove(int index) {
         rangeCheck(index);
 
         modCount++;
@@ -713,9 +801,11 @@ ArrayList的删除方法和添加任意位置元素的方法是有些相同的�
 ```
 
 #### 6.ArrayList遍历元素
+
 由于ArrayList是基于数组实现的，所以在获取元素的时候是非常快捷的。
+
 ```
-  public E get(int index) {
+public E get(int index) {
         rangeCheck(index);
 
         return elementData(index);
@@ -729,9 +819,11 @@ ArrayList的删除方法和添加任意位置元素的方法是有些相同的�
 ---
 
 ### 2.3.3 LinkedList是如何实现的？
+
 虽然LinkedList与ArrayList都是List类型的集合，但LinkedList的实现原理却和ArrayList大相径庭，使用场景也不太一样。LinkedList是基于双向链表数据结构实现的，LinkedList定义了一个Node结构，Node结构中包含了3个部分：元素内容item、前指针prev以及后指针next，代码如下。
+
 ```
- private static class Node<E> {
+private static class Node<E> {
         E item;
         Node<E> next;
         Node<E> prev;
@@ -751,12 +843,14 @@ ArrayList的删除方法和添加任意位置元素的方法是有些相同的�
 - first/last属性能更清晰地表达链表的链头和链尾概念；
 - first/last方式可以在初始化LinkedList的时候节省new一个Entry；
 - first/last方式最重要的性能优化是链头和链尾的插入删除操作更加快捷了。
-这里同ArrayList的讲解一样，我将从数据结构、实现原理以及源码分析等几个角度带你深入了解LinkedList。
+  这里同ArrayList的讲解一样，我将从数据结构、实现原理以及源码分析等几个角度带你深入了解LinkedList。
 
 #### 1.LinkedList实现类
+
 LinkedList类实现了List接口、Deque接口，同时继承了AbstractSequentialList抽象类，LinkedList既实现了List类型又有Queue类型的特点；LinkedList也实现了Cloneable和Serializable接口，同ArrayList一样，可以实现克隆和序列化。
 
 由于LinkedList存储数据的内存地址是不连续的，而是通过指针来定位不连续地址，因此，LinkedList不支持随机快速访问，LinkedList也就不能实现RandomAccess接口。
+
 ```
 public class LinkedList<E>
     extends AbstractSequentialList<E>
@@ -764,17 +858,21 @@ public class LinkedList<E>
 ```
 
 #### 2.LinkedList属性
+
 我们前面讲到了LinkedList的两个重要属性first/last属性，其实还有一个size属性。我们可以看到这三个属性都被transient修饰了，原因很简单，我们在序列化的时候不会只对头尾进行序列化，所以LinkedList也是自行实现readObject和writeObject进行序列化与反序列化。
+
 ```
-    transient int size = 0;
+transient int size = 0;
     transient Node<E> first;
     transient Node<E> last;
 ```
 
 #### 3.LinkedList新增元素
+
 LinkedList添加元素的实现很简洁，但添加的方式却有很多种。默认的add (Ee)方法是将添加的元素加到队尾，首先是将last元素置换到临时变量中，生成一个新的Node节点对象，然后将last引用指向新节点对象，之前的last对象的前指针指向新节点对象。
+
 ```
- public boolean add(E e) {
+public boolean add(E e) {
         linkLast(e);
         return true;
     }
@@ -791,9 +889,11 @@ LinkedList添加元素的实现很简洁，但添加的方式却有很多种。�
         modCount++;
     }
 ```
+
 LinkedList也有添加元素到任意位置的方法，如果我们是将元素添加到任意两个元素的中间位置，添加元素操作只会改变前后元素的前后指针，指针将会指向添加的新元素，所以相比ArrayList的添加操作来说，LinkedList的性能优势明显。
+
 ```
- public void add(int index, E element) {
+public void add(int index, E element) {
         checkPositionIndex(index);
 
         if (index == size)
@@ -817,24 +917,29 @@ LinkedList也有添加元素到任意位置的方法，如果我们是将元素�
 ```
 
 #### 4.LinkedList删除元素
+
 在LinkedList删除元素的操作中，我们首先要通过循环找到要删除的元素，如果要删除的位置处于List的前半段，就从前往后找；若其位置处于后半段，就从后往前找。这样做的话，无论要删除较为靠前或较为靠后的元素都是非常高效的，但如果List拥有大量元素，移除的元素又在List的中间段，那效率相对来说会很低。
 
 #### 5.LinkedList遍历元素
+
 LinkedList的获取元素操作实现跟LinkedList的删除元素操作基本类似，通过分前后半段来循环查找到对应的元素。但是通过这种方式来查询元素是非常低效的，特别是在for循环遍历的情况下，每一次循环都会去遍历半个List。所以在LinkedList循环遍历时，我们可以使用iterator方式迭代循环，直接拿到我们的元素，而不需要通过循环查找List。
 
 ---
 
 ### 2.3.4 总结
+
 前面我们已经从源码的实现角度深入了解了ArrayList和LinkedList的实现原理以及各自的特点。如果你能充分理解这些内容，很多实际应用中的相关性能问题也就迎刃而解了。就像如果现在还有人跟你说，“ArrayList和LinkedList在新增、删除元素时，LinkedList的效率要高于ArrayList，而在遍历的时候，ArrayList的效率要高于LinkedList”，你还会表示赞同吗？
 
 现在我们不妨通过几组测试来验证一下。这里因为篇幅限制，所以我就直接给出测试结果了，对应的测试代码你可以访问[Github](https://github.com/nickliuchao/collection)查看和下载。
 
 #### 1.ArrayList和LinkedList新增元素操作测试
+
 - 从集合头部位置新增元素
 - 从集合中间位置新增元素
 - 从集合尾部位置新增元素
 
 测试结果(花费时间)：
+
 - ArrayList>LinkedList
 - ArrayList<LinkedList
 - ArrayList<LinkedList
@@ -852,25 +957,27 @@ LinkedList的获取元素操作实现跟LinkedList的删除元素操作基本类
 - 从集合尾部位置删除元素
 
 测试结果(花费时间)：
+
 - ArrayList>LinkedList
 - ArrayList<LinkedList
 - ArrayList<LinkedList
-ArrayList和LinkedList删除元素操作测试的结果和添加元素操作测试的结果很接近，这是一样的原理，我在这里就不重复讲解了。
+  ArrayList和LinkedList删除元素操作测试的结果和添加元素操作测试的结果很接近，这是一样的原理，我在这里就不重复讲解了。
 
 #### 3.ArrayList和LinkedList遍历元素操作测试
+
 - for(;;)循环
 - 迭代器迭代循环
-测试结果(花费时间)：
-
+  测试结果(花费时间)：
 - ArrayList<LinkedList
 - ArrayList≈LinkedList
-我们可以看到，LinkedList的for循环性能是最差的，而ArrayList的for循环性能是最好的。
+  我们可以看到，LinkedList的for循环性能是最差的，而ArrayList的for循环性能是最好的。
 
 这是因为LinkedList基于链表实现的，在使用for循环的时候，每一次for循环都会去遍历半个List，所以严重影响了遍历的效率；ArrayList则是基于数组实现的，并且实现了RandomAccess接口标志，意味着ArrayList可以实现快速随机访问，所以for循环效率非常高。LinkedList的迭代循环遍历和ArrayList的迭代循环遍历性能相当，也不会太差，所以在遍历LinkedList时，我们要切忌使用for循环遍历。
 
 **思考题**
 
 我们通过一个使用for循环遍历删除操作ArrayList数组的例子，思考下ArrayList数组的删除操作应该注意的一些问题。
+
 ```
 public static void main(String[] args)
     {
@@ -889,17 +996,19 @@ public static void main(String[] args)
         }
     }
 ```
+
 从上面的代码来看，我定义了一个ArrayList数组，里面添加了一些元素，然后我通过remove删除指定的元素。请问以下两种写法，哪种是正确的？
 
 写法1：
+
 ```
 public static void remove(ArrayList<String> list) 
     {
         Iterator<String> it = list.iterator();
-        
+  
         while (it.hasNext()) {
             String str = it.next();
-            
+  
             if (str.equals("b")) {
                 it.remove();
             }
@@ -907,7 +1016,9 @@ public static void remove(ArrayList<String> list)
 
     }
 ```
+
 写法2：
+
 ```
 public static void remove(ArrayList<String> list) 
     {
@@ -924,6 +1035,7 @@ public static void remove(ArrayList<String> list)
 **解答**：写法1 ，写法2会抛ConcurrentModificationException，写法2用了foreach循环，checkForComodification检查不通过
 
 ## 2.4 常用的性能测试工具
+
 常用的性能测试工具有很多，在这里我将列举几个比较实用的。
 
 对于开发人员来说，首选是一些开源免费的性能（压力）测试软件，例如ab（ApacheBench）、JMeter等；对于专业的测试团队来说，付费版的LoadRunner是首选。当然，也有很多公司是自行开发了一套量身定做的性能测试软件，优点是定制化强，缺点则是通用性差。
@@ -931,6 +1043,7 @@ public static void remove(ArrayList<String> list)
 接下来，我会为你重点介绍ab和JMeter两款测试工具的特点以及常规的使用方法。
 
 ### 2.4.1 ab
+
 ab测试工具是Apache提供的一款测试工具，具有简单易上手的特点，在测试Web服务时非常实用。
 
 ab可以在Windows系统中使用，也可以在Linux系统中使用。这里我说下在Linux系统中的安装方法，非常简单，只需要在Linux系统中输入yum-y install httpd-tools命令，就可以了。
@@ -939,23 +1052,29 @@ ab可以在Windows系统中使用，也可以在Linux系统中使用。这里我
 ![alt text](Java-performance-tuning/ac58706f86ebd1d7349561ae501fca0a.png)
 
 ab工具用来测试post get接口请求非常便捷，可以通过参数指定请求数、并发数、请求参数等。例如，一个测试并发用户数为10、请求数量为100的的post请求输入如下：
+
 ```
 ab -n 100  -c 10 -p 'post.txt' -T 'application/x-www-form-urlencoded' 'http://test.api.com/test/register'
 ```
+
 post.txt为存放post参数的文档，存储格式如下：
+
 ```
 usernanme=test&password=test&sex=1
 ```
+
 附上几个常用参数的含义：
 
 - -n：总请求次数（最小默认为1）；
 - -c：并发次数（最小默认为1且不能大于总请求次数，例如：10个请求，10个并发，实际就是1人请求1次）；
 - -p：post参数文档路径（-p和-T参数要配合使用）；
 - -T：header头内容类型（此处切记是大写英文字母T）。
-当我们测试一个get请求接口时，可以直接在链接的后面带上请求的参数：
+  当我们测试一个get请求接口时，可以直接在链接的后面带上请求的参数：
+
 ```
 ab -c 10 -n 100 http://www.test.api.com/test/login?userName=test&password=test
 ```
+
 输出结果如下：
 ![alt text](Java-performance-tuning/66e7cf2dafa91a3ae80405f97a91899b.png)
 以上输出中，有几项性能指标可以提供给你参考使用：
@@ -968,6 +1087,7 @@ ab -c 10 -n 100 http://www.test.api.com/test/login?userName=test&password=test
 ---
 
 ### 2.4.2.JMeter
+
 JMeter是Apache提供的一款功能性比较全的性能测试工具，同样可以在Windows和Linux环境下安装使用。JMeter在Windows环境下使用了图形界面，可以通过图形界面来编写测试用例，具有易学和易操作的特点。
 
 JMeter不仅可以实现简单的并发性能测试，还可以实现复杂的宏基准测试。我们可以通过录制脚本的方式，在JMeter实现整个业务流程的测试。JMeter也支持通过csv文件导入参数变量，实现用多样化的参数测试系统性能。Windows下的JMeter安装非常简单，在官网下载安装包，解压后即可使用。如果你需要打开图形化界面，那就进入到bin目录下，找到jmeter.bat文件，双击运行该文件就可以了。
@@ -988,6 +1108,7 @@ JMeter的功能非常全面，我在这里简单介绍下如何录制测试脚�
 ---
 
 ### 2.4.3 LoadRunner
+
 LoadRunner是一款商业版的测试工具，并且License的售价不低。
 
 作为一款专业的性能测试工具，LoadRunner在性能压测时，表现得非常稳定和高效。相比JMeter，LoadRunner可以模拟出不同的内网IP地址，通过分配不同的IP地址给测试的用户，模拟真实环境下的用户。这里我就不展开详述了。
@@ -995,14 +1116,1244 @@ LoadRunner是一款商业版的测试工具，并且License的售价不低。
 ---
 
 ### 2.4.4 总结
+
 三种常用的性能测试工具就介绍完了，最后我把今天的主要内容为你总结了一张图。
 ![alt text](Java-performance-tuning/a70d0081607081471df4db435641b51a.jpg)
 
-
 现在测试工具非常多，包括阿里云的PTS测试工具也很好用，但每款测试工具其实都有自己的优缺点。个人建议，还是在熟练掌握其中一款测试工具的前提下，再去探索其他测试工具的使用方法会更好。
+
+## 2.5 Stream如何提高遍历集合效率？
+
+上一讲中，我在讲List集合类，那我想你一定也知道集合的顶端接口Collection。在Java8中，Collection新增了两个流方法，分别是Stream()和parallelStream()。
+
+通过英文名不难猜测，这两个方法肯定和Stream有关，那进一步猜测，是不是和我们熟悉的InputStream和OutputStream也有关系呢？集合类中新增的两个Stream方法到底有什么作用？今天，我们就来深入了解下Stream。
+
+### 2.5.1 什么是Stream？
+
+现在很多大数据量系统中都存在分表分库的情况。例如，电商系统中的订单表，常常使用用户ID的Hash值来实现分表分库，这样是为了减少单个表的数据量，优化用户查询订单的速度。但在后台管理员审核订单时，他们需要将各个数据源的数据查询到应用层之后进行合并操作。
+
+例如，当我们需要查询出过滤条件下的所有订单，并按照订单的某个条件进行排序，单个数据源查询出来的数据是可以按照某个条件进行排序的，但多个数据源查询出来已经排序好的数据，并不代表合并后是正确的排序，所以我们需要在应用层对合并数据集合重新进行排序。
+
+在Java8之前，我们通常是通过for循环或者Iterator迭代来重新排序合并数据，又或者通过重新定义Collections.sorts的Comparator方法来实现，这两种方式对于大数据量系统来说，效率并不是很理想。Java8中添加了一个新的接口类Stream，他和我们之前接触的字节流概念不太一样，Java8集合中的Stream相当于高级版的Iterator，他可以通过Lambda 表达式对集合进行各种非常便利、高效的聚合操作（Aggregate Operation），或者大批量数据操作 (Bulk Data Operation)。
+
+Stream的聚合操作与数据库SQL的聚合操作sorted、filter、map等类似。我们在应用层就可以高效地实现类似数据库SQL的聚合操作了，而在数据操作方面，Stream不仅可以通过串行的方式实现数据操作，还可以通过并行的方式处理大批量数据，提高数据的处理效率。接下来我们就用一个简单的例子来体验下Stream的简洁与强大。
+
+这个Demo的需求是过滤分组一所中学里身高在160cm以上的男女同学，我们先用传统的迭代方式来实现，代码如下：
+
+```
+Map<String, List<Student>> stuMap = new HashMap<String, List<Student>>();
+        for (Student stu: studentsList) {
+            if (stu.getHeight() > 160) { //如果身高大于160
+                if (stuMap.get(stu.getSex()) == null) { //该性别还没分类
+                    List<Student> list = new ArrayList<Student>(); //新建该性别学生的列表
+                    list.add(stu);//将学生放进去列表
+                    stuMap.put(stu.getSex(), list);//将列表放到map中
+                } else { //该性别分类已存在
+                    stuMap.get(stu.getSex()).add(stu);//该性别分类已存在，则直接放进去即可
+                }
+            }
+        }
+```
+
+我们再使用Java8中的Stream API进行实现：
+
+1.串行实现
+
+```
+Map<String, List<Student>> stuMap = stuList.stream().filter((Student s) -> s.getHeight() > 160) .collect(Collectors.groupingBy(Student ::getSex));
+```
+
+2.并行实现
+
+```
+Map<String, List<Student>> stuMap = stuList.parallelStream().filter((Student s) -> s.getHeight() > 160) .collect(Collectors.groupingBy(Student ::getSex));
+```
+
+通过上面两个简单的例子，我们可以发现，Stream结合Lambda表达式实现遍历筛选功能非常得简洁和便捷。
+
+---
+
+### 2.5.2 Stream如何优化遍历？
+
+上面我们初步了解了Java8中的Stream API，那Stream是如何做到优化迭代的呢？并行又是如何实现的？下面我们就透过Stream源码剖析Stream的实现原理。
+
+#### 1.Stream操作分类
+
+在了解Stream的实现原理之前，我们先来了解下Stream的操作分类，因为他的操作分类其实是实现高效迭代大数据集合的重要原因之一。为什么这样说，分析完你就清楚了。
+
+官方将Stream中的操作分为两大类：中间操作（Intermediate operations）和终结操作（Terminal operations）。中间操作只对操作进行了记录，即只会返回一个流，不会进行计算操作，而终结操作是实现了计算操作。
+
+- 中间操作又可以分为无状态（Stateless）与有状态（Stateful）操作，前者是指元素的处理不受之前元素的影响，后者是指该操作只有拿到所有元素之后才能继续下去。
+- 终结操作又可以分为短路（Short-circuiting）与非短路（Unshort-circuiting）操作，前者是指遇到某些符合条件的元素就可以得到最终结果，后者是指必须处理完所有元素才能得到最终结果。操作分类详情如下图所示：
+  ![alt text](Java-performance-tuning/ea8dfeebeae8f05ae809ee61b3bf3094.jpg)
+
+我们通常还会将中间操作称为懒操作，也正是由这种懒操作结合终结操作、数据源构成的处理管道（Pipeline），实现了Stream的高效。
+
+#### 2.Stream源码实现
+
+在了解Stream如何工作之前，我们先来了解下Stream包是由哪些主要结构类组合而成的，各个类的职责是什么。参照下图：
+![alt text](Java-performance-tuning/fc256f9f8f9e3224aac10b2ee8940e00.jpg)
+
+- BaseStream和Stream为最顶端的接口类。BaseStream主要定义了流的基本接口方法，例如，spliterator、isParallel等；Stream则定义了一些流的常用操作方法，例如，map、filter等。
+- ReferencePipeline是一个结构类，他通过定义内部类组装了各种操作流。他定义了Head、StatelessOp、StatefulOp三个内部类，实现了BaseStream与Stream的接口方法。
+- Sink接口是定义每个Stream操作之间关系的协议，他包含begin()、end()、cancellationRequested()、accpt()四个方法。ReferencePipeline最终会将整个Stream流操作组装成一个调用链，而这条调用链上的各个Stream操作的上下关系就是通过Sink接口协议来定义实现的。
+
+#### 3.Stream操作叠加
+
+我们知道，一个Stream的各个操作是由处理管道组装，并统一完成数据处理的。在JDK中每次的中断操作会以使用阶段（Stage）命名。
+
+管道结构通常是由ReferencePipeline类实现的，前面讲解Stream包结构时，我提到过ReferencePipeline包含了Head、StatelessOp、StatefulOp三种内部类。
+
+Head类主要用来定义数据源操作，在我们初次调用names.stream()方法时，会初次加载Head对象，此时为加载数据源操作；接着加载的是中间操作，分别为无状态中间操作StatelessOp对象和有状态操作StatefulOp对象，此时的Stage并没有执行，而是通过AbstractPipeline生成了一个中间操作Stage链表；当我们调用终结操作时，会生成一个最终的Stage，通过这个Stage触发之前的中间操作，从最后一个Stage开始，递归产生一个Sink链。如下图所示：
+![alt text](Java-performance-tuning/f548ce93fef2d41b03274295aa0a0419.jpg)
+
+下面我们再通过一个例子来感受下Stream的操作分类是如何实现高效迭代大数据集合的。
+
+```
+List<String> names = Arrays.asList("张三", "李四", "王老五", "李三", "刘老四", "王小二", "张四", "张五六七");
+
+String maxLenStartWithZ = names.stream()
+                    .filter(name -> name.startsWith("张"))
+                    .mapToInt(String::length)
+                    .max()
+                    .toString();
+```
+
+这个例子的需求是查找出一个长度最长，并且以张为姓氏的名字。从代码角度来看，你可能会认为是这样的操作流程：首先遍历一次集合，得到以“张”开头的所有名字；然后遍历一次filter得到的集合，将名字转换成数字长度；最后再从长度集合中找到最长的那个名字并且返回。这里我要很明确地告诉你，实际情况并非如此。我们来逐步分析下这个方法里所有的操作是如何执行的。
+
+首先 ，因为names是ArrayList集合，所以names.stream()方法将会调用集合类基础接口Collection的Stream方法：
+
+```
+default Stream<E> stream() {
+        return StreamSupport.stream(spliterator(), false);
+    }
+```
+
+然后，Stream方法就会调用StreamSupport类的Stream方法，方法中初始化了一个ReferencePipeline的Head内部类对象：
+
+```
+public static <T> Stream<T> stream(Spliterator<T> spliterator, boolean parallel) {
+        Objects.requireNonNull(spliterator);
+        return new ReferencePipeline.Head<>(spliterator,
+                                            StreamOpFlag.fromCharacteristics(spliterator),
+                                            parallel);
+    }
+```
+
+再调用filter和map方法，这两个方法都是无状态的中间操作，所以执行filter和map操作时，并没有进行任何的操作，而是分别创建了一个Stage来标识用户的每一次操作。而通常情况下Stream的操作又需要一个回调函数，所以一个完整的Stage是由数据来源、操作、回调函数组成的三元组来表示。如下图所示，分别是ReferencePipeline的filter方法和map方法：
+
+```
+@Override
+    public final Stream<P_OUT> filter(Predicate<? super P_OUT> predicate) {
+        Objects.requireNonNull(predicate);
+        return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,StreamOpFlag.NOT_SIZED) {
+            @Override
+            Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
+                return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
+                    public void accept(P_OUT u) {
+                        if (predicate.test(u))
+                            downstream.accept(u);
+                    }
+                };
+            }
+        };
+    }
+
+   @Override
+    @SuppressWarnings("unchecked")
+    public final <R> Stream<R> map(Function<? super P_OUT, ? extends R> mapper) {
+        Objects.requireNonNull(mapper);
+        return new StatelessOp<P_OUT, R>(this, StreamShape.REFERENCE,
+                                     StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+            @Override
+            Sink<P_OUT> opWrapSink(int flags, Sink<R> sink) {
+                return new Sink.ChainedReference<P_OUT, R>(sink) {
+                    @Override
+                    public void accept(P_OUT u) {
+                        downstream.accept(mapper.apply(u));
+                    }
+                };
+            }
+        };
+    }
+```
+
+new StatelessOp将会调用父类AbstractPipeline的构造函数，这个构造函数将前后的Stage联系起来，生成一个Stage链表：
+
+```
+AbstractPipeline(AbstractPipeline<?, E_IN, ?> previousStage, int opFlags) {
+        if (previousStage.linkedOrConsumed)
+            throw new IllegalStateException(MSG_STREAM_LINKED);
+        previousStage.linkedOrConsumed = true;
+        previousStage.nextStage = this;//将当前的stage的next指针指向之前的stage
+
+        this.previousStage = previousStage;//赋值当前stage当全局变量previousStage 
+        this.sourceOrOpFlags = opFlags & StreamOpFlag.OP_MASK;
+        this.combinedFlags = StreamOpFlag.combineOpFlags(opFlags, previousStage.combinedFlags);
+        this.sourceStage = previousStage.sourceStage;
+        if (opIsStateful())
+            sourceStage.sourceAnyStateful = true;
+        this.depth = previousStage.depth + 1;
+    }
+```
+
+因为在创建每一个Stage时，都会包含一个opWrapSink()方法，该方法会把一个操作的具体实现封装在Sink类中，Sink采用（处理->转发）的模式来叠加操作。当执行max方法时，会调用ReferencePipeline的max方法，此时由于max方法是终结操作，所以会创建一个TerminalOp操作，同时创建一个ReducingSink，并且将操作封装在Sink类中。
+
+```
+@Override
+    public final Optional<P_OUT> max(Comparator<? super P_OUT> comparator) {
+        return reduce(BinaryOperator.maxBy(comparator));
+    }
+```
+
+最后，调用AbstractPipeline的wrapSink方法，该方法会调用opWrapSink生成一个Sink链表，Sink链表中的每一个Sink都封装了一个操作的具体实现。
+
+```
+@Override
+    @SuppressWarnings("unchecked")
+    final <P_IN> Sink<P_IN> wrapSink(Sink<E_OUT> sink) {
+        Objects.requireNonNull(sink);
+
+        for ( @SuppressWarnings("rawtypes") AbstractPipeline p=AbstractPipeline.this; p.depth > 0; p=p.previousStage) {
+            sink = p.opWrapSink(p.previousStage.combinedFlags, sink);
+        }
+        return (Sink<P_IN>) sink;
+    }
+```
+
+当Sink链表生成完成后，Stream开始执行，通过spliterator迭代集合，执行Sink链表中的具体操作。
+
+```
+@Override
+    final <P_IN> void copyInto(Sink<P_IN> wrappedSink, Spliterator<P_IN> spliterator) {
+        Objects.requireNonNull(wrappedSink);
+
+        if (!StreamOpFlag.SHORT_CIRCUIT.isKnown(getStreamAndOpFlags())) {
+            wrappedSink.begin(spliterator.getExactSizeIfKnown());
+            spliterator.forEachRemaining(wrappedSink);
+            wrappedSink.end();
+        }
+        else {
+            copyIntoWithCancel(wrappedSink, spliterator);
+        }
+    }
+```
+
+Java8中的Spliterator的forEachRemaining会迭代集合，每迭代一次，都会执行一次filter操作，如果filter操作通过，就会触发map操作，然后将结果放入到临时数组object中，再进行下一次的迭代。完成中间操作后，就会触发终结操作max。
+这就是串行处理方式了，那么Stream的另一种处理数据的方式又是怎么操作的呢？
+
+#### 4.Stream并行处理
+
+Stream处理数据的方式有两种，串行处理和并行处理。要实现并行处理，我们只需要在例子的代码中新增一个Parallel()方法，代码如下所示：
+
+```
+List<String> names = Arrays.asList("张三", "李四", "王老五", "李三", "刘老四", "王小二", "张四", "张五六七");
+
+String maxLenStartWithZ = names.stream()
+                    .parallel()
+    	            .filter(name -> name.startsWith("张"))
+    	            .mapToInt(String::length)
+    	            .max()
+    	            .toString();
+```
+
+Stream的并行处理在执行终结操作之前，跟串行处理的实现是一样的。而在调用终结方法之后，实现的方式就有点不太一样，会调用TerminalOp的evaluateParallel方法进行并行处理。
+
+```
+final <R> R evaluate(TerminalOp<E_OUT, R> terminalOp) {
+        assert getOutputShape() == terminalOp.inputShape();
+        if (linkedOrConsumed)
+            throw new IllegalStateException(MSG_STREAM_LINKED);
+        linkedOrConsumed = true;
+
+        return isParallel()
+               ? terminalOp.evaluateParallel(this, sourceSpliterator(terminalOp.getOpFlags()))
+               : terminalOp.evaluateSequential(this, sourceSpliterator(terminalOp.getOpFlags()));
+    }
+```
+
+这里的并行处理指的是，Stream结合了ForkJoin框架，对Stream 处理进行了分片，Splititerator中的estimateSize方法会估算出分片的数据量。ForkJoin框架和估算算法，在这里我就不具体讲解了，如果感兴趣，你可以深入源码分析下该算法的实现。
+
+通过预估的数据量获取最小处理单元的阈值，如果当前分片大小大于最小处理单元的阈值，就继续切分集合。每个分片将会生成一个Sink链表，当所有的分片操作完成后，ForkJoin框架将会合并分片任何结果集。
+
+---
+
+### 2.5.3 合理使用Stream
+
+看到这里，你应该对Stream API是如何优化集合遍历有个清晰的认知了。Stream API用起来简洁，还能并行处理，那是不是使用Stream API，系统性能就更好呢？通过一组测试，我们一探究竟。我们将对常规的迭代、Stream串行迭代以及Stream并行迭代进行性能测试对比，迭代循环中，我们将对数据进行过滤、分组等操作。分别进行以下几组测试：
+
+- 多核CPU服务器配置环境下，对比长度100的int数组的性能；
+- 多核CPU服务器配置环境下，对比长度1.00E+8的int数组的性能；
+- 多核CPU服务器配置环境下，对比长度1.00E+8对象数组过滤分组的性能；
+- 单核CPU服务器配置环境下，对比长度1.00E+8对象数组过滤分组的性能。
+  由于篇幅有限，我这里直接给出统计结果，你也可以自己去验证一下，具体的测试代码可以在[Github](https://github.com/nickliuchao/stream)上查看。通过以上测试，我统计出的测试结果如下（迭代使用时间）：
+- 常规的迭代<Stream并行迭代<Stream串行迭代
+- Stream并行迭代<常规的迭代<Stream串行迭代
+- Stream并行迭代<常规的迭代<Stream串行迭代
+- 常规的迭代<Stream串行迭代<Stream并行迭代
+
+通过以上测试结果，我们可以看到：在循环迭代次数较少的情况下，常规的迭代方式性能反而更好；在单核CPU服务器配置环境中，也是常规迭代方式更有优势；而在大数据循环迭代中，如果服务器是多核CPU的情况下，Stream的并行迭代优势明显。所以我们在平时处理大数据的集合时，应该尽量考虑将应用部署在多核CPU环境下，并且使用Stream的并行迭代方式进行处理。
+
+用事实说话，我们看到其实使用Stream未必可以使系统性能更佳，还是要结合应用场景进行选择，也就是合理地使用Stream。
+
+---
+
+### 2.5.4 总结
+
+纵观Stream的设计实现，非常值得我们学习。从大的设计方向上来说，Stream将整个操作分解为了链式结构，不仅简化了遍历操作，还为实现了并行计算打下了基础。从小的分类方向上来说，Stream将遍历元素的操作和对元素的计算分为中间操作和终结操作，而中间操作又根据元素之间状态有无干扰分为有状态和无状态操作，实现了链结构中的不同阶段。
+
+在串行处理操作中，Stream在执行每一步中间操作时，并不会做实际的数据操作处理，而是将这些中间操作串联起来，最终由终结操作触发，生成一个数据处理链表，通过Java8中的Spliterator迭代器进行数据处理；此时，每执行一次迭代，就对所有的无状态的中间操作进行数据处理，而对有状态的中间操作，就需要迭代处理完所有的数据，再进行处理操作；最后就是进行终结操作的数据处理。
+
+在并行处理操作中，Stream对中间操作基本跟串行处理方式是一样的，但在终结操作中，Stream将结合ForkJoin框架对集合进行切片处理，ForkJoin框架将每个切片的处理结果Join合并起来。最后就是要注意Stream的使用场景。
+
+**思考题：**
+这里有一个简单的并行处理案例，请你找出其中存在的问题。
+
+```
+//使用一个容器装载100个数字，通过Stream并行处理的方式将容器中为单数的数字转移到容器parallelList
+List<Integer> integerList= new ArrayList<Integer>();
+
+for (int i = 0; i <100; i++) {
+      integerList.add(i);
+}
+
+List<Integer> parallelList = new ArrayList<Integer>() ;
+integerList.stream()
+           .parallel()
+           .filter(i->i%2==1)
+           .forEach(i->parallelList.add(i));
+```
+
+**解答：**
+并行流中的 `forEach` 操作可能由不同的线程同时执行，因此会有多个线程并发调用 `parallelList.add(i)` 方法。
+
+`ArrayList` 是非线程安全的，这意味着它的方法在多线程环境下并发执行时，不保证操作的原子性、可见性和有序性。这样的并发修改可能会导致如下的问题：
+
+1. 并发修改异常（`ConcurrentModificationException`）：尽管这个异常更常见于迭代期间的并发修改，有写操作的多线程环境下也可能抛出这个异常。
+2. 数据一致性问题：由于并行执行，可能导致部分元素丢失，不被添加到 `parallelList` 中。
+3. 数据竞争和内存一致性问题：不同线程对共享数据的修改可能互相覆盖，导致 `parallelList` 的状态不确定且最终结果不正确。
+
+为了避免这些问题，你可以使用线程安全的容器替换 `ArrayList`，例如 `Vector` 或 `Collections.synchronizedList` 包装的 `ArrayList`。但是，一个更符合流（stream）处理的解决方案是使用线程安全的数据结构来收集并行流的结果，比如使用 `collect` 方法搭配线程安全的 `Collector`。例如：
+
+```java
+List<Integer> parallelList = integerList.stream()
+                                        .parallel()
+                                        .filter(i -> i % 2 == 1)
+                                        .collect(Collectors.toList());
+```
+
+**补充：**
+
+1. 日常业务开发中不用纠结stream相比普通遍历的性能损耗，stream的优势是把复杂啰嗦的for循环写法给简化了。
+2. 慎用parallelstream，会默认使用内置的forkjoinpool。如果涉及到io并行，一定是要自己弄一个线程池的。如果是纯cpu计算，大部分场景适用普通stream性能也不会差太多
+
+## 2.6 深入浅出HashMap的设计与优化
+
+在上一讲中我提到过Collection接口，那么在Java容器类中，除了这个接口之外，还定义了一个很重要的Map接口，主要用来存储键值对数据。HashMap作为我们日常使用最频繁的容器之一，相信你一定不陌生了。今天我们就从HashMap的底层实现讲起，深度了解下它的设计与优化。
+
+### 2.6.1 常用的数据结构
+
+我在05讲分享List集合类的时候，讲过ArrayList是基于数组的数据结构实现的，LinkedList是基于链表的数据结构实现的，而我今天要讲的HashMap是基于哈希表的数据结构实现的。我们不妨一起来温习下常用的数据结构，这样也有助于你更好地理解后面地内容。
+
+- 数组：采用一段连续的存储单元来存储数据。对于指定下标的查找，时间复杂度为O(1)，但在数组中间以及头部插入数据时，需要复制移动后面的元素。
+- 链表：一种在物理存储单元上非连续、非顺序的存储结构，数据元素的逻辑顺序是通过链表中的指针链接次序实现的。
+- 链表由一系列结点（链表中每一个元素）组成，结点可以在运行时动态生成。每个结点都包含“存储数据单元的数据域”和“存储下一个结点地址的指针域”这两个部分。由于链表不用必须按顺序存储，所以链表在插入的时候可以达到O(1)的复杂度，但查找一个结点或者访问特定编号的结点需要O(n)的时间。
+- 哈希表：根据关键码值（Key value）直接进行访问的数据结构。通过把关键码值映射到表中一个位置来访问记录，以加快查找的速度。这个映射函数叫做哈希函数，存放记录的数组就叫做哈希表。
+- 树：由n（n≥1）个有限结点组成的一个具有层次关系的集合，就像是一棵倒挂的树。
+
+---
+
+### 2.6.2 HashMap的实现结构
+
+了解完数据结构后，我们再来看下HashMap的实现结构。作为最常用的Map类，它是基于哈希表实现的，继承了AbstractMap并且实现了Map接口。哈希表将键的Hash值映射到内存地址，即根据键获取对应的值，并将其存储到内存地址。也就是说HashMap是根据键的Hash值来决定对应值的存储位置。通过这种索引方式，HashMap获取数据的速度会非常快。
+
+例如，存储键值对（x，“aa”）时，哈希表会通过哈希函数f(x)得到"aa"的实现存储位置。但也会有新的问题。如果再来一个(y，“bb”)，哈希函数f(y)的哈希值跟之前f(x)是一样的，这样两个对象的存储地址就冲突了，这种现象就被称为哈希冲突。那么哈希表是怎么解决的呢？方式有很多，比如，开放定址法、再哈希函数法和链地址法。
+
+- 开放定址法很简单，当发生哈希冲突时，如果哈希表未被装满，说明在哈希表中必然还有空位置，那么可以把key存放到冲突位置后面的空位置上去。这种方法存在着很多缺点，例如，查找、扩容等，所以我不建议你作为解决哈希冲突的首选。
+- 再哈希法顾名思义就是在同义词产生地址冲突时再计算另一个哈希函数地址，直到冲突不再发生，这种方法不易产生“聚集”，但却增加了计算时间。如果我们不考虑添加元素的时间成本，且对查询元素的要求极高，就可以考虑使用这种算法设计。
+- HashMap则是综合考虑了所有因素，采用链地址法解决哈希冲突问题。这种方法是采用了数组（哈希表）+ 链表的数据结构，当发生哈希冲突时，就用一个链表结构存储相同Hash值的数据。
+
+---
+
+### 2.6.3 HashMap的重要属性
+
+从HashMap的源码中，我们可以发现，HashMap是由一个Node数组构成，每个Node包含了一个key-value键值对。
+
+```
+transient Node<K,V>[] table;
+```
+
+Node类作为HashMap中的一个内部类，除了key、value两个属性外，还定义了一个next指针。当有哈希冲突时，HashMap会用之前数组当中相同哈希值对应存储的Node对象，通过指针指向新增的相同哈希值的Node对象的引用。
+
+```
+static class Node<K,V> implements Map.Entry<K,V> {
+        final int hash;
+        final K key;
+        V value;
+        Node<K,V> next;
+
+        Node(int hash, K key, V value, Node<K,V> next) {
+            this.hash = hash;
+            this.key = key;
+            this.value = value;
+            this.next = next;
+        }
+}
+```
+
+HashMap还有两个重要的属性：加载因子（loadFactor）和边界值（threshold）。在初始化HashMap时，就会涉及到这两个关键初始化参数。
+
+```
+int threshold;
+final float loadFactor;
+```
+
+LoadFactor属性是用来间接设置Entry数组（哈希表）的内存空间大小，在初始HashMap不设置参数的情况下，默认LoadFactor值为0.75。为什么是0.75这个值呢？这是因为对于使用链表法的哈希表来说，查找一个元素的平均时间是O(1+n)，这里的n指的是遍历链表的长度，因此加载因子越大，对空间的利用就越充分，这就意味着链表的长度越长，查找效率也就越低。如果设置的加载因子太小，那么哈希表的数据将过于稀疏，对空间造成严重浪费。
+
+那有没有什么办法来解决这个因链表过长而导致的查询时间复杂度高的问题呢？你可以先想想，我将在后面的内容中讲到。Entry数组的Threshold是通过初始容量和LoadFactor计算所得，在初始HashMap不设置参数的情况下，默认边界值为12。如果我们在初始化时，设置的初始化容量较小，HashMap中Node的数量超过边界值，HashMap就会调用resize()方法重新分配table数组。这将会导致HashMap的数组复制，迁移到另一块内存中去，从而影响HashMap的效率。
+
+---
+
+### 2.6.4 HashMap添加元素优化
+
+初始化完成后，HashMap就可以使用put()方法添加键值对了。从下面源码可以看出，当程序将一个key-value对添加到HashMap中，程序首先会根据该key的hashCode()返回值，再通过hash()方法计算出hash值，再通过putVal方法中的(n - 1) & hash决定该Node的存储位置。
+
+```
+public V put(K key, V value) {
+        return putVal(hash(key), key, value, false, true);
+    }
+
+ static final int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+    }
+
+  if ((tab = table) == null || (n = tab.length) == 0)
+            n = (tab = resize()).length;
+        //通过putVal方法中的(n - 1) & hash决定该Node的存储位置
+        if ((p = tab[i = (n - 1) & hash]) == null)
+            tab[i] = newNode(hash, key, value, null);
+```
+
+如果你不太清楚hash()以及(n-1)&hash的算法，就请你看下面的详述。我们先来了解下hash()方法中的算法。如果我们没有使用hash()方法计算hashCode，而是直接使用对象的hashCode值，会出现什么问题呢？
+
+假设要添加两个对象a和b，如果数组长度是16，这时对象a和b通过公式(n - 1) & hash运算，也就是(16-1)＆a.hashCode和(16-1)＆b.hashCode，15的二进制为0000000000000000000000000001111，假设对象 A 的 hashCode 为 1000010001110001000001111000000，对象 B 的 hashCode 为 0111011100111000101000010100000，你会发现上述与运算结果都是0。这样的哈希结果就太让人失望了，很明显不是一个好的哈希算法。
+
+但如果我们将 hashCode 值右移 16 位（h >>> 16代表无符号右移16位），也就是取 int 类型的一半，刚好可以将该二进制数对半切开，并且使用位异或运算（如果两个数对应的位置相反，则结果为1，反之为0），这样的话，就能避免上面的情况发生。这就是hash()方法的具体实现方式。简而言之，就是尽量打乱hashCode真正参与运算的低16位。
+
+我再来解释下(n - 1) & hash是怎么设计的，这里的n代表哈希表的长度，哈希表习惯将长度设置为2的n次方，这样恰好可以保证(n - 1) & hash的计算得到的索引值总是位于table数组的索引之内。例如：hash=15，n=16时，结果为15；hash=17，n=16时，结果为1。在获得Node的存储位置后，如果判断Node不在哈希表中，就新增一个Node，并添加到哈希表中，整个流程我将用一张图来说明：
+![alt text](Java-performance-tuning/ebc8c027e556331dc327e18feb00c7d9.jpg)
+从图中我们可以看出：在JDK1.8中，HashMap引入了红黑树数据结构来提升链表的查询效率。
+
+这是因为链表的长度超过8后，红黑树的查询效率要比链表高，所以当链表超过8时，HashMap就会将链表转换为红黑树，这里值得注意的一点是，这时的新增由于存在左旋、右旋效率会降低。讲到这里，我前面我提到的“因链表过长而导致的查询时间复杂度高”的问题，也就迎刃而解了。以下就是put的实现源码:
+
+```
+final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+                   boolean evict) {
+        Node<K,V>[] tab; Node<K,V> p; int n, i;
+        if ((tab = table) == null || (n = tab.length) == 0)
+//1、判断当table为null或者tab的长度为0时，即table尚未初始化，此时通过resize()方法得到初始化的table
+            n = (tab = resize()).length;
+        if ((p = tab[i = (n - 1) & hash]) == null)
+//1.1、此处通过（n - 1） & hash 计算出的值作为tab的下标i，并另p表示tab[i]，也就是该链表第一个节点的位置。并判断p是否为null
+            tab[i] = newNode(hash, key, value, null);
+//1.1.1、当p为null时，表明tab[i]上没有任何元素，那么接下来就new第一个Node节点，调用newNode方法返回新节点赋值给tab[i]
+        else {
+//2.1下面进入p不为null的情况，有三种情况：p为链表节点；p为红黑树节点；p是链表节点但长度为临界长度TREEIFY_THRESHOLD，再插入任何元素就要变成红黑树了。
+            Node<K,V> e; K k;
+            if (p.hash == hash &&
+                ((k = p.key) == key || (key != null && key.equals(k))))
+//2.1.1HashMap中判断key相同的条件是key的hash相同，并且符合equals方法。这里判断了p.key是否和插入的key相等，如果相等，则将p的引用赋给e
+
+                e = p;
+            else if (p instanceof TreeNode)
+//2.1.2现在开始了第一种情况，p是红黑树节点，那么肯定插入后仍然是红黑树节点，所以我们直接强制转型p后调用TreeNode.putTreeVal方法，返回的引用赋给e
+                e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+            else {
+//2.1.3接下里就是p为链表节点的情形，也就是上述说的另外两类情况：插入后还是链表/插入后转红黑树。另外，上行转型代码也说明了TreeNode是Node的一个子类
+                for (int binCount = 0; ; ++binCount) {
+//我们需要一个计数器来计算当前链表的元素个数，并遍历链表，binCount就是这个计数器
+
+                    if ((e = p.next) == null) {
+                        p.next = newNode(hash, key, value, null);
+                        if (binCount >= TREEIFY_THRESHOLD - 1) 
+// 插入成功后，要判断是否需要转换为红黑树，因为插入后链表长度加1，而binCount并不包含新节点，所以判断时要将临界阈值减1
+                            treeifyBin(tab, hash);
+//当新长度满足转换条件时，调用treeifyBin方法，将该链表转换为红黑树
+                        break;
+                    }
+                    if (e.hash == hash &&
+                        ((k = e.key) == key || (key != null && key.equals(k))))
+                        break;
+                    p = e;
+                }
+            }
+            if (e != null) { // existing mapping for key
+                V oldValue = e.value;
+                if (!onlyIfAbsent || oldValue == null)
+                    e.value = value;
+                afterNodeAccess(e);
+                return oldValue;
+            }
+        }
+        ++modCount;
+        if (++size > threshold)
+            resize();
+        afterNodeInsertion(evict);
+        return null;
+    }
+```
+
+---
+
+### 2.6.5 HashMap获取元素优化
+
+当HashMap中只存在数组，而数组中没有Node链表时，是HashMap查询数据性能最好的时候。一旦发生大量的哈希冲突，就会产生Node链表，这个时候每次查询元素都可能遍历Node链表，从而降低查询数据的性能。
+
+特别是在链表长度过长的情况下，性能将明显降低，红黑树的使用很好地解决了这个问题，使得查询的平均复杂度降低到了O(log(n))，链表越长，使用黑红树替换后的查询效率提升就越明显。
+
+我们在编码中也可以优化HashMap的性能，例如，重写key值的hashCode()方法，降低哈希冲突，从而减少链表的产生，高效利用哈希表，达到提高性能的效果。
+
+---
+
+### 2.6.6 HashMap扩容优化
+
+HashMap也是数组类型的数据结构，所以一样存在扩容的情况。在JDK1.7 中，HashMap整个扩容过程就是分别取出数组元素，一般该元素是最后一个放入链表中的元素，然后遍历以该元素为头的单向链表元素，依据每个被遍历元素的 hash 值计算其在新数组中的下标，然后进行交换。这样的扩容方式会将原来哈希冲突的单向链表尾部变成扩容后单向链表的头部。
+
+而在 JDK 1.8 中，HashMap对扩容操作做了优化。由于扩容数组的长度是 2 倍关系，所以对于假设初始 tableSize = 4 要扩容到 8 来说就是 0100 到 1000 的变化（左移一位就是 2 倍），在扩容中只用判断原来的 hash 值和左移动的一位（newtable 的值）按位与操作是 0 或 1 就行，0 的话索引不变，1 的话索引变成原索引加上扩容前数组。
+
+之所以能通过这种“与运算“来重新分配索引，是因为 hash 值本来就是随机的，而hash 按位与上 newTable 得到的 0（扩容前的索引位置）和 1（扩容前索引位置加上扩容前数组长度的数值索引处）就是随机的，所以扩容的过程就能把之前哈希冲突的元素再随机分布到不同的索引中去。
+
+---
+
+### 2.6.7 总结
+
+HashMap通过哈希表数据结构的形式来存储键值对，这种设计的好处就是查询键值对的效率高。我们在使用HashMap时，可以结合自己的场景来设置初始容量和加载因子两个参数。当查询操作较为频繁时，我们可以适当地减少加载因子；如果对内存利用率要求比较高，我可以适当的增加加载因子。
+
+我们还可以在预知存储数据量的情况下，提前设置初始容量（初始容量=预知数据量/加载因子）。这样做的好处是可以减少resize()操作，提高HashMap的效率。
+
+HashMap还使用了数组+链表这两种数据结构相结合的方式实现了链地址法，当有哈希值冲突时，就可以将冲突的键值对链成一个链表。
+
+但这种方式又存在一个性能问题，如果链表过长，查询数据的时间复杂度就会增加。HashMap就在Java8中使用了红黑树来解决链表过长导致的查询性能下降问题。以下是HashMap的数据结构图：
+![alt text](Java-performance-tuning/c0a12608e37753c96f2358fe0f6ff86f.jpg)
+
+**思考题:**
+实际应用中，我们设置初始容量，一般得是2的整数次幂。你知道原因吗？
+
+**解答：**
+初始容量设为 2 的整数次幂的目的：
+
+1. 计算索引时（hash & (capacity - 1)）会保证任何哈希码的低位都被考虑到，减少了相同桶中的碰撞。
+2. 计算键应该位于桶数组中哪个位置的索引时，取模（hash % capacity）可以被替换为位运算（hash & (capacity - 1)），位运算在处理器上的执行速度比取模快。
+
+## 2.7 网络通信优化之/O模型:如何解决高并发下1/0瓶颈?
+
+提到Java I/O，相信你一定不陌生。你可能使用I/O操作读写文件，也可能使用它实现Socket的信息传输…这些都是我们在系统中最常遇到的和I/O有关的操作。
+
+我们都知道，I/O的速度要比内存速度慢，尤其是在现在这个大数据时代背景下，I/O的性能问题更是尤为突出，I/O读写已经成为很多应用场景下的系统性能瓶颈，不容我们忽视。今天，我们就来深入了解下Java I/O在高并发、大数据业务场景下暴露出的性能问题，从源头入手，学习优化方法。
+
+### 2.7.1 什么是I/O
+
+I/O是机器获取和交换信息的主要渠道，而流是完成I/O操作的主要方式。
+
+在计算机中，流是一种信息的转换。流是有序的，因此相对于某一机器或者应用程序而言，我们通常把机器或者应用程序接收外界的信息称为输入流（InputStream），从机器或者应用程序向外输出的信息称为输出流（OutputStream），合称为输入/输出流（I/O Streams）。
+
+机器间或程序间在进行信息交换或者数据交换时，总是先将对象或数据转换为某种形式的流，再通过流的传输，到达指定机器或程序后，再将流转换为对象数据。因此，流就可以被看作是一种数据的载体，通过它可以实现数据交换和传输。Java的I/O操作类在包java.io下，其中InputStream、OutputStream以及Reader、Writer类是I/O包中的4个基本类，它们分别处理字节流和字符流。如下图所示：
+![alt text](Java-performance-tuning/64f1e83054e2997f1fd96b221fb0da7d.jpg)
+
+#### 1.字节流
+
+InputStream/OutputStream是字节流的抽象类，这两个抽象类又派生出了若干子类，不同的子类分别处理不同的操作类型。如果是文件的读写操作，就使用FileInputStream/FileOutputStream；如果是数组的读写操作，就使用ByteArrayInputStream/ByteArrayOutputStream；如果是普通字符串的读写操作，就使用BufferedInputStream/BufferedOutputStream。具体内容如下图所示：
+![alt text](Java-performance-tuning/12bbf6e62c7c29ae82bf90fead72b98f.jpg)
+
+#### 2.字符流
+
+Reader/Writer是字符流的抽象类，这两个抽象类也派生出了若干子类，不同的子类分别处理不同的操作类型，具体内容如下图所示：
+![alt text](Java-performance-tuning/24592c6f90300f7bab86ec4141dd7e9f.jpg)
+
+### 2.7.2 传统I/O的性能问题
+
+我们知道，I/O操作分为磁盘I/O操作和网络I/O操作。前者是从磁盘中读取数据源输入到内存中，之后将读取的信息持久化输出在物理磁盘上；后者是从网络中读取信息输入到内存，最终将信息输出到网络中。但不管是磁盘I/O还是网络I/O，在传统I/O中都存在严重的性能问题。
+
+#### 1.多次内存复制
+
+在传统I/O中，我们可以通过InputStream从源数据中读取数据流输入到缓冲区里，通过OutputStream将数据输出到外部设备（包括磁盘、网络）。你可以先看下输入操作在操作系统中的具体流程，如下图所示：
+![alt text](Java-performance-tuning/4c4af15b08d3b11de3fe603a70dc6ac2.jpg)
+
+- JVM会发出read()系统调用，并通过read系统调用向内核发起读请求；
+- 内核向硬件发送读指令，并等待读就绪；
+- 内核把将要读取的数据复制到指向的内核缓存中；
+- 操作系统内核将数据复制到用户空间缓冲区，然后read系统调用返回。
+  在这个过程中，数据先从外部设备复制到内核空间，再从内核空间复制到用户空间，这就发生了两次内存复制操作。这种操作会导致不必要的数据拷贝和上下文切换，从而降低I/O的性能。
+
+#### 2.阻塞
+
+在传统I/O中，InputStream的read()是一个while循环操作，它会一直等待数据读取，直到数据就绪才会返回。这就意味着如果没有数据就绪，这个读取操作将会一直被挂起，用户线程将会处于阻塞状态。
+
+在少量连接请求的情况下，使用这种方式没有问题，响应速度也很高。但在发生大量连接请求时，就需要创建大量监听线程，这时如果线程没有数据就绪就会被挂起，然后进入阻塞状态。一旦发生线程阻塞，这些线程将会不断地抢夺CPU资源，从而导致大量的CPU上下文切换，增加系统的性能开销。
+
+---
+
+### 2.7.2 如何优化I/O操作
+
+面对以上两个性能问题，不仅编程语言对此做了优化，各个操作系统也进一步优化了I/O。JDK1.4发布了java.nio包（new I/O的缩写），NIO的发布优化了内存复制以及阻塞导致的严重性能问题。JDK1.7又发布了NIO2，提出了从操作系统层面实现的异步I/O。下面我们就来了解下具体的优化实现。
+
+#### 1.使用缓冲区优化读写流操作
+
+在传统I/O中，提供了基于流的I/O实现，即InputStream和OutputStream，这种基于流的实现以字节为单位处理数据。
+
+NIO与传统 I/O 不同，它是基于块（Block）的，它以块为基本单位处理数据。在NIO中，最为重要的两个组件是缓冲区（Buffer）和通道（Channel）。Buffer是一块连续的内存块，是 NIO 读写数据的中转地。Channel表示缓冲数据的源头或者目的地，它用于读取缓冲或者写入数据，是访问缓冲的接口。
+
+传统I/O和NIO的最大区别就是传统I/O是面向流，NIO是面向Buffer。Buffer可以将文件一次性读入内存再做后续处理，而传统的方式是边读文件边处理数据。虽然传统I/O后面也使用了缓冲块，例如BufferedInputStream，但仍然不能和NIO相媲美。使用NIO替代传统I/O操作，可以提升系统的整体性能，效果立竿见影。
+
+#### 2. 使用DirectBuffer减少内存复制
+
+NIO的Buffer除了做了缓冲块优化之外，还提供了一个可以直接访问物理内存的类DirectBuffer。普通的Buffer分配的是JVM堆内存，而DirectBuffer是直接分配物理内存(非堆内存)。
+
+我们知道数据要输出到外部设备，必须先从用户空间复制到内核空间，再复制到输出设备，而在Java中，在用户空间中又存在一个拷贝，那就是从Java堆内存中拷贝到临时的直接内存中，通过临时的直接内存拷贝到内存空间中去。此时的直接内存和堆内存都是属于用户空间。
+![alt text](Java-performance-tuning/399d715ed2f687e22ec9ca2a65bd88c2.jpg)
+你肯定会在想，为什么Java需要通过一个临时的非堆内存来复制数据呢？如果单纯使用Java堆内存进行数据拷贝，当拷贝的数据量比较大的情况下，Java堆的GC压力会比较大，而使用非堆内存可以减低GC的压力。
+
+DirectBuffer则是直接将步骤简化为数据直接保存到非堆内存，从而减少了一次数据拷贝。以下是JDK源码中IOUtil.java类中的write方法：
+
+```
+if (src instanceof DirectBuffer)
+            return writeFromNativeBuffer(fd, src, position, nd);
+
+        // Substitute a native buffer
+        int pos = src.position();
+        int lim = src.limit();
+        assert (pos <= lim);
+        int rem = (pos <= lim ? lim - pos : 0); 
+        ByteBuffer bb = Util.getTemporaryDirectBuffer(rem);
+        try {
+            bb.put(src);
+            bb.flip();
+        // ...............
+```
+
+这里拓展一点，由于DirectBuffer申请的是非JVM的物理内存，所以创建和销毁的代价很高。DirectBuffer申请的内存并不是直接由JVM负责垃圾回收，但在DirectBuffer包装类被回收时，会通过Java Reference机制来释放该内存块。
+
+DirectBuffer只优化了用户空间内部的拷贝，而之前我们是说优化用户空间和内核空间的拷贝，那Java的NIO中是否能做到减少用户空间和内核空间的拷贝优化呢？
+
+答案是可以的，DirectBuffer是通过unsafe.allocateMemory(size)方法分配内存，也就是基于本地类Unsafe类调用native方法进行内存分配的。而在NIO中，还存在另外一个Buffer类：MappedByteBuffer，跟DirectBuffer不同的是，MappedByteBuffer是通过本地类调用mmap进行文件内存映射的，map()系统调用方法会直接将文件从硬盘拷贝到用户空间，只进行一次数据拷贝，从而减少了传统的read()方法从硬盘拷贝到内核空间这一步。
+
+#### 3.避免阻塞，优化I/O操作
+
+NIO很多人也称之为Non-block I/O，即非阻塞I/O，因为这样叫，更能体现它的特点。为什么这么说呢？传统的I/O即使使用了缓冲块，依然存在阻塞问题。由于线程池线程数量有限，一旦发生大量并发请求，超过最大数量的线程就只能等待，直到线程池中有空闲的线程可以被复用。而对Socket的输入流进行读取时，读取流会一直阻塞，直到发生以下三种情况的任意一种才会解除阻塞：
+
+- 有数据可读；
+- 连接释放；
+- 空指针或I/O异常。
+
+阻塞问题，就是传统I/O最大的弊端。NIO发布后，通道和多路复用器这两个基本组件实现了NIO的非阻塞，下面我们就一起来了解下这两个组件的优化原理。
+
+##### 通道（Channel）
+
+前面我们讨论过，传统I/O的数据读取和写入是从用户空间到内核空间来回复制，而内核空间的数据是通过操作系统层面的I/O接口从磁盘读取或写入。最开始，在应用程序调用操作系统I/O接口时，是由CPU完成分配，这种方式最大的问题是“发生大量I/O请求时，非常消耗CPU“；之后，操作系统引入了DMA（直接存储器存储），内核空间与磁盘之间的存取完全由DMA负责，但这种方式依然需要向CPU申请权限，且需要借助DMA总线来完成数据的复制操作，如果DMA总线过多，就会造成总线冲突。
+
+通道的出现解决了以上问题，Channel有自己的处理器，可以完成内核空间和磁盘之间的I/O操作。在NIO中，我们读取和写入数据都要通过Channel，由于Channel是双向的，所以读、写可以同时进行。
+
+##### 多路复用器（Selector）
+
+Selector是Java NIO编程的基础。用于检查一个或多个NIO Channel的状态是否处于可读、可写。Selector是基于事件驱动实现的，我们可以在Selector中注册accpet、read监听事件，Selector会不断轮询注册在其上的Channel，如果某个Channel上面发生监听事件，这个Channel就处于就绪状态，然后进行I/O操作。
+
+一个线程使用一个Selector，通过轮询的方式，可以监听多个Channel上的事件。我们可以在注册Channel时设置该通道为非阻塞，当Channel上没有I/O操作时，该线程就不会一直等待了，而是会不断轮询所有Channel，从而避免发生阻塞。
+
+目前操作系统的I/O多路复用机制都使用了epoll，相比传统的select机制，epoll没有最大连接句柄1024的限制。所以Selector在理论上可以轮询成千上万的客户端。下面我用一个生活化的场景来举例，看完你就更清楚Channel和Selector在非阻塞I/O中承担什么角色，发挥什么作用了。
+
+- 我们可以把监听多个I/O连接请求比作一个火车站的进站口。以前检票只能让搭乘就近一趟发车的旅客提前进站，而且只有一个检票员，这时如果有其他车次的旅客要进站，就只能在站口排队。这就相当于最早没有实现线程池的I/O操作。
+- 后来火车站升级了，多了几个检票入口，允许不同车次的旅客从各自对应的检票入口进站。这就相当于用多线程创建了多个监听线程，同时监听各个客户端的I/O请求。
+- 最后火车站进行了升级改造，可以容纳更多旅客了，每个车次载客更多了，而且车次也安排合理，乘客不再扎堆排队，可以从一个大的统一的检票口进站了，这一个检票口可以同时检票多个车次。这个大的检票口就相当于Selector，车次就相当于Channel，旅客就相当于I/O流。
+
+### 2.7.3 总结
+
+Java的传统I/O开始是基于InputStream和OutputStream两个操作流实现的，这种流操作是以字节为单位，如果在高并发、大数据场景中，很容易导致阻塞，因此这种操作的性能是非常差的。还有，输出数据从用户空间复制到内核空间，再复制到输出设备，这样的操作会增加系统的性能开销。
+
+传统I/O后来使用了Buffer优化了“阻塞”这个性能问题，以缓冲块作为最小单位，但相比整体性能来说依然不尽人意。于是NIO发布，它是基于缓冲块为单位的流操作，在Buffer的基础上，新增了两个组件“管道和多路复用器”，实现了非阻塞I/O，NIO适用于发生大量I/O连接请求的场景，这三个组件共同提升了I/O的整体性能。你可以在[Github](https://github.com/nickliuchao/io)上通过几个简单的例子来实践下传统IO、NIO。
+
+**思考题:**
+在JDK1.7版本中，Java发布了NIO的升级包NIO2，也就是AIO。AIO实现了真正意义上的异步I/O，它是直接将I/O操作交给操作系统进行异步处理。这也是对I/O操作的一种优化，那为什么现在很多容器的通信框架都还是使用NIO呢？
+
+**解答：**
+
+1. 成熟度和稳定性
+   NIO 更成熟：NIO 已经存在很长时间，广泛应用于各种项目，成熟且稳定。
+   AIO 相对较新：AIO 相对较新，生产环境中使用较少，相对不够成熟稳定。
+2. 生态系统和兼容性
+   NIO 生态系统广泛：许多成熟的框架（如 Netty、Tomcat）都基于 NIO 实现，有丰富的第三方库支持。
+   兼容性好：广泛的支持和验证使得 NIO 更容易与现有系统和库兼容。
+3. 性能和复杂性
+   性能足够：NIO 在大多数高并发场景下已经足够高效。
+   开发复杂性较低：NIO 编程模型相对简单，易于掌握和应用，而 AIO 编程模型相对复杂。
+4. 平台支持
+   跨平台性好：NIO 对各类操作系统有更好的支持和一致性。
+   AIO 支持不一致：AIO 在不同操作系统上的实现和性能可能存在差异。
+
+## 2.8 网络通信优化之序列化:避免使用Java序列化
+
+当前大部分后端服务都是基于微服务架构实现的。服务按照业务划分被拆分，实现了服务的解耦，但同时也带来了新的问题，不同业务之间通信需要通过接口实现调用。两个服务之间要共享一个数据对象，就需要从对象转换成二进制流，通过网络传输，传送到对方服务，再转换回对象，供服务方法调用。这个编码和解码过程我们称之为序列化与反序列化。
+
+在大量并发请求的情况下，如果序列化的速度慢，会导致请求响应时间增加；而序列化后的传输数据体积大，会导致网络吞吐量下降。所以一个优秀的序列化框架可以提高系统的整体性能。
+
+我们知道，Java提供了RMI框架可以实现服务与服务之间的接口暴露和调用，RMI中对数据对象的序列化采用的是Java序列化。而目前主流的微服务框架却几乎没有用到Java序列化，SpringCloud用的是Json序列化，Dubbo虽然兼容了Java序列化，但默认使用的是Hessian序列化。这是为什么呢？今天我们就来深入了解下Java序列化，再对比近两年比较火的Protobuf序列化，看看Protobuf是如何实现最优序列化的。
+
+### 2.8.1 Java序列化
+
+在说缺陷之前，你先得知道什么是Java序列化以及它的实现原理。Java提供了一种序列化机制，这种机制能够将一个对象序列化为二进制形式（字节数组），用于写入磁盘或输出到网络，同时也能从网络或磁盘中读取字节数组，反序列化成对象，在程序中使用。
+![alt text](Java-performance-tuning/bd4bc4b2746f4b005ca26042412f4ee2.png)
+
+JDK提供的两个输入、输出流对象ObjectInputStream和ObjectOutputStream，它们只能对实现了Serializable接口的类的对象进行反序列化和序列化。ObjectOutputStream的默认序列化方式，仅对对象的非transient的实例变量进行序列化，而不会序列化对象的transient的实例变量，也不会序列化静态变量。
+
+在实现了Serializable接口的类的对象中，会生成一个serialVersionUID的版本号，这个版本号有什么用呢？它会在反序列化过程中来验证序列化对象是否加载了反序列化的类，如果是具有相同类名的不同版本号的类，在反序列化中是无法获取对象的。
+
+具体实现序列化的是writeObject和readObject，通常这两个方法是默认的，当然我们也可以在实现Serializable接口的类中对其进行重写，定制一套属于自己的序列化与反序列化机制。另外，Java序列化的类中还定义了两个重写方法：writeReplace()和readResolve()，前者是用来在序列化之前替换序列化对象的，后者是用来在反序列化之后对返回对象进行处理的。
+
+---
+
+### 2.8.2 Java序列化的缺陷
+
+如果你用过一些RPC通信框架，你就会发现这些框架很少使用JDK提供的序列化。其实不用和不好用多半是挂钩的，下面我们就一起来看看JDK默认的序列化到底存在着哪些缺陷。
+
+#### 1.无法跨语言
+
+现在的系统设计越来越多元化，很多系统都使用了多种语言来编写应用程序。比如，我们公司开发的一些大型游戏就使用了多种语言，C++写游戏服务，Java/Go写周边服务，Python写一些监控应用。而Java序列化目前只适用基于Java语言实现的框架，其它语言大部分都没有使用Java的序列化框架，也没有实现Java序列化这套协议。因此，如果是两个基于不同语言编写的应用程序相互通信，则无法实现两个应用服务之间传输对象的序列化与反序列化。
+
+#### 2.易被攻击
+
+Java官网安全编码指导方针中说明：“对不信任数据的反序列化，从本质上来说是危险的，应该予以避免”。可见Java序列化是不安全的。我们知道对象是通过在ObjectInputStream上调用readObject()方法进行反序列化的，这个方法其实是一个神奇的构造器，它可以将类路径上几乎所有实现了Serializable接口的对象都实例化。这也就意味着，在反序列化字节流的过程中，该方法可以执行任意类型的代码，这是非常危险的。
+
+对于需要长时间进行反序列化的对象，不需要执行任何代码，也可以发起一次攻击。攻击者可以创建循环对象链，然后将序列化后的对象传输到程序中反序列化，这种情况会导致hashCode方法被调用次数呈次方爆发式增长, 从而引发栈溢出异常。例如下面这个案例就可以很好地说明。
+
+```
+Set root = new HashSet();  
+Set s1 = root;  
+Set s2 = new HashSet();  
+for (int i = 0; i < 100; i++) {  
+   Set t1 = new HashSet();  
+   Set t2 = new HashSet();  
+   t1.add("foo"); //使t2不等于t1  
+   s1.add(t1);  
+   s1.add(t2);  
+   s2.add(t1);  
+   s2.add(t2);  
+   s1 = t1;  
+   s2 = t2;   
+}
+```
+
+2015年FoxGlove Security安全团队的breenmachine发布过一篇长博客，主要内容是：通过Apache Commons Collections，Java反序列化漏洞可以实现攻击。一度横扫了WebLogic、WebSphere、JBoss、Jenkins、OpenNMS的最新版，各大Java Web Server纷纷躺枪。其实，Apache Commons Collections就是一个第三方基础库，它扩展了Java标准库里的Collection结构，提供了很多强有力的数据结构类型，并且实现了各种集合工具类。
+
+实现攻击的原理就是：Apache Commons Collections允许链式的任意的类函数反射调用，攻击者通过“实现了Java序列化协议”的端口，把攻击代码上传到服务器上，再由Apache Commons Collections里的TransformedMap来执行。
+
+**那么后来是如何解决这个漏洞的呢？**
+
+很多序列化协议都制定了一套数据结构来保存和获取对象。例如，JSON序列化、ProtocolBuf等，它们只支持一些基本类型和数组数据类型，这样可以避免反序列化创建一些不确定的实例。虽然它们的设计简单，但足以满足当前大部分系统的数据传输需求。我们也可以通过反序列化对象白名单来控制反序列化对象，可以重写resolveClass方法，并在该方法中校验对象名字。代码如下所示：
+
+```
+@Override
+protected Class resolveClass(ObjectStreamClass desc) throws IOException,ClassNotFoundException {
+if (!desc.getName().equals(Bicycle.class.getName())) {
+
+throw new InvalidClassException(
+"Unauthorized deserialization attempt", desc.getName());
+}
+return super.resolveClass(desc);
+}
+```
+
+#### 3.序列化后的流太大
+
+序列化后的二进制流大小能体现序列化的性能。序列化后的二进制数组越大，占用的存储空间就越多，存储硬件的成本就越高。如果我们是进行网络传输，则占用的带宽就更多，这时就会影响到系统的吞吐量。
+
+Java序列化中使用了ObjectOutputStream来实现对象转二进制编码，那么这种序列化机制实现的二进制编码完成的二进制数组大小，相比于NIO中的ByteBuffer实现的二进制编码完成的数组大小，有没有区别呢？
+
+我们可以通过一个简单的例子来验证下：
+
+```
+User user = new User();
+        user.setUserName("test");
+        user.setPassword("test");
+  
+        ByteArrayOutputStream os =new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(os);
+        out.writeObject(user);
+  
+        byte[] testByte = os.toByteArray();
+        System.out.print("ObjectOutputStream 字节编码长度：" + testByte.length + "\n");
+
+  ByteBuffer byteBuffer = ByteBuffer.allocate( 2048);
+
+        byte[] userName = user.getUserName().getBytes();
+        byte[] password = user.getPassword().getBytes();
+        byteBuffer.putInt(userName.length);
+        byteBuffer.put(userName);
+        byteBuffer.putInt(password.length);
+        byteBuffer.put(password);
+  
+        byteBuffer.flip();
+        byte[] bytes = new byte[byteBuffer.remaining()];
+        System.out.print("ByteBuffer 字节编码长度：" + bytes.length+ "\n");
+```
+
+运行结果：
+
+```
+ObjectOutputStream 字节编码长度：99
+ByteBuffer 字节编码长度：16
+```
+
+这里我们可以清楚地看到：Java序列化实现的二进制编码完成的二进制数组大小，比ByteBuffer实现的二进制编码完成的二进制数组大小要大上几倍。因此，Java序列后的流会变大，最终会影响到系统的吞吐量。
+
+#### 4.序列化性能太差
+
+序列化的速度也是体现序列化性能的重要指标，如果序列化的速度慢，就会影响网络通信的效率，从而增加系统的响应时间。我们再来通过上面这个例子，来对比下Java序列化与NIO中的ByteBuffer编码的性能：
+
+```
+User user = new User();
+        user.setUserName("test");
+        user.setPassword("test");
+  
+        long startTime = System.currentTimeMillis();
+  
+        for(int i=0; i<1000; i++) {
+        ByteArrayOutputStream os =new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(os);
+            out.writeObject(user);
+            out.flush();
+            out.close();
+            byte[] testByte = os.toByteArray();
+            os.close();
+        }
+  
+  
+        long endTime = System.currentTimeMillis();
+        System.out.print("ObjectOutputStream 序列化时间：" + (endTime - startTime) + "\n");
+
+long startTime1 = System.currentTimeMillis();
+        for(int i=0; i<1000; i++) {
+        ByteBuffer byteBuffer = ByteBuffer.allocate( 2048);
+
+            byte[] userName = user.getUserName().getBytes();
+            byte[] password = user.getPassword().getBytes();
+            byteBuffer.putInt(userName.length);
+            byteBuffer.put(userName);
+            byteBuffer.putInt(password.length);
+            byteBuffer.put(password);
+  
+            byteBuffer.flip();
+            byte[] bytes = new byte[byteBuffer.remaining()];
+        }
+        long endTime1 = System.currentTimeMillis();
+        System.out.print("ByteBuffer 序列化时间：" + (endTime1 - startTime1)+ "\n");
+```
+
+运行结果：
+
+```
+ObjectOutputStream 序列化时间：29
+ByteBuffer 序列化时间：6
+```
+
+通过以上案例，我们可以清楚地看到：Java序列化中的编码耗时要比ByteBuffer长很多。
+
+---
+
+### 2.8.3 使用Protobuf序列化替换Java序列化
+
+目前业内优秀的序列化框架有很多，而且大部分都避免了Java默认序列化的一些缺陷。例如，最近几年比较流行的**FastJson**、Kryo、Protobuf、Hessian等。我们完全可以找一种替换掉Java序列化，这里我推荐使用Protobuf序列化框架。Protobuf是由Google推出且支持多语言的序列化框架，目前在主流网站上的序列化框架性能对比测试报告中，Protobuf无论是编解码耗时，还是二进制流压缩大小，都名列前茅。
+
+Protobuf以一个 .proto 后缀的文件为基础，这个文件描述了字段以及字段类型，通过工具可以生成不同语言的数据结构文件。在序列化该数据对象的时候，Protobuf通过.proto文件描述来生成Protocol Buffers格式的编码。这里拓展一点，我来讲下什么是Protocol Buffers存储格式以及它的实现原理。
+
+Protocol Buffers 是一种轻便高效的结构化数据存储格式。它使用T-L-V（标识 - 长度 - 字段值）的数据格式来存储数据，T代表字段的正数序列(tag)，Protocol Buffers 将对象中的每个字段和正数序列对应起来，对应关系的信息是由生成的代码来保证的。在序列化的时候用整数值来代替字段名称，于是传输流量就可以大幅缩减；L代表Value的字节长度，一般也只占一个字节；V则代表字段值经过编码后的值。这种数据格式不需要分隔符，也不需要空格，同时减少了冗余字段名。
+
+Protobuf定义了一套自己的编码方式，几乎可以映射Java/Python等语言的所有基础数据类型。不同的编码方式对应不同的数据类型，还能采用不同的存储格式。如下图所示：
+![alt text](Java-performance-tuning/ec0ebe4f622e9edcd9de86cb92f15eeb.jpg)
+对于存储Varint编码数据，由于数据占用的存储空间是固定的，就不需要存储字节长度 Length，所以实际上Protocol Buffers的存储方式是 T - V，这样就又减少了一个字节的存储空间。Protobuf定义的Varint编码方式是一种变长的编码方式，每个字节的最后一位(即最高位)是一个标志位(msb)，用0和1来表示，0表示当前字节已经是最后一个字节，1表示这个数字后面还有一个字节。
+
+对于int32类型数字，一般需要4个字节表示，若采用Varint编码方式，对于很小的int32类型数字，就可以用1个字节来表示。对于大部分整数类型数据来说，一般都是小于256，所以这种操作可以起到很好地压缩数据的效果。我们知道int32代表正负数，所以一般最后一位是用来表示正负值，现在Varint编码方式将最后一位用作了标志位，那还如何去表示正负整数呢？如果使用int32/int64表示负数就需要多个字节来表示，在Varint编码类型中，通过Zigzag编码进行转换，将负数转换成无符号数，再采用sint32/sint64来表示负数，这样就可以大大地减少编码后的字节数。
+
+Protobuf的这种数据存储格式，不仅压缩存储数据的效果好， 在编码和解码的性能方面也很高效。Protobuf的编码和解码过程结合.proto文件格式，加上Protocol Buffer独特的编码格式，只需要简单的数据运算以及位移等操作就可以完成编码与解码。可以说Protobuf的整体性能非常优秀。
+
+---
+
+### 2.8.4 总结
+
+无论是网路传输还是磁盘持久化数据，我们都需要将数据编码成字节码，而我们平时在程序中使用的数据都是基于内存的数据类型或者对象，我们需要通过编码将这些数据转化成二进制字节流；如果需要接收或者再使用时，又需要通过解码将二进制字节流转换成内存数据。我们通常将这两个过程称为序列化与反序列化。
+
+Java默认的序列化是通过Serializable接口实现的，只要类实现了该接口，同时生成一个默认的版本号，我们无需手动设置，该类就会自动实现序列化与反序列化。Java默认的序列化虽然实现方便，但却存在安全漏洞、不跨语言以及性能差等缺陷，所以我强烈建议你避免使用Java序列化。
+
+纵观主流序列化框架，FastJson、Protobuf、Kryo是比较有特点的，而且性能以及安全方面都得到了业界的认可，我们可以结合自身业务来选择一种适合的序列化框架，来优化系统的序列化性能。
+
+**思考题：**
+这是一个使用单例模式实现的类，如果我们将该类实现Java的Serializable接口，它还是单例吗？如果要你来写一个实现了Java的Serializable接口的单例，你会怎么写呢？
+
+```
+public class Singleton implements Serializable{
+
+    private final static Singleton singleInstance = new Singleton();
+
+    private Singleton(){}
+
+    public static Singleton getInstance(){
+       return singleInstance; 
+    }
+}
+```
+
+**解答：**
+在 Java 中，实现 Serializable 接口的单例类在反序列化过程中可能会破坏单例模式。具体来说，当反序列化一个对象时，会创建一个新的对象实例，即使原来的实例已经存在。这就违背了单例模式的设计意图。为了解决这个问题，我们需要通过实现自定义的反序列化机制，确保在反序列化时返回同一个实例。我们可以通过实现 readResolve 方法来实现这一点。
+
+- 反射攻击防护：构造函数中加入检查 if (INSTANCE != null)，防止使用反射创建新的实例。
+- readResolve 方法：eadResolve 方法被定义在反序列化之后自动调用，用来替换反序列化出来的对象。在这个方法中返回实际的单例实例 INSTANCE，保证反序列化不会创建新的实例。
+
+```
+import java.io.ObjectStreamException;
+import java.io.Serializable;
+
+public class Singleton implements Serializable {
+    private static final long serialVersionUID = 1L; // 推荐添加 serialVersionUID 用于版本控制
+  
+    private static final Singleton INSTANCE = new Singleton();
+  
+    private Singleton() {
+        // 通过反射来阻止创建新的实例
+        if (INSTANCE != null) {
+            throw new IllegalStateException("Singleton already initialized");
+        }
+    }
+  
+    public static Singleton getInstance() {
+        return INSTANCE;
+    }
+  
+    // 防止创建新的实例，在反序列化时返回已有实例
+    private Object readResolve() throws ObjectStreamException {
+        return INSTANCE;
+    }
+}
+```
+
+## 2.9 网络通信优化之通信协议:如何优化RPC网络通信?
+
+上一讲中，我提到了微服务框架，其中SpringCloud和Dubbo的使用最为广泛，行业内也一直存在着对两者的比较，很多技术人会为这两个框架哪个更好而争辩。
+
+我记得我们部门在搭建微服务框架时，也在技术选型上纠结良久，还曾一度有过激烈的讨论。当前SpringCloud炙手可热，具备完整的微服务生态，得到了很多同事的票选，但我们最终的选择却是Dubbo，这是为什么呢？
+
+### 2.9.1 RPC通信是大型服务框架的核心
+
+我们经常讨论微服务，首要应该了解的就是微服务的核心到底是什么，这样我们在做技术选型时，才能更准确地把握需求。就我个人理解，我认为微服务的核心是远程通信和服务治理。远程通信提供了服务之间通信的桥梁，服务治理则提供了服务的后勤保障。所以，我们在做技术选型时，更多要考虑的是这两个核心的需求。
+
+我们知道服务的拆分增加了通信的成本，特别是在一些抢购或者促销的业务场景中，如果服务之间存在方法调用，比如，抢购成功之后需要调用订单系统、支付系统、券包系统等，这种远程通信就很容易成为系统的瓶颈。所以，在满足一定的服务治理需求的前提下，对远程通信的性能需求就是技术选型的主要影响因素。目前，很多微服务框架中的服务通信是基于RPC通信实现的，在没有进行组件扩展的前提下，SpringCloud是基于Feign组件实现的RPC通信（基于Http+Json序列化实现），Dubbo是基于SPI扩展了很多RPC通信框架，包括RMI、Dubbo、Hessian等RPC通信框架（默认是Dubbo+Hessian序列化）。不同的业务场景下，RPC通信的选择和优化标准也不同。
+
+例如，开头我提到的我们部门在选择微服务框架时，选择了Dubbo。当时的选择标准就是RPC通信可以支持抢购类的高并发，在这个业务场景中，请求的特点是瞬时高峰、请求量大和传入、传出参数数据包较小。而Dubbo中的Dubbo协议就很好地支持了这个请求。以下是基于Dubbo:2.6.4版本进行的简单的性能测试。分别测试Dubbo+Protobuf序列化以及Http+Json序列化的通信性能（这里主要模拟单一TCP长连接+Protobuf序列化和短连接的Http+Json序列化的性能对比）。为了验证在数据量不同的情况下二者的性能表现，我分别准备了小对象和大对象的性能压测，通过这样的方式我们也可以间接地了解下二者在RPC通信方面的水平。
+
+![1718788109005](images/Java-performance-tuning/1718788109005.png)
+
+![1718788197240](images/Java-performance-tuning/1718788197240.png)
+
+这个测试是我之前的积累，基于测试环境比较复杂，这里我就直接给出结果了，如果你感兴趣的话，可以留言和我讨论。通过以上测试结果可以发现：无论从响应时间还是吞吐量上来看，单一TCP长连接+Protobuf序列化实现的RPC通信框架都有着非常明显的优势。
+
+在高并发场景下，我们选择后端服务框架或者中间件部门自行设计服务框架时，RPC通信是重点优化的对象。其实，目前成熟的RPC通信框架非常多，如果你们公司没有自己的中间件团队，也可以基于开源的RPC通信框架做扩展。在正式进行优化之前，我们不妨简单回顾下RPC。
+
+### 2.9.2 什么是RPC通信
+
+一提到RPC，你是否还想到MVC、SOA这些概念呢？如果你没有经历过这些架构的演变，这些概念就很容易混淆。你可以通过下面这张图来了解下这些架构的演变史。
+
+![](//oss-grow2.alibaba.com/content/2024/03/21fd2919-f534-41da-b117-2bbf0240f89d.jpg?Expires=1718787159&OSSAccessKeyId=LTAI5tMHgGsZrXJ6WkiYuXFN&Signature=B%2FnaCy9TQKpgVykHn4XVm9e1B%2Fg%3D&x-oss-process=style%2Fcontent)
+
+无论是微服务、SOA、还是RPC架构，它们都是分布式服务架构，都需要实现服务之间的互相通信，我们通常把这种通信统称为RPC通信。
+
+- RPC（Remote Process Call），即远程服务调用，是通过网络请求远程计算机程序服务的通信技术。RPC框架封装好了底层网络通信、序列化等技术，我们只需要在项目中引入各个服务的接口包，就可以实现在代码中调用RPC服务同调用本地方法一样。正因为这种方便、透明的远程调用，RPC被广泛应用于当下企业级以及互联网项目中，是实现分布式系统的核心。
+- RMI（Remote Method Invocation）是JDK中最先实现了RPC通信的框架之一，RMI的实现对建立分布式Java应用程序至关重要，是Java体系非常重要的底层技术，很多开源的RPC通信框架也是基于RMI实现原理设计出来的，包括Dubbo框架中也接入了RMI框架。接下来我们就一起了解下RMI的实现原理，看看它存在哪些性能瓶颈有待优化。
+
+### 2.9.3 RMI：JDK自带的RPC通信框架
+
+目前RMI已经很成熟地应用在了EJB以及Spring框架中，是纯Java网络分布式应用系统的核心解决方案。RMI实现了一台虚拟机应用对远程方法的调用可以同对本地方法的调用一样，RMI帮我们封装好了其中关于远程通信的内容。
+
+#### RMI的实现原理
+
+RMI远程代理对象是RMI中最核心的组件，除了对象本身所在的虚拟机，其它虚拟机也可以调用此对象的方法。而且这些虚拟机可以不在同一个主机上，通过远程代理对象，远程应用可以用网络协议与服务进行通信。我们可以通过一张图来详细地了解下整个RMI的通信过程：
+
+![1718788598196](images/Java-performance-tuning/1718788598196.png)
+
+#### RMI在高并发场景下的性能瓶颈
+
+- Java默认序列化
+
+RMI的序列化采用的是Java默认的序列化方式，我在09讲中详细地介绍过Java序列化，我们深知它的性能并不是很好，而且其它语言框架也暂时不支持Java序列化。
+
+* TCP短连接
+
+由于RMI是基于TCP短连接实现，在高并发情况下，大量请求会带来大量连接的创建和销毁，这对于系统来说无疑是非常消耗性能的。
+
+* 阻塞式网络I/O
+
+在08讲中，我提到了网络通信存在I/O瓶颈，如果在Socket编程中使用传统的I/O模型，在高并发场景下基于短连接实现的网络通信就很容易产生I/O阻塞，性能将会大打折扣。
+
+### 2.9.4一个高并发场景下的RPC通信优化路径
+
+SpringCloud的RPC通信和RMI通信的性能瓶颈就非常相似。SpringCloud是基于Http通信协议（短连接）和Json序列化实现的，在高并发场景下并没有优势。 那么，在瞬时高并发的场景下，我们又该如何去优化一个RPC通信呢？RPC通信包括了建立通信、实现报文、传输协议以及传输数据编解码等操作，接下来我们就从每一层的优化出发，逐步实现整体的性能优化。
+
+#### 1.选择合适的通信协议
+
+要实现不同机器间的网络通信，我们先要了解计算机系统网络通信的基本原理。网络通信是两台设备之间实现数据流交换的过程，是基于网络传输协议和传输数据的编解码来实现的。其中网络传输协议有TCP、UDP协议，这两个协议都是基于Socket编程接口之上，为某类应用场景而扩展出的传输协议。通过以下两张图，我们可以大概了解到基于TCP和UDP协议实现的Socket网络通信是怎样的一个流程。
+
+![1718788998862](images/Java-performance-tuning/1718788998862.png)
+
+基于TCP协议实现的Socket通信是有连接的，而传输数据是要通过三次握手来实现数据传输的可靠性，且传输数据是没有边界的，采用的是字节流模式。基于UDP协议实现的Socket通信，客户端不需要建立连接，只需要创建一个套接字发送数据报给服务端，这样就不能保证数据报一定会达到服务端，所以在传输数据方面，基于UDP协议实现的Socket通信具有不可靠性。UDP发送的数据采用的是数据报模式，每个UDP的数据报都有一个长度，该长度将与数据一起发送到服务端。
+
+通过对比，我们可以得出优化方法：为了保证数据传输的可靠性，通常情况下我们会采用TCP协议。如果在局域网且对数据传输的可靠性没有要求的情况下，我们也可以考虑使用UDP协议，毕竟这种协议的效率要比TCP协议高。
+
+#### 2.使用单一长连接
+
+如果是基于TCP协议实现Socket通信，我们还能做哪些优化呢？服务之间的通信不同于客户端与服务端之间的通信。客户端与服务端由于客户端数量多，基于短连接实现请求可以避免长时间地占用连接，导致系统资源浪费。
+
+但服务之间的通信，连接的消费端不会像客户端那么多，但消费端向服务端请求的数量却一样多，我们基于长连接实现，就可以省去大量的TCP建立和关闭连接的操作，从而减少系统的性能消耗，节省时间。
+
+#### 3.优化Socket通信
+
+建立两台机器的网络通信，我们一般使用Java的Socket编程实现一个TCP连接。传统的Socket通信主要存在I/O阻塞、线程模型缺陷以及内存拷贝等问题。我们可以使用比较成熟的通信框架，比如Netty。Netty4对Socket通信编程做了很多方面的优化，具体见下方。实现非阻塞I/O：在08讲中，我们提到了多路复用器Selector实现了非阻塞I/O通信。
+
+- 高效的Reactor线程模型：Netty使用了主从Reactor多线程模型，服务端接收客户端请求连接是用了一个主线程，这个主线程用于客户端的连接请求操作，一旦连接建立成功，将会监听I/O事件，监听到事件后会创建一个链路请求。链路请求将会注册到负责I/O操作的I/O工作线程上，由I/O工作线程负责后续的I/O操作。利用这种线程模型，可以解决在高负载、高并发的情况下，由于单个NIO线程无法监听海量客户端和满足大量I/O操作造成的问题。
+- 串行设计：服务端在接收消息之后，存在着编码、解码、读取和发送等链路操作。如果这些操作都是基于并行去实现，无疑会导致严重的锁竞争，进而导致系统的性能下降。为了提升性能，Netty采用了串行无锁化完成链路操作，Netty提供了Pipeline实现链路的各个操作在运行期间不进行线程切换。
+- 零拷贝：在08讲中，我们提到了一个数据从内存发送到网络中，存在着两次拷贝动作，先是从用户空间拷贝到内核空间，再是从内核空间拷贝到网络I/O中。而NIO提供的ByteBuffer可以使用Direct Buffers模式，直接开辟一个非堆物理内存，不需要进行字节缓冲区的二次拷贝，可以直接将数据写入到内核空间。
+
+除了以上这些优化，我们还可以针对套接字编程提供的一些TCP参数配置项，提高网络吞吐量，Netty可以基于ChannelOption来设置这些参数。
+
+- TCP\_NODELAY：TCP\_NODELAY选项是用来控制是否开启Nagle算法。Nagle算法通过缓存的方式将小的数据包组成一个大的数据包，从而避免大量的小数据包发送阻塞网络，提高网络传输的效率。我们可以关闭该算法，优化对于时延敏感的应用场景。
+- SO\_RCVBUF和SO\_SNDBUF：可以根据场景调整套接字发送缓冲区和接收缓冲区的大小。
+- SO\_BACKLOG：backlog参数指定了客户端连接请求缓冲队列的大小。服务端处理客户端连接请求是按顺序处理的，所以同一时间只能处理一个客户端连接，当有多个客户端进来的时候，服务端就会将不能处理的客户端连接请求放在队列中等待处理。
+- SO\_KEEPALIVE：当设置该选项以后，连接会检查长时间没有发送数据的客户端的连接状态，检测到客户端断开连接后，服务端将回收该连接。我们可以将该时间设置得短一些，来提高回收连接的效率。
+
+#### 4.量身定做报文格式
+
+接下来就是实现报文，我们需要设计一套报文，用于描述具体的校验、操作、传输数据等内容。为了提高传输的效率，我们可以根据自己的业务和架构来考虑设计，尽量实现报体小、满足功能、易解析等特性。我们可以参考下面的数据格式：
+
+![1718795173606](images/Java-performance-tuning/1718795173606.png)
+
+![1718795198393](images/Java-performance-tuning/1718795198393.png)
+
+#### 5.编码、解码
+
+在09讲中，我们分析过序列化编码和解码的过程，对于实现一个好的网络通信协议来说，兼容优秀的序列化框架是非常重要的。如果只是单纯的数据对象传输，我们可以选择性能相对较好的Protobuf序列化，有利于提高网络通信的性能。
+
+#### 6.调整Linux的TCP参数设置选项
+
+如果RPC是基于TCP短连接实现的，我们可以通过修改Linux TCP配置项来优化网络通信。开始TCP配置项的优化之前，我们先来了解下建立TCP连接的三次握手和关闭TCP连接的四次握手，这样有助后面内容的理解。
+
+* 三次握手 ![1718795548503](images/Java-performance-tuning/1718795548503.png)
+* 四次握手![1718795585983](images/Java-performance-tuning/1718795585983.png)
+
+我们可以通过sysctl -a | grep net.xxx命令运行查看Linux系统默认的的TCP参数设置，如果需要修改某项配置，可以通过编辑 vim/etc/sysctl.conf，加入需要修改的配置项， 并通过sysctl -p命令运行生效修改后的配置项设置。通常我们会通过修改以下几个配置项来提高网络吞吐量和降低延时。
+
+![1718795740753](images/Java-performance-tuning/1718795740753.png)
+
+以上就是我们从不同层次对RPC优化的详解，除了最后的Linux系统中TCP的配置项设置调优，其它的调优更多是从代码编程优化的角度出发，最终实现了一套RPC通信框架的优化路径。弄懂了这些，你就可以根据自己的业务场景去做技术选型了，还能很好地解决过程中出现的一些性能问题。
+
+### 2.9.5 总结
+
+在现在的分布式系统中，特别是系统走向微服务化的今天，服务间的通信就显得尤为频繁，掌握服务间的通信原理和通信协议优化，是你的一项的必备技能。在一些并发场景比较多的系统中，我更偏向使用Dubbo实现的这一套RPC通信协议。Dubbo协议是建立的单一长连接通信，网络I/O为NIO非阻塞读写操作，更兼容了Kryo、FST、Protobuf等性能出众的序列化框架，在高并发、小对象传输的业务场景中非常实用。
+
+在企业级系统中，业务往往要比普通的互联网产品复杂，服务与服务之间可能不仅仅是数据传输，还有图片以及文件的传输，所以RPC的通信协议设计考虑更多是功能性需求，在性能方面不追求极致。其它通信框架在功能性、生态以及易用、易入门等方面更具有优势。
+
+**思考题**
+
+目前实现Java RPC通信的框架有很多，实现RPC通信的协议也有很多，除了Dubbo协议以外，你还使用过其它RPC通信协议吗？通过这讲的学习，你能对比谈谈各自的优缺点了吗？
+
+
+| 特性           | Dubbo                          | gRPC                            | Thrift                         | Hessian                    |
+| -------------- | ------------------------------ | ------------------------------- | ------------------------------ | -------------------------- |
+| **协议**       | 多种协议（Dubbo、HTTP 等）     | HTTP/2                          | 多种协议（可选择）             | 自定义二进制协议           |
+| **序列化**     | 多种（Hessian、Protobuf）      | Protobuf                        | 多种（Binary 等）              | 自定义二进制协议           |
+| **服务发现**   | 支持多种注册中心               | 常与其他服务发现工具组合使用    | 常与其他服务发现工具组合使用   | 手动或与其他工具组合使用   |
+| **负载均衡**   | 内置多种策略                   | 需要自行实现或结合其他工具      | 需要自行实现或结合其他工具     | 需要自行实现或结合其他工具 |
+| **跨语言支持** | 主要在 Java 中                 | 支持多种语言                    | 支持多种语言                   | 支持一些其他语言           |
+| **优点**       | 功能丰富，生态系统完善         | 高性能，多语言支持，HTTP/2 特性 | 多语言支持，高吞吐量，可选协议 | 轻量级，易于使用，高效     |
+| **缺点**       | 配置复杂，主要在阿里生态中流行 | 学习曲线较高，复杂性较高        | 工具链复杂，社区活跃度较低     | 功能有限，跨语言支持较少   |
+| **使用场景**   | 企业级应用，大型分布式系统     | 高性能，多语言的微服务架构      | 异构系统，大量语言之间通信     | 轻量级应用，Java 环境      |
+
+## 2.10 答疑课堂：深入了解NIO的优化实现原理
+
+综合查看完近期的留言以后，我的第一篇答疑课堂就顺势诞生了。我将继续讲解I/O优化，对大家在08讲中提到的内容做重点补充，并延伸一些有关I/O的知识点，更多结合实际场景进行分享。话不多说，我们马上切入正题。
+
+Tomcat中经常被提到的一个调优就是修改线程的I/O模型。Tomcat 8.5版本之前，默认情况下使用的是BIO线程模型，如果在高负载、高并发的场景下，可以通过设置NIO线程模型，来提高系统的网络通信性能。我们可以通过一个性能对比测试来看看在高负载或高并发的情况下，BIO和NIO通信性能（这里用页面请求模拟多I/O读写操作的请求）：
+
+![1718802683011](images/Java-performance-tuning/1718802683011.png)
+
+![1718802718029](images/Java-performance-tuning/1718802718029.png)
+
+测试结果：Tomcat在I/O读写操作比较多的情况下，使用NIO线程模型有明显的优势。Tomcat中看似一个简单的配置，其中却包含了大量的优化升级知识点。下面我们就从底层的网络I/O模型优化出发，再到内存拷贝优化和线程模型优化，深入分析下Tomcat、Netty等通信框架是如何通过优化I/O来提高系统性能的。
+
+### 2.10.1网络I/O模型优化
+
+网络通信中，最底层的就是内核中的网络I/O模型了。随着技术的发展，操作系统内核的网络模型衍生出了五种I/O模型，《UNIX网络编程》一书将这五种I/O模型分为阻塞式I/O、非阻塞式I/O、I/O复用、信号驱动式I/O和异步I/O。每一种I/O模型的出现，都是基于前一种I/O模型的优化升级。最开始的阻塞式I/O，它在每一个连接创建时，都需要一个用户线程来处理，并且在I/O操作没有就绪或结束时，线程会被挂起，进入阻塞等待状态，阻塞式I/O就成为了导致性能瓶颈的根本原因。那阻塞到底发生在套接字（socket）通信的哪些环节呢？
+
+在《Unix网络编程》中，套接字通信可以分为流式套接字（TCP）和数据报套接字（UDP）。其中TCP连接是我们最常用的，一起来了解下TCP服务端的工作流程（由于TCP的数据传输比较复杂，存在拆包和装包的可能，这里我只假设一次最简单的TCP数据传输）：
+
+![1718874352667](images/Java-performance-tuning/1718874352667.png)
+
+* 首先，应用程序通过系统调用socket创建一个套接字，它是系统分配给应用程序的一个文件描述符；
+* 其次，应用程序会通过系统调用bind，绑定地址和端口号，给套接字命名一个名称；
+* 然后，系统会调用listen创建一个队列用于存放客户端进来的连接；
+* 最后，应用服务会通过系统调用accept来监听客户端的连接请求。
+
+当有一个客户端连接到服务端之后，服务端就会调用fork创建一个子进程，通过系统调用read监听客户端发来的消息，再通过write向客户端返回信息。
+
+#### 1.阻塞式I/O
+
+在整个socket通信工作流程中，socket的默认状态是阻塞的。也就是说，当发出一个不能立即完成的套接字调用时，其进程将被阻塞，被系统挂起，进入睡眠状态，一直等待相应的操作响应。从上图中，我们可以发现，可能存在的阻塞主要包括以下三种。
+
+- connect阻塞：当客户端发起TCP连接请求，通过系统调用connect函数，TCP连接的建立需要完成三次握手过程，客户端需要等待服务端发送回来的ACK以及SYN信号，同样服务端也需要阻塞等待客户端确认连接的ACK信号，这就意味着TCP的每个connect都会阻塞等待，直到确认连接。![1718876273060](images/Java-performance-tuning/1718876273060.png)
+- accept阻塞：一个阻塞的socket通信的服务端接收外来连接，会调用accept函数，如果没有新的连接到达，调用进程将被挂起，进入阻塞状态。![1718876340975](images/Java-performance-tuning/1718876340975.png)
+- read、write阻塞：当一个socket连接创建成功之后，服务端用fork函数创建一个子进程， 调用read函数等待客户端的数据写入，如果没有数据写入，调用子进程将被挂起，进入阻塞状态。![1718876372766](images/Java-performance-tuning/1718876372766.png)
+
+#### 2.非阻塞式I/O
+
+使用fcntl可以把以上三种操作都设置为非阻塞操作。如果没有数据返回，就会直接返回一个EWOULDBLOCK或EAGAIN错误，此时进程就不会一直被阻塞。
+
+当我们把以上操作设置为了非阻塞状态，我们需要设置一个线程对该操作进行轮询检查，这也是最传统的非阻塞I/O模型。![1718876505943](images/Java-performance-tuning/1718876505943.png)
+
+#### 3. I/O复用
+
+如果使用用户线程轮询查看一个I/O操作的状态，在大量请求的情况下，这对于CPU的使用率无疑是种灾难。 那么除了这种方式，还有其它方式可以实现非阻塞I/O套接字吗？Linux提供了I/O复用函数select/poll/epoll，进程将一个或多个读操作通过系统调用函数，阻塞在函数操作上。这样，系统内核就可以帮我们侦测多个读操作是否处于就绪状态。
+
+- select()函数：它的用途是，在超时时间内，监听用户感兴趣的文件描述符上的可读可写和异常事件的发生。Linux 操作系统的内核将所有外部设备都看做一个文件来操作，对一个文件的读写操作会调用内核提供的系统命令，返回一个文件描述符（fd）。
+  - 查看以上代码，select() 函数监视的文件描述符分3类，分别是writefds（写文件描述符）、readfds（读文件描述符）以及exceptfds（异常事件文件描述符）。调用后select() 函数会阻塞，直到有描述符就绪或者超时，函数返回。当select函数返回后，可以通过函数FD\_ISSET遍历fdset，来找到就绪的描述符。fd\_set可以理解为一个集合，这个集合中存放的是文件描述符，可通过以下四个宏进行设置：
+  - ![1718876899955](images/Java-performance-tuning/1718876899955.png)
+
+```
+int select(int maxfdp1,fd_set *readset,fd_set *writeset,fd_set *exceptset,const struct timeval *timeout)
+```
+
+```
+void FD_ZERO(fd_set *fdset);           //清空集合
+          void FD_SET(int fd, fd_set *fdset);   //将一个给定的文件描述符加入集合之中
+          void FD_CLR(int fd, fd_set *fdset);   //将一个给定的文件描述符从集合中删除
+          int FD_ISSET(int fd, fd_set *fdset);   // 检查集合中指定的文件描述符是否可以读写
+```
+
+- poll()函数：在每次调用select()函数之前，系统需要把一个fd从用户态拷贝到内核态，这样就给系统带来了一定的性能开销。再有单个进程监视的fd数量默认是1024，我们可以通过修改宏定义甚至重新编译内核的方式打破这一限制。但由于fd\_set是基于数组实现的，在新增和删除fd时，数量过大会导致效率降低。
+  - poll() 的机制与 select() 类似，二者在本质上差别不大。poll() 管理多个描述符也是通过轮询，根据描述符的状态进行处理，但 poll() 没有最大文件描述符数量的限制。
+  - poll() 和 select() 存在一个相同的缺点，那就是包含大量文件描述符的数组被整体复制到用户态和内核的地址空间之间，而无论这些文件描述符是否就绪，他们的开销都会随着文件描述符数量的增加而线性增大。
+  - ![1718877100152](images/Java-performance-tuning/1718877100152.png)
+- **epoll()函数：**select/poll是顺序扫描fd是否就绪，而且支持的fd数量不宜过大，因此它的使用受到了一些制约。Linux在2.6内核版本中提供了一个epoll调用，epoll使用事件驱动的方式代替轮询扫描fd。epoll事先通过epoll\_ctl()来注册一个文件描述符，将文件描述符存放到内核的一个事件表中，这个事件表是基于红黑树实现的，所以在大量I/O请求的场景下，插入和删除的性能比select/poll的数组fd\_set要好，因此epoll的性能更胜一筹，而且不会受到fd数量的限制。
+  - 通过下面代码，我们可以看到：epoll\_ctl()函数中的epfd是由 epoll\_create()函数生成的一个epoll专用文件描述符。op代表操作事件类型，fd表示关联文件描述符，event表示指定监听的事件类型。一旦某个文件描述符就绪时，内核会采用类似callback的回调机制，迅速激活这个文件描述符，当进程调用epoll\_wait()时便得到通知，之后进程将完成相关I/O操作。
+  - ![1718877390141](images/Java-performance-tuning/1718877390141.png)
+
+```
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event event)
+```
+
+```
+int epoll_wait(int epfd, struct epoll_event events,int maxevents,int timeout)
+```
+
+#### 4.信号驱动式I/O
+
+信号驱动式I/O类似观察者模式，内核就是一个观察者，信号回调则是通知。用户进程发起一个I/O请求操作，会通过系统调用sigaction函数，给对应的套接字注册一个信号回调，此时不阻塞用户进程，进程会继续工作。当内核数据就绪时，内核就为该进程生成一个SIGIO信号，通过信号回调通知进程进行相关I/O操作。![1718877792531](images/Java-performance-tuning/1718877792531.png)
+
+信号驱动式I/O相比于前三种I/O模式，实现了在等待数据就绪时，进程不被阻塞，主循环可以继续工作，所以性能更佳。而由于TCP来说，信号驱动式I/O几乎没有被使用，这是因为SIGIO信号是一种Unix信号，信号没有附加信息，如果一个信号源有多种产生信号的原因，信号接收者就无法确定究竟发生了什么。而 TCP socket生产的信号事件有七种之多，这样应用程序收到 SIGIO，根本无从区分处理。
+
+但信号驱动式I/O现在被用在了UDP通信上，我们从10讲中的UDP通信流程图中可以发现，UDP只有一个数据请求事件，这也就意味着在正常情况下UDP进程只要捕获SIGIO信号，就调用recvfrom读取到达的数据报。如果出现异常，就返回一个异常错误。比如，NTP服务器就应用了这种模型。
+
+#### 5.异步I/O
+
+信号驱动式I/O虽然在等待数据就绪时，没有阻塞进程，但在被通知后进行的I/O操作还是阻塞的，进程会等待数据从内核空间复制到用户空间中。而异步I/O则是实现了真正的非阻塞I/O。
+
+当用户进程发起一个I/O请求操作，系统会告知内核启动某个操作，并让内核在整个操作完成后通知进程。这个操作包括等待数据就绪和数据从内核复制到用户空间。由于程序的代码复杂度高，调试难度大，且支持异步I/O的操作系统比较少见（目前Linux暂不支持，而Windows已经实现了异步I/O），所以在实际生产环境中很少用到异步I/O模型。
+
+![1718975345862](images/Java-performance-tuning/1718975345862.png)
+
+在08讲中，我讲到了NIO使用I/O复用器Selector实现非阻塞I/O，Selector就是使用了这五种类型中的I/O复用模型。Java中的Selector其实就是select/poll/epoll的外包类。我们在上面的TCP通信流程中讲到，Socket通信中的conect、accept、read以及write为阻塞操作，在Selector中分别对应SelectionKey的四个监听事件OP\_ACCEPT、OP\_CONNECT、OP\_READ以及OP\_WRITE。
+
+![1718975425294](images/Java-performance-tuning/1718975425294.png)
+
+在NIO服务端通信编程中，首先会创建一个Channel，用于监听客户端连接；接着，创建多路复用器Selector，并将Channel注册到Selector，程序会通过Selector来轮询注册在其上的Channel，当发现一个或多个Channel处于就绪状态时，返回就绪的监听事件，最后程序匹配到监听事件，进行相关的I/O操作。
+
+![1718975612714](images/Java-performance-tuning/1718975612714.png)
+
+在创建Selector时，程序会根据操作系统版本选择使用哪种I/O复用函数。在JDK1.5版本中，如果程序运行在Linux操作系统，且内核版本在2.6以上，NIO中会选择epoll来替代传统的select/poll，这也极大地提升了NIO通信的性能。由于信号驱动式I/O对TCP通信的不支持，以及异步I/O在Linux操作系统内核中的应用还不大成熟，大部分框架都还是基于I/O复用模型实现的网络通信。
+
+### 2.10.2 零拷贝
+
+在I/O复用模型中，执行读写I/O操作依然是阻塞的，在执行读写I/O操作时，存在着多次内存拷贝和上下文切换，给系统增加了性能开销。零拷贝是一种避免多次内存复制的技术，用来优化读写I/O操作。在网络编程中，通常由read、write来完成一次I/O读写操作。每一次I/O读写操作都需要完成四次内存拷贝，路径是I/O设备->内核空间->用户空间->内核空间->其它I/O设备。
+
+- **Linux内核中的mmap函数可以代替read、write的I/O读写操作**，实现用户空间和内核空间共享一个缓存数据。mmap将用户空间的一块地址和内核空间的一块地址同时映射到相同的一块物理内存地址，不管是用户空间还是内核空间都是虚拟地址，最终要通过地址映射映射到物理内存地址。这种方式避免了内核空间与用户空间的数据交换。I/O复用中的epoll函数中就是使用了mmap减少了内存拷贝。
+- 在Java的NIO编程中，则是使用到了Direct Buffer来实现内存的零拷贝。Java直接在JVM内存空间之外开辟了一个物理内存空间，这样内核和用户进程都能共享一份缓存数据。这是在08讲中已经详细讲解过的内容，你可以再去回顾下。(这里好像不太对，Direct Buffer不是只实现了堆外内存吗，还是要拷贝到内核内存吧)
+
+```
+Direct Buffer（直接缓冲区）
+Java 的直接缓冲区（Direct Buffer）是一种存储在堆外内存中的缓冲区，由 ByteBuffer.allocateDirect 方法创建。与堆内存缓冲区不同，直接缓冲区不受 JVM 垃圾收集的管理，直接缓冲区的优点如下：
+1. 减少堆内存占用：因为缓冲区在堆外内存中分配，不会占用 JVM 的堆空间，从而减少了堆内存的压力。
+2. 更快的 I/O 操作：直接内存缓冲区减少了从 JVM 内存到本地操作系统内存的数据复制步骤，提升了 I/O 操作性能。
+
+零拷贝概念
+零拷贝（Zero-Copy）技术是一种优化 I/O 操作的手段，目的是在内核和用户空间之间尽量减少数据复制。下面是一些实现零拷贝的技术：
+1. sendfile：允许数据在操作系统内核中直接从一个文件描述符传递到另一个文件描述符，而不经过用户空间。
+2. mmap：通过内存映射文件，直接在内存中操作文件内容，减少 I/O 操作次数。
+3. splice：在 Linux 上，通过内核中的管道缓冲区传输数据，可以避免数据复制到用户空间。
+4. 在 Java 中，NIO 提供了 FileChannel 的 transferTo() 和 transferFrom() 方法来借助底层操作系统的零拷贝特性。
+```
+
+### 2.10.3 线程模型优化
+
+除了内核对网络I/O模型的优化，NIO在用户层也做了优化升级。NIO是基于事件驱动模型来实现的I/O操作。Reactor模型是同步I/O事件处理的一种常见模型，其核心思想是将I/O事件注册到多路复用器上，一旦有I/O事件触发，多路复用器就会将事件分发到事件处理器中，执行就绪的I/O事件操作。该模型有以下三个主要组件：
+
+* 事件接收器Acceptor：主要负责接收请求连接；
+* 事件分离器Reactor：接收请求后，会将建立的连接注册到分离器中，依赖于循环监听多路复用器Selector，一旦监听到事件，就会将事件dispatch到事件处理器；
+* 事件处理器Handlers：事件处理器主要是完成相关的事件处理，比如读写I/O操作。
+
+#### 1.单线程Reactor线程模型
+
+最开始NIO是基于单线程实现的，所有的I/O操作都是在一个NIO线程上完成。由于NIO是非阻塞I/O，理论上一个线程可以完成所有的I/O操作。但NIO其实还不算真正地实现了非阻塞I/O操作，因为读写I/O操作时用户进程还是处于阻塞状态，这种方式在高负载、高并发的场景下会存在性能瓶颈，一个NIO线程如果同时处理上万连接的I/O操作，系统是无法支撑这种量级的请求的。
+
+![1718976078218](images/Java-performance-tuning/1718976078218.png)
+
+#### 2.多线程Reactor线程模型
+
+为了解决这种单线程的NIO在高负载、高并发场景下的性能瓶颈，后来使用了线程池。在Tomcat和Netty中都使用了一个Acceptor线程来监听连接请求事件，当连接成功之后，会将建立的连接注册到多路复用器中，一旦监听到事件，将交给Worker线程池来负责处理。大多数情况下，这种线程模型可以满足性能要求，但如果连接的客户端再上一个量级，一个Acceptor线程可能会存在性能瓶颈。
+
+![1718976197400](images/Java-performance-tuning/1718976197400.png)
+
+#### 3.主从Reactor线程模型
+
+现在主流通信框架中的NIO通信框架都是基于主从Reactor线程模型来实现的。在这个模型中，Acceptor不再是一个单独的NIO线程，而是一个线程池。Acceptor接收到客户端的TCP连接请求，建立连接之后，后续的I/O操作将交给Worker I/O线程。
+
+![1718976231604](images/Java-performance-tuning/1718976231604.png)
+
+#### 4.基于线程模型的Tomcat参数调优
+
+Tomcat中，BIO、NIO是基于主从Reactor线程模型实现的。在BIO中，Tomcat中的Acceptor只负责监听新的连接，一旦连接建立监听到I/O操作，将会交给Worker线程中，Worker线程专门负责I/O读写操作。
+
+- **连接数受限**：每个连接都是由一个独立的线程处理，如果有大量连接，就需要大量线程，这会导致高内存使用和线程上下文切换的开销。
+- **资源利用率**：阻塞 I/O 的线程在等待 I/O 操作完成期间不能做其他工作，资源利用率较低。
+
+在NIO中，Tomcat新增了一个Poller线程池，Acceptor监听到连接后，不是直接使用Worker中的线程处理请求，而是先将请求发送给了Poller缓冲队列。在Poller中，维护了一个Selector对象，当Poller从队列中取出连接后，注册到该Selector中；然后通过遍历Selector，找出其中就绪的I/O操作，并使用Worker中的线程处理相应的请求。
+
+- **Acceptor线程**：监听新的连接，并将新连接注册到 Poller 线程。
+- **Poller线程**：维护一个 `Selector` 对象，它会监视多个注册的通道，并在其中任意一个通道准备好 I/O 操作时通知 Poller。
+- **Worker线程**：实际执行 I/O 操作（读、写）的业务逻辑处理。
+
+![1718976494312](images/Java-performance-tuning/1718976494312.png)
+
+你可以通过以下几个参数来设置Acceptor线程池和Worker线程池的配置项。
+
+- acceptorThreadCount：该参数代表Acceptor的线程数量，在请求客户端的数据量非常巨大的情况下，可以适当地调大该线程数量来提高处理请求连接的能力，默认值为1。
+- maxThreads：专门处理I/O操作的Worker线程数量，默认是200，可以根据实际的环境来调整该参数，但不一定越大越好。
+- acceptCount：Tomcat的Acceptor线程是负责从accept队列中取出该connection，然后交给工作线程去执行相关操作，这里的acceptCount指的是accept队列的大小。当Http关闭keep alive，在并发量比较大时，可以适当地调大这个值。而在Http开启keep alive时，因为Worker线程数量有限，Worker线程就可能因长时间被占用，而连接在accept队列中等待超时。如果accept队列过大，就容易浪费连接。
+- maxConnections：表示有多少个socket连接到Tomcat上。在BIO模式中，一个线程只能处理一个连接，一般maxConnections与maxThreads的值大小相同；在NIO模式中，一个线程同时处理多个连接，maxConnections应该设置得比maxThreads要大的多，默认是10000。
+
 # 三、多线程性能调优
 
 ## 3.1 多线程之锁优化（上）：深入了解Synchronized同步锁的优化方法
+
 在并发编程中，多个线程访问同一个共享资源时，我们必须考虑如何维护数据的原子性。在JDK1.5之前，Java是依靠Synchronized关键字实现锁功能来做到这点的。Synchronized是JVM实现的一种内置锁，锁的获取和释放是由JVM隐式实现。到了JDK1.5版本，并发包中新增了Lock接口来实现锁功能，它提供了与Synchronized关键字类似的同步功能，只是在使用时需要显式获取和释放锁。
 
 Lock同步锁是基于Java实现的，而Synchronized是基于底层操作系统的Mutex Lock实现的，每次获取和释放锁操作都会带来用户态和内核态的切换，从而增加系统性能开销。因此，在锁竞争激烈的情况下，Synchronized同步锁在性能上就表现得非常糟糕，它也常被大家称为重量级锁。
@@ -1012,13 +2363,15 @@ Lock同步锁是基于Java实现的，而Synchronized是基于底层操作系统
 到了JDK1.6版本之后，Java对Synchronized同步锁做了充分的优化，甚至在某些场景下，它的性能已经超越了Lock同步锁。这一讲我们就来看看Synchronized同步锁究竟是通过了哪些优化，实现了性能地提升。
 
 ### 3.1.1 Synchronized同步锁实现原理
+
 了解Synchronized同步锁优化之前，我们先来看看它的底层实现原理，这样可以帮助我们更好地理解后面的内容。通常Synchronized实现同步锁的方式有两种，一种是修饰方法，一种是修饰方法块。以下就是通过Synchronized实现的两种同步方法加锁的方式：
+
 ```
 // 关键字在实例方法上，锁为当前实例
     public synchronized void method1() {
         // code
     }
-    
+  
     // 关键字在代码块上，锁为括号里面的对象
     public void method2() {
         Object o = new Object();
@@ -1027,21 +2380,25 @@ Lock同步锁是基于Java实现的，而Synchronized是基于底层操作系统
         }
     }
 ```
+
 下面我们可以通过反编译看下具体字节码的实现，运行以下反编译命令，就可以输出我们想要的字节码：
+
 ```
 javac -encoding UTF-8 SyncTest.java  //先运行编译class文件命令
 javap -v SyncTest.class //再通过javap打印出字节文件
 ```
+
 通过输出的字节码，你会发现：Synchronized在修饰同步代码块时，是由 monitorenter和monitorexit指令来实现同步的。进入monitorenter 指令后，线程将持有Monitor对象，退出monitorenter指令后，线程将释放该Monitor对象。
+
 ```
 public void method2();
     descriptor: ()V
     flags: ACC_PUBLIC
     Code:
       stack=2, locals=4, args_size=1
-         0: new           #2                  
+         0: new           #2        
          3: dup
-         4: invokespecial #1                  
+         4: invokespecial #1        
          7: astore_1
          8: aload_1
          9: dup
@@ -1075,6 +2432,7 @@ public void method2();
 ```
 
 再来看以下同步方法的字节码，你会发现：当Synchronized修饰同步方法时，并没有发现monitorenter和monitorexit指令，而是出现了一个ACC_SYNCHRONIZED标志。这是因为JVM使用了ACC_SYNCHRONIZED访问标志来区分一个方法是否是同步方法。当方法调用时，调用指令将会检查该方法是否被设置ACC_SYNCHRONIZED访问标志。如果设置了该标志，执行线程将先持有Monitor对象，然后再执行方法。在该方法运行期间，其它线程将无法获取到该Mointor对象，当方法执行完成后，再释放该Monitor对象。
+
 ```
 public synchronized void method1();
     descriptor: ()V
@@ -1085,7 +2443,9 @@ public synchronized void method1();
       LineNumberTable:
         line 8: 0
 ```
+
 通过以上的源码，我们再来看看Synchronized修饰方法是怎么实现锁原理的。JVM中的同步是基于进入和退出管程（Monitor）对象实现的。每个对象实例都会有一个Monitor，Monitor可以和对象一起创建、销毁。Monitor是由ObjectMonitor实现，而ObjectMonitor是由C++的ObjectMonitor.hpp文件实现，如下所示：
+
 ```
 ObjectMonitor() {
    _header = NULL;
@@ -1106,6 +2466,7 @@ ObjectMonitor() {
    OwnerIsThread = 0 ;
 }
 ```
+
 当多个线程同时访问一段同步代码时，多个线程会先被存放在ContentionList和_EntryList 集合中，处于block状态的线程，都会被加入到该列表。接下来当线程获取到对象的Monitor时，Monitor是依靠底层操作系统的Mutex Lock来实现互斥的，线程申请Mutex成功，则持有该Mutex，其它线程将无法获取到该Mutex，竞争失败的线程会再次进入ContentionList被挂起。
 
 如果线程调用wait() 方法，就会释放当前持有的Mutex，并且该线程会进入WaitSet集合中，等待下一次被唤醒。如果当前线程顺利执行完方法，也将释放Mutex。
@@ -1125,19 +2486,22 @@ _EntryList
 ContentionList侧重于管理那些因为锁竞争而无法进入同步区域的线程，它反应了系统中锁争用的状态。
 _EntryList可能包含了更直接等待进入同步块或方法的线程，这些线程可能是之前在ContentionList中但现在锁竞争状况有所变化，有望近期内获得锁。
 ```
+
 ---
 
 ### 3.1.2 锁升级优化
+
 为了提升性能，JDK1.6引入了偏向锁、轻量级锁、重量级锁概念，来减少锁竞争带来的上下文切换，而正是新增的Java对象头实现了锁升级功能。当Java对象被Synchronized关键字修饰成为同步锁后，围绕这个锁的一系列升级操作都将和Java对象头有关。
 
 #### Java对象头
+
 在JDK1.6 JVM中，对象实例在堆内存中被分为了三个部分：对象头、实例数据和对齐填充。其中Java对象头由Mark Word、指向类的指针以及数组长度三部分组成。Mark Word记录了对象和锁有关的信息。Mark Word在64位JVM中的长度是64bit，我们可以一起看下64位JVM的存储结构是怎么样的。如下图所示：
 ![alt text](Java-performance-tuning/fd86f1b5cbac1f652bea58b039fbc8f8.jpg)
-
 
 锁升级功能主要依赖于Mark Word中的锁标志位和释放偏向锁标志位，Synchronized同步锁就是从偏向锁开始的，随着竞争越来越激烈，偏向锁升级到轻量级锁，最终升级到重量级锁。下面我们就沿着这条优化路径去看下具体的内容。
 
 #### 1.偏向锁
+
 偏向锁主要用来优化同一线程多次申请同一个锁的竞争。在某些情况下，大部分时间是同一个线程竞争锁资源，例如，在创建一个线程并在线程中执行循环监听的场景下，或单线程操作一个线程安全集合时，同一线程每次都需要获取和释放锁，每次操作都会发生用户态与内核态的切换。
 
 偏向锁的作用就是，当一个线程再次访问这个同步代码或方法时，该线程只需去对象头的Mark Word中去判断一下是否有偏向锁指向它的ID，无需再进入Monitor去竞争对象了。当对象被当做同步锁并有一个线程抢到了锁时，锁标志位还是01，“是否偏向锁”标志位设置为1，并且记录抢到锁的线程ID，表示进入偏向锁状态。一旦出现其它线程竞争锁资源时，偏向锁就会被撤销。偏向锁的撤销需要等待全局安全点，暂停持有该锁的线程，同时检查该线程是否还在执行该方法，如果是，则升级锁，反之则被其它线程抢占。
@@ -1145,21 +2509,26 @@ _EntryList可能包含了更直接等待进入同步块或方法的线程，这�
 下图中红线流程部分为偏向锁获取和撤销流程：
 ![alt text](Java-performance-tuning/d9f1e7fae6996a940e9471c47a455ba2.png)
 因此，在高并发场景下，当大量线程同时竞争同一个锁资源时，偏向锁就会被撤销，发生stop the word后， 开启偏向锁无疑会带来更大的性能开销，这时我们可以通过添加JVM参数关闭偏向锁来调优系统性能，示例代码如下：
+
 ```
 -XX:-UseBiasedLocking //关闭偏向锁（默认打开）
 ```
+
 或
+
 ```
 -XX:+UseHeavyMonitors  //设置重量级锁
 ```
 
 #### 2.轻量级锁
+
 当有另外一个线程竞争获取这个锁时，由于该锁已经是偏向锁，当发现对象头Mark Word中的线程ID不是自己的线程ID，就会进行CAS操作获取锁，如果获取成功，直接替换Mark Word中的线程ID为自己的ID，该锁会保持偏向锁状态；如果获取锁失败，代表当前锁有一定的竞争，偏向锁将升级为轻量级锁。轻量级锁适用于线程交替执行同步块的场景，绝大部分的锁在整个同步周期内都不存在长时间的竞争。
 
 下图中红线流程部分为升级轻量级锁及操作流程：
 ![alt text](Java-performance-tuning/84f4d5dd908788fec0940431b4b912f0.png)
 
 #### 3.自旋锁与重量级锁
+
 轻量级锁CAS抢锁失败，线程将会被挂起进入阻塞状态。如果正在持有锁的线程在很短的时间内释放资源，那么进入阻塞状态的线程无疑又要申请锁资源。JVM提供了一种自旋锁，可以通过自旋方式不断尝试获取锁，从而避免线程被挂起阻塞。这是基于大多数情况下，线程持有锁的时间都不会太长，毕竟线程被挂起阻塞可能会得不偿失。
 
 从JDK1.7开始，自旋锁默认启用，自旋次数由JVM设置决定，这里我不建议设置的重试次数过多，因为CAS重试操作意味着长时间地占用CPU。自旋锁重试之后如果抢锁依然失败，同步锁就会升级至重量级锁，锁标志位改为10。在这个状态下，未抢到锁的线程都会进入Monitor，之后会被阻塞在_WaitSet队列中。
@@ -1168,12 +2537,14 @@ _EntryList可能包含了更直接等待进入同步块或方法的线程，这�
 ![alt text](Java-performance-tuning/2e912fc6de6faeb1713a10959e5f1e99.png)
 
 在锁竞争不激烈且锁占用时间非常短的场景下，自旋锁可以提高系统性能。一旦锁竞争激烈或锁占用的时间过长，自旋锁将会导致大量的线程一直处于CAS重试状态，占用CPU资源，反而会增加系统性能开销。所以自旋锁和重量级锁的使用都要结合实际场景。在高负载、高并发的场景下，我们可以通过设置JVM参数来关闭自旋锁，优化系统性能，示例代码如下：
+
 ```
 -XX:-UseSpinning //参数关闭自旋锁优化(默认打开) 
 -XX:PreBlockSpin //参数修改默认的自旋次数。JDK1.7后，去掉此参数，由jvm控制
 ```
 
 #### 动态编译实现锁消除/锁粗化
+
 除了锁升级优化，Java还使用了编译器对锁进行优化。JIT 编译器在动态编译同步块的时候，借助了一种被称为逃逸分析的技术，来判断同步块使用的锁对象是否只能够被一个线程访问，而没有被发布到其它线程。
 
 确认是的话，那么 JIT 编译器在编译这个同步块的时候不会生成 synchronized 所表示的锁的申请与释放的机器码，即消除了锁的使用。在 Java7 之后的版本就不需要手动配置了，该操作可以自动实现。
@@ -1181,6 +2552,7 @@ _EntryList可能包含了更直接等待进入同步块或方法的线程，这�
 锁粗化同理，就是在 JIT 编译器动态编译时，如果发现几个相邻的同步块使用的是同一个锁实例，那么 JIT 编译器将会把这几个同步块合并为一个大的同步块，从而避免一个线程“反复申请、释放同一个锁”所带来的性能开销。
 
 #### 减小锁粒度
+
 除了锁内部优化和编译器优化之外，我们还可以通过代码层来实现锁优化，减小锁粒度就是一种惯用的方法。当我们的锁对象是一个数组或队列时，集中竞争一个对象的话会非常激烈，锁也会升级为重量级锁。我们可以考虑将一个数组和队列对象拆成多个小对象，来降低锁竞争，提升并行度。
 
 最经典的减小锁粒度的案例就是JDK1.8之前实现的ConcurrentHashMap版本。我们知道，HashTable是基于一个数组+链表实现的，所以在并发读写操作集合时，存在激烈的锁资源竞争，也因此性能会存在瓶颈。而ConcurrentHashMap就很很巧妙地使用了分段锁Segment来降低锁资源竞争，如下图所示：
@@ -1194,6 +2566,7 @@ Java 8及之后版本中的改进
 ---
 
 ### 3.1.3 总结
+
 JVM在JDK1.6中引入了分级锁机制来优化Synchronized，当一个线程获取锁时，首先对象锁将成为一个偏向锁，这样做是为了优化同一线程重复获取导致的用户态与内核态的切换问题；其次如果有多个线程竞争锁资源，锁将会升级为轻量级锁，它适用于在短时间内持有锁，且分锁有交替切换的场景；轻量级锁还使用了自旋锁来避免线程用户态与内核态的频繁切换，大大地提高了系统性能；但如果锁竞争太激烈了，那么同步锁将会升级为重量级锁。
 
 减少锁竞争，是优化Synchronized同步锁的关键。我们应该尽量使Synchronized同步锁处于轻量级锁或偏向锁，这样才能提高Synchronized同步锁的性能；通过减小锁粒度来降低锁竞争也是一种最常用的优化方法；另外我们还可以通过减少锁的持有时间来提高Synchronized同步锁在自旋时获取锁资源的成功率，避免Synchronized同步锁升级为重量级锁。
@@ -1201,24 +2574,26 @@ JVM在JDK1.6中引入了分级锁机制来优化Synchronized，当一个线程�
 这一讲我们重点了解了Synchronized同步锁优化，这里由于字数限制，也为了你能更好地理解内容，目录中12讲的内容我拆成了两讲，在下一讲中，我会重点讲解Lock同步锁的优化方法。
 
 - 思考题
-请问以下Synchronized同步锁对普通方法和静态方法的修饰有什么区别？
-    ```
-    // 修饰普通方法
-        public synchronized void method1() {
-            // code
-        }
-        
-        // 修饰静态方法
-        public  synchronized static void method2() {
-            // code
-        }
-    ``
+  请问以下Synchronized同步锁对普通方法和静态方法的修饰有什么区别？
+  ```
+  // 修饰普通方法
+      public synchronized void method1() {
+          // code
+      }
+
+      // 修饰静态方法
+      public  synchronized static void method2() {
+          // code
+      }
+  ``
+  ```
 - 解答
   - 普通方法锁的是对象,静态方法锁的是Class对象,是全局的
 
 ---
 
 ## 3.2 多线程之锁优化（中）：深入了解Lock同步锁的优化方法
+
 今天这讲我们继续来聊聊锁优化。上一讲我重点介绍了在JVM层实现的Synchronized同步锁的优化方法，除此之外，在JDK1.5之后，Java还提供了Lock同步锁。那么它有什么优势呢？
 
 相对于需要JVM隐式获取和释放锁的Synchronized同步锁，Lock同步锁（以下简称Lock锁）需要的是显示获取和释放锁，这就为获取和释放锁提供了更多的灵活性。Lock锁的基本操作是通过乐观锁来实现的，但由于Lock锁也会在阻塞时被挂起，因此它依然属于悲观锁。我们可以通过一张图来简单对比下两个同步锁，了解下各自的特点：
@@ -1230,6 +2605,7 @@ JVM在JDK1.6中引入了分级锁机制来优化Synchronized，当一个线程�
 通过以上数据，我们可以发现：Lock锁的性能相对来说更加稳定。那它与上一讲的Synchronized同步锁相比，实现原理又是怎样的呢？
 
 ### 3.2.1 Lock锁的实现原理
+
 Lock锁是基于Java实现的锁，Lock是一个接口类，常用的实现类有ReentrantLock、ReentrantReadWriteLock（RRW），它们都是依赖AbstractQueuedSynchronizer（AQS）类实现的。
 
 AQS类结构中包含一个基于链表实现的等待队列（CLH队列），用于存储所有阻塞的线程，AQS中还有一个state变量，该变量对ReentrantLock来说表示加锁状态。该队列的操作均通过CAS操作实现，我们可以通过一张图来看下整个获取锁的流程。
@@ -1238,11 +2614,13 @@ AQS类结构中包含一个基于链表实现的等待队列（CLH队列），�
 ---
 
 ### 3.2.2 锁分离优化Lock同步锁
+
 虽然Lock锁的性能稳定，但也并不是所有的场景下都默认使用ReentrantLock独占锁来实现线程同步。我们知道，对于同一份数据进行读写，如果一个线程在读数据，而另一个线程在写数据，那么读到的数据和最终的数据就会不一致；如果一个线程在写数据，而另一个线程也在写数据，那么线程前后看到的数据也会不一致。这个时候我们可以在读写方法中加入互斥锁，来保证任何时候只能有一个线程进行读或写操作。
 
 在大部分业务场景中，读业务操作要远远大于写业务操作。而在多线程编程中，读操作并不会修改共享资源的数据，如果多个线程仅仅是读取共享资源，那么这种情况下其实没有必要对资源进行加锁。如果使用互斥锁，反倒会影响业务的并发性能，那么在这种场景下，有没有什么办法可以优化下锁的实现方式呢？
 
 #### 1.读写锁ReentrantReadWriteLock
+
 针对这种读多写少的场景，Java提供了另外一个实现Lock接口的读写锁RRW。我们已知ReentrantLock是一个独占锁，同一时间只允许一个线程访问，而RRW允许多个读线程同时访问，但不允许写线程和读线程、写线程和写线程同时访问。读写锁内部维护了两个锁，一个是用于读操作的ReadLock，一个是用于写操作的WriteLock。
 
 那读写锁又是如何实现锁分离来保证共享资源的原子性呢？RRW也是基于AQS实现的，它的自定义同步器（继承AQS）需要在同步状态state上维护多个读线程和一个写线程的状态，该状态的设计成为实现读写锁的关键。RRW很好地使用了高低位，来实现一个整型控制两种状态的功能，读写锁将变量切分成了两个部分，高16位表示读，低16位表示写。
@@ -1254,6 +2632,7 @@ AQS类结构中包含一个基于链表实现的等待队列（CLH队列），�
 ![alt text](Java-performance-tuning/52e77acc6999efbdf4113daaa5918d46.jpeg)
 
 下面我们通过一个求平方的例子，来感受下RRW的实现，代码如下：
+
 ```java
 public class TestRTTLock {
 
@@ -1287,15 +2666,16 @@ public class TestRTTLock {
 	}
 
 }
-
 ```
 
 #### 2.读写锁再优化之StampedLock
+
 RRW被很好地应用在了读大于写的并发场景中，然而RRW在性能上还有可提升的空间。在读取很多、写入很少的情况下，RRW会使写入线程遭遇饥饿（Starvation）问题，也就是说写入线程会因迟迟无法竞争到锁而一直处于等待状态。
 
 在JDK1.8中，Java提供了StampedLock类解决了这个问题。StampedLock不是基于AQS实现的，但实现的原理和AQS是一样的，都是基于队列和锁状态实现的。与RRW不一样的是，StampedLock控制锁有三种模式: 写、悲观读以及乐观读，并且StampedLock在获取锁时会返回一个票据stamp，获取的stamp除了在释放锁时需要校验，在乐观读模式下，stamp还会作为读取共享资源后的二次校验，后面我会讲解stamp的工作原理。
 
 我们先通过一个官方的例子来了解下StampedLock是如何使用的，代码如下：
+
 ```java
 public class Point {
     private double x, y;
@@ -1331,8 +2711,8 @@ public class Point {
         return Math.sqrt(currentX * currentX + currentY * currentY);
     }
 }
-
 ```
+
 我们可以发现：一个写线程获取写锁的过程中，首先是通过WriteLock获取一个票据stamp，WriteLock是一个独占锁，同时只有一个线程可以获取该锁，当一个线程获取该锁后，其它请求的线程必须等待，当没有线程持有读锁或者写锁的时候才可以获取到该锁。请求该锁成功后会返回一个stamp票据变量，用来表示该锁的版本，当释放该锁的时候，需要unlockWrite并传递参数stamp。
 
 接下来就是一个读线程获取锁的过程。首先线程会通过乐观锁tryOptimisticRead操作获取票据stamp ，如果当前没有线程持有写锁，则返回一个非0的stamp版本信息。线程获取该stamp后，将会拷贝一份共享资源到方法栈，在这之前具体的操作都是基于方法栈的拷贝数据。
@@ -1342,6 +2722,7 @@ public class Point {
 相比于RRW，StampedLock获取读锁只是使用与或操作进行检验，不涉及CAS操作，即使第一次乐观锁获取失败，也会马上升级至悲观锁，这样就可以避免一直进行CAS操作带来的CPU占用性能的问题，因此StampedLock的效率更高。
 
 #### 公平锁和非公平锁的简单比较
+
 - 公平锁和非公平锁的比较：
   - 响应时间：公平锁由于要严格按照等待队列中的顺序来分配锁，可能会导致整体的响应时间变长，因为新请求的线程必须等待队列中所有老线程都获取一次锁之后才能获得锁。
   - 吞吐量：非公平锁往往能提供更好的吞吐量。这是因为当一个锁被释放时，如果有线程正好请求这个锁，它可能直接获取锁而无需加入等待队列，减少了上下文切换和队列排队的开销。
@@ -1349,12 +2730,13 @@ public class Point {
 ---
 
 ### 3.2.3 总结
+
 不管使用Synchronized同步锁还是Lock同步锁，只要存在锁竞争就会产生线程阻塞，从而导致线程之间的频繁切换，最终增加性能消耗。因此，如何降低锁竞争，就成为了优化锁的关键。在Synchronized同步锁中，我们了解了可以通过减小锁粒度、减少锁占用时间来降低锁的竞争。在这一讲中，我们知道可以利用Lock锁的灵活性，通过锁分离的方式来降低锁竞争。
 
 Lock锁实现了读写锁分离来优化读大于写的场景，从普通的RRW实现到读锁和写锁，到StampedLock实现了乐观读锁、悲观读锁和写锁，都是为了降低锁的竞争，促使系统的并发性能达到最佳。
 
 - 思考题
-StampedLock同RRW一样，都适用于读大于写操作的场景，StampedLock青出于蓝结果却不好说，毕竟RRW还在被广泛应用，就说明它还有StampedLock无法替代的优势。你知道StampedLock没有被广泛应用的原因吗？或者说它还存在哪些缺陷导致没有被广泛应用。
+  StampedLock同RRW一样，都适用于读大于写操作的场景，StampedLock青出于蓝结果却不好说，毕竟RRW还在被广泛应用，就说明它还有StampedLock无法替代的优势。你知道StampedLock没有被广泛应用的原因吗？或者说它还存在哪些缺陷导致没有被广泛应用。
 - StampedLock 在某些方面优于传统的 ReadWriteLock，但它并没有被广泛应用，主要原因包括以下几点：
   - 复杂性:StampedLock 的API比 ReadWriteLock 更复杂。StampedLock 提供了三种模式的锁：读锁、写锁和乐观读锁，每种模式的锁都通过获取一个戳（stamp）来控制和访问。开发人员需要手动检查戳的值来确保锁的正确释放和转换，这增加了使用的复杂性。
   - 不支持Reentrant特性:与 ReentrantReadWriteLock 不同，StampedLock 不支持重入。如果一个线程已经持有写锁，它再次尝试获取写锁，或者尝试获取读锁时，会导致死锁。这一限制使得 StampedLock 在某些需要重入锁的场景下不适用。
@@ -1363,9 +2745,11 @@ StampedLock同RRW一样，都适用于读大于写操作的场景，StampedLock�
   - 风险:由于 StampedLock 的API使用起来较为复杂，且存在一些坑点（如不支持重入、容易导致死锁等），不正确的使用 StampedLock 的风险相比 ReentrantReadWriteLock 更高。这使得它成为了一个更适合在性能敏感且线程模型简单的场景下使用的工具。
 
 ## 3.3 多线程之锁优化（下）：使用乐观锁优化并行操作
+
 前两讲我们讨论了Synchronized和Lock实现的同步锁机制，这两种同步锁都属于悲观锁，是保护线程安全最直观的方式。我们知道悲观锁在高并发的场景下，激烈的锁竞争会造成线程阻塞，大量阻塞线程会导致系统的上下文切换，增加系统的性能开销。那有没有可能实现一种非阻塞型的锁机制来保证线程的安全呢？答案是肯定的。今天我就带你学习下乐观锁的优化方法，看看怎么使用才能发挥它最大的价值。
 
 ### 3.3.1 什么是乐观锁
+
 开始优化前，我们先来简单回顾下乐观锁的定义。乐观锁，顾名思义，就是说在操作共享资源时，它总是抱着乐观的态度进行，它认为自己可以成功地完成操作。但实际上，当多个线程同时操作一个共享资源时，只有一个线程会成功，那么失败的线程呢？它们不会像悲观锁一样在操作系统中挂起，而仅仅是返回，并且系统允许失败的线程重试，也允许自动放弃退出操作。
 
 所以，乐观锁相比悲观锁来说，不会带来死锁、饥饿等活性故障问题，线程间的相互影响也远远比悲观锁要小。更为重要的是，乐观锁没有因竞争造成的系统开销，所以在性能上也是更胜一筹。
@@ -1373,16 +2757,19 @@ StampedLock同RRW一样，都适用于读大于写操作的场景，StampedLock�
 ---
 
 ### 3.3.2乐观锁的实现原理
+
 相信你对上面的内容是有一定的了解的，下面我们来看看乐观锁的实现原理，有助于我们从根本上总结优化方法。CAS是实现乐观锁的核心算法，它包含了3个参数：V（需要更新的变量）、E（预期值）和N（最新值）。
 
 只有当需要更新的变量等于预期值时，需要更新的变量才会被设置为最新值，如果更新值和预期值不同，则说明已经有其它线程更新了需要更新的变量，此时当前线程不做操作，返回V的真实值。
 
 #### 1.CAS如何实现原子操作
+
 在JDK中的concurrent包中，atomic路径下的类都是基于CAS实现的。AtomicInteger就是基于CAS实现的一个线程安全的整型类。下面我们通过源码来了解下如何使用CAS实现原子操作。
 
 我们可以看到AtomicInteger的自增方法getAndIncrement是用了Unsafe的getAndAddInt方法，显然AtomicInteger依赖于本地方法Unsafe类，Unsafe类中的操作方法会调用CPU底层指令实现原子操作。
+
 ```java
-    //基于CAS操作更新值
+//基于CAS操作更新值
     public final boolean compareAndSet(int expect, int update) {
         return unsafe.compareAndSwapInt(this, valueOffset, expect, update);
     }
@@ -1390,13 +2777,14 @@ StampedLock同RRW一样，都适用于读大于写操作的场景，StampedLock�
     public final int getAndIncrement() {
         return unsafe.getAndAddInt(this, valueOffset, 1);
     }
-    
+  
     //基于CAS操作减1
     public final int getAndDecrement() {
         return unsafe.getAndAddInt(this, valueOffset, -1);
 ```
 
 #### 2.处理器如何实现原子操作
+
 CAS是调用处理器底层指令来实现原子操作，那么处理器底层又是如何实现原子操作的呢？处理器和物理内存之间的通信速度要远慢于处理器间的处理速度，所以处理器有自己的内部缓存。如下图所示，在执行操作时，频繁使用的内存数据会缓存在处理器的L1、L2和L3高速缓存中，以加快频繁读取的速度。
 ![alt text](Java-performance-tuning/15ffcf63bf097a6db4826000f1923af0.png)
 一般情况下，一个单核处理器能自我保证基本的内存操作是原子性的，当一个线程读取一个字节时，所有进程和线程看到的字节都是同一个缓存里的字节，其它线程不能访问这个字节的内存地址。但现在的服务器通常是多处理器，并且每个处理器都是多核的。每个处理器维护了一块字节的内存，每个内核维护了一块字节的缓存，这时候多线程并发就会存在缓存不一致的问题，从而导致数据不一致。
@@ -1408,11 +2796,13 @@ CAS是调用处理器底层指令来实现原子操作，那么处理器底层�
 ---
 
 ### 3.3.3 优化CAS乐观锁
+
 虽然乐观锁在并发性能上要比悲观锁优越，但是在写大于读的操作场景下，CAS失败的可能性会增大，如果不放弃此次CAS操作，就需要循环做CAS重试，这无疑会长时间地占用CPU。
 
 在Java7中，通过以下代码我们可以看到：AtomicInteger的getAndSet方法中使用了for循环不断重试CAS操作，如果长时间不成功，就会给CPU带来非常大的执行开销。到了Java8，for循环虽然被去掉了，但我们反编译Unsafe类时就可以发现该循环其实是被封装在了Unsafe类中，CPU的执行开销依然存在。
+
 ```
-   public final int getAndSet(int newValue) {
+public final int getAndSet(int newValue) {
         for (;;) {
             int current = get();
             if (compareAndSet(current, newValue))
@@ -1420,6 +2810,7 @@ CAS是调用处理器底层指令来实现原子操作，那么处理器底层�
         }
     }
 ```
+
 在JDK1.8中，Java提供了一个新的原子类LongAdder。LongAdder在高并发场景下会比AtomicInteger和AtomicLong的性能更好，代价就是会消耗更多的内存空间。
 
 LongAdder的原理就是降低操作共享变量的并发数，也就是将对单一共享变量的操作压力分散到多个变量值上，将竞争的每个写线程的value值分散到一个数组中，不同线程会命中到数组的不同槽中，各个线程只对自己槽中的value值进行CAS操作，最后在读取值的时候会将原子操作的共享变量与各个分散在数组的value值相加，返回一个近似准确的数值。
@@ -1429,6 +2820,7 @@ LongAdder内部由一个base变量和一个cell[]数组组成。当只有一个�
 我们可以发现，LongAdder在操作后的返回值只是一个近似准确的数值，但是LongAdder最终返回的是一个准确的数值， 所以在一些对实时性要求比较高的场景下，LongAdder并不能取代AtomicInteger或AtomicLong。
 
 ### 3.3.4 总结
+
 ---
 
 在日常开发中，使用乐观锁最常见的场景就是数据库的更新操作了。为了保证操作数据库的原子性，我们常常会为每一条数据定义一个版本号，并在更新前获取到它，到了更新数据库的时候，还要判断下已经获取的版本号是否被更新过，如果没有，则执行该操作。CAS乐观锁在平常使用时比较受限，它只能保证单个变量操作的原子性，当涉及到多个变量时，CAS就无能为力了，但前两讲讲到的悲观锁可以通过对整个代码块加锁来做到这点。
@@ -1448,6 +2840,7 @@ CAS乐观锁在高并发写大于读的场景下，大部分线程的原子操�
   - 我们在使用CAS操作的时候要注意的ABA问题指的是什么呢？
 
 ## 3.4 多线程调优（上）：哪些操作导致了上下文切换？
+
 我们常说“实践是检验真理的唯一标准”，这句话不光在社会发展中可行，在技术学习中也同样适用。记得我刚入职上家公司的时候，恰好赶上了一次抢购活动。这是系统重构上线后经历的第一次高并发考验，如期出现了大量超时报警，不过比我预料的要好一点，起码没有挂掉重启。
 
 通过工具分析，我发现 cs（上下文切换每秒次数）指标已经接近了 60w ，平时的话最高5w。再通过日志分析，我发现了大量带有 wait() 的 Exception，由此初步怀疑是大量线程处理不及时导致的，进一步锁定问题是连接池大小设置不合理。后来我就模拟了生产环境配置，对连接数压测进行调节，降低最大线程数，最后系统的性能就上去了。
@@ -1459,6 +2852,7 @@ CAS乐观锁在高并发写大于读的场景下，大部分线程的原子操�
 ---
 
 ### 3.4.1 初识上下文切换
+
 我们首先得明白，上下文切换到底是什么。其实在单个处理器的时期，操作系统就能处理多线程并发任务。处理器给每个线程分配 CPU 时间片（Time Slice），线程在分配获得的时间片内执行任务。
 
 CPU 时间片是 CPU 分配给每个线程执行的时间段，一般为几十毫秒。在这么短的时间内线程互相切换，我们根本感觉不到，所以看上去就好像是同时进行的一样。时间片决定了一个线程可以连续占用处理器运行的时长。当一个线程的时间片用完了，或者因自身原因被迫暂停运行了，这个时候，另外一个线程（可以是同一个线程或者其它进程的线程）就会被操作系统选中，来占用处理器。这种一个线程被暂停剥夺使用权，另外一个线程被选中开始或者继续运行的过程就叫做上下文切换（Context Switch）。
@@ -1470,9 +2864,9 @@ CPU 时间片是 CPU 分配给每个线程执行的时间段，一般为几十�
 ---
 
 ### 3.4.2 多线程上下文切换诱因
+
 在操作系统中，上下文切换的类型还可以分为进程间的上下文切换和线程间的上下文切换。而在多线程编程中，我们主要面对的就是线程间的上下文切换导致的性能问题，下面我们就重点看看究竟是什么原因导致了多线程的上下文切换。开始之前，先看下系统线程的生命周期状态。
 ![alt text](Java-performance-tuning/14dde8a9486799ad1aa13aa06003757e.jpg)
-
 
 结合图示可知，线程主要有“新建”（NEW）、“就绪”（RUNNABLE）、“运行”（RUNNING）、“阻塞”（BLOCKED）、“死亡”（DEAD）五种状态。到了Java层面它们都被映射为了NEW、RUNABLE、BLOCKED、WAITING、TIMED_WAITING、TERMINADTED等6种状态。
 
@@ -1483,6 +2877,7 @@ CPU 时间片是 CPU 分配给每个线程执行的时间段，一般为几十�
 通过线程的运行状态以及状态间的相互切换，我们可以了解到，多线程的上下文切换实际上就是由多线程两个运行状态的互相切换导致的。那么在线程运行时，线程状态由 RUNNING 转为 BLOCKED 或者由 BLOCKED 转为 RUNNABLE，这又是什么诱发的呢？
 
 我们可以分两种情况来分析，一种是程序本身触发的切换，这种我们称为自发性上下文切换，另一种是由系统或者虚拟机诱发的非自发性上下文切换。自发性上下文切换指线程由 Java 程序调用导致切出，在多线程编程中，执行调用以下方法或关键字，常常就会引发自发性上下文切换。
+
 - sleep()
 - wait()
 - yield()
@@ -1504,7 +2899,9 @@ STW事件发生的原因主要是GC需要在安全的状态下执行，确保在
 ---
 
 ### 3.4.3 发现上下文切换
+
 我们总说上下文切换会带来系统开销，那它带来的性能问题是不是真有这么糟糕呢？我们又该怎么去监测到上下文切换？上下文切换到底开销在哪些环节？接下来我将给出一段代码，来对比串联执行和并发执行的速度，然后一一解答这些问题。
+
 ```java
 public class DemoApplication {
        public static void main(String[] args) {
@@ -1547,7 +2944,7 @@ public class DemoApplication {
                                          if(counter < 100000000) {
                                                 increaseCounter();
                                          }
-                                         
+                               
                                   }
                            }
                      }
@@ -1573,13 +2970,14 @@ public class DemoApplication {
               public int getCount() {
                      return this.counter;
               }
-              public void increaseCounter() {             
+              public void increaseCounter() {   
                      this.counter += 1;
               }
               public abstract void Start();
        }
 }
 ```
+
 执行之后，看一下两者的时间测试结果：
 ![alt text](Java-performance-tuning/be3a4dbe5abbafc7121bae9ab46b1f47.jpg)
 
@@ -1600,6 +2998,7 @@ public class DemoApplication {
 ---
 
 ### 3.4.4 总结
+
 上下文切换就是一个工作的线程被另外一个线程暂停，另外一个线程占用了处理器开始执行任务的过程。系统和 Java 程序自发性以及非自发性的调用操作，就会导致上下文切换，从而带来系统开销。
 
 线程越多，系统的运行速度不一定越快。那么我们平时在并发量比较大的情况下，什么时候用单线程，什么时候用多线程呢？一般在单个逻辑比较简单，而且速度相对来非常快的情况下，我们可以使用单线程。例如，我们前面讲到的 Redis，从内存中快速读取值，不用考虑 I/O 瓶颈带来的阻塞问题。而在逻辑相对来说很复杂的场景，等待时间相对较长又或者是需要大量计算的场景，我建议使用多线程来提高系统的整体性能。例如，NIO 时期的文件读写操作、图像处理以及大数据分析等。
@@ -1613,6 +3012,7 @@ public class DemoApplication {
 ---
 
 ## 3.5 多线程调优（下）：如何优化多线程上下文切换？
+
 通过上一讲的讲解，相信你对上下文切换已经有了一定的了解了。如果是单个线程，在 CPU 调用之后，那么它基本上是不会被调度出去的。如果可运行的线程数远大于 CPU 数量，那么操作系统最终会将某个正在运行的线程调度出来，从而使其它线程能够使用 CPU ，这就会导致上下文切换。
 
 还有，在多线程中如果使用了竞争锁，当线程由于等待竞争锁而被阻塞时，JVM 通常会将这个线程挂起，并允许它被交换出去。如果频繁地发生阻塞，CPU 密集型的程序就会发生更多的上下文切换。
@@ -1622,16 +3022,19 @@ public class DemoApplication {
 ---
 
 ### 3.5.1 竞争锁优化
+
 大多数人在多线程编程中碰到性能问题，第一反应多是想到了锁。多线程对锁资源的竞争会引起上下文切换，还有锁竞争导致的线程阻塞越多，上下文切换就越频繁，系统的性能开销也就越大。由此可见，在多线程编程中，锁其实不是性能开销的根源，竞争锁才是。
 
 第11～13讲中我曾集中讲过锁优化，我们知道锁的优化归根结底就是减少竞争。这讲中我们就再来总结下锁优化的一些方式。
 
 #### 1.减少锁的持有时间
+
 我们知道，锁的持有时间越长，就意味着有越多的线程在等待该竞争资源释放。如果是Synchronized同步锁资源，就不仅是带来线程间的上下文切换，还有可能会增加进程间的上下文切换。
 
 在第12讲中，我曾分享过一些更具体的方法，例如，可以将一些与锁无关的代码移出同步代码块，尤其是那些开销较大的操作以及可能被阻塞的操作。
 
 - 优化前
+
 ```
 public synchronized void mySyncMethod(){  
         businesscode1();  
@@ -1639,7 +3042,9 @@ public synchronized void mySyncMethod(){
         businesscode2();
     }
 ```
+
 - 优化后
+
 ```
 public void mySyncMethod(){  
         businesscode1();  
@@ -1652,14 +3057,15 @@ public void mySyncMethod(){
 ```
 
 #### 2.降低锁的粒度
+
 同步锁可以保证对象的原子性，我们可以考虑将锁粒度拆分得更小一些，以此避免所有线程对一个锁资源的竞争过于激烈。具体方式有以下两种：
 
 - 锁分离
-与传统锁不同的是，读写锁实现了锁分离，也就是说读写锁是由“读锁”和“写锁”两个锁实现的，其规则是可以共享读，但只有一个写。这样做的好处是，在多线程读的时候，读读是不互斥的，读写是互斥的，写写是互斥的。而传统的独占锁在没有区分读写锁的时候，读写操作一般是：读读互斥、读写互斥、写写互斥。所以在读远大于写的多线程场景中，锁分离避免了在高并发读情况下的资源竞争，从而避免了上下文切换。
-
+  与传统锁不同的是，读写锁实现了锁分离，也就是说读写锁是由“读锁”和“写锁”两个锁实现的，其规则是可以共享读，但只有一个写。这样做的好处是，在多线程读的时候，读读是不互斥的，读写是互斥的，写写是互斥的。而传统的独占锁在没有区分读写锁的时候，读写操作一般是：读读互斥、读写互斥、写写互斥。所以在读远大于写的多线程场景中，锁分离避免了在高并发读情况下的资源竞争，从而避免了上下文切换。
 - 锁分段 我们在使用锁来保证集合或者大对象原子性时，可以考虑将锁对象进一步分解。例如，我之前讲过的 Java1.8 之前版本的 ConcurrentHashMap 就使用了锁分段。
 
 #### 3.非阻塞乐观锁替代竞争锁
+
 volatile关键字的作用是保障可见性及有序性，volatile的读写操作不会导致上下文切换，因此开销比较小。 但是，volatile不能保证操作变量的原子性，因为没有锁的排他性。
 
 而 CAS 是一个原子的 if-then-act 操作，CAS 是一个无锁算法实现，保障了对一个共享变量读写操作的一致性。CAS 操作中有 3 个操作数，内存值 V、旧的预期值 A和要修改的新值 B，当且仅当 A 和 V 相同时，将 V 修改为 B，否则什么都不做，CAS 算法将不会导致上下文切换。Java 的 Atomic 包就使用了 CAS 算法来更新数据，就不需要额外加锁。
@@ -1671,9 +3077,11 @@ volatile关键字的作用是保障可见性及有序性，volatile的读写操�
 ---
 
 ### 3.5.2 wait/notify优化
+
 在 Java 中，我们可以通过配合调用 Object 对象的 wait()方法和 notify()方法或 notifyAll() 方法来实现线程间的通信。在线程中调用 wait()方法，将阻塞等待其它线程的通知（其它线程调用notify()方法或notifyAll()方法），在线程中调用 notify()方法或 notifyAll()方法，将通知其它线程从 wait()方法处返回。
 
 下面我们通过wait() / notify()来实现一个简单的生产者和消费者的案例，代码如下：
+
 ```
 public class WaitNotifyTest {
     public static void main(String[] args) {
@@ -1692,12 +3100,12 @@ public class WaitNotifyTest {
     class Producer implements Runnable{
         private Vector<Integer> pool;
         private Integer size;
-        
+  
         public Producer(Vector<Integer>  pool, Integer size) {
             this.pool = pool;
             this.size = size;
         }
-        
+  
         public void run() {
             for(;;){
                 try {
@@ -1734,7 +3142,7 @@ public class WaitNotifyTest {
         public Consumer(Vector<Integer>  pool) {
             this.pool = pool;
         }
-        
+  
         public void run() {
             for(;;){
                 try {
@@ -1746,7 +3154,7 @@ public class WaitNotifyTest {
                 }
             }
         }
-        
+  
         private void consume() throws InterruptedException{
             synchronized (pool) {
                 while(pool.isEmpty()) {
@@ -1757,7 +3165,7 @@ public class WaitNotifyTest {
             synchronized (pool) {
                 pool.remove(0);
                 pool.notifyAll();//通知生产者生产商品
-                
+      
             }
         }
 
@@ -1765,6 +3173,7 @@ public class WaitNotifyTest {
 ```
 
 #### wait/notify的使用导致了较多的上下文切换
+
 结合以下图片，我们可以看到，在消费者第一次申请到锁之前，发现没有商品消费，此时会执行 Object.wait() 方法，这里会导致线程挂起，进入阻塞状态，这里为一次上下文切换。
 
 当生产者获取到锁并执行notifyAll()之后，会唤醒处于阻塞状态的消费者线程，此时这里又发生了一次上下文切换。被唤醒的等待线程在继续运行时，需要再次申请相应对象的内部锁，此时等待线程可能需要和其它新来的活跃线程争用内部锁，这也可能会导致上下文切换。
@@ -1774,6 +3183,7 @@ public class WaitNotifyTest {
 ![alt text](Java-performance-tuning/601517ef35af63a9e470b8531124bc0a.jpg)
 
 #### 优化wait/notify的使用，减少上下文切换
+
 首先，我们在多个不同消费场景中，可以使用 Object.notify() 替代 Object.notifyAll()。 因为Object.notify() 只会唤醒指定线程，不会过早地唤醒其它未满足需求的阻塞线程，所以可以减少相应的上下文切换。
 
 其次，在生产者执行完 Object.notify() / notifyAll()唤醒其它线程之后，应该尽快地释放内部锁，以避免其它线程在唤醒之后长时间地持有锁处理业务操作，这样可以避免被唤醒的线程再次申请相应内部锁的时候等待锁的释放。
@@ -1785,6 +3195,7 @@ Condition 接口定义的 await 方法 、signal 方法和 signalAll 方法分�
 ---
 
 ### 3.5.3 合理地设置线程池大小，避免创建过多线程
+
 线程池的线程数量设置不宜过大，因为一旦线程池的工作线程总数超过系统所拥有的处理器数量，就会导致过多的上下文切换。更多关于如何合理设置线程池数量的内容，我将在第18讲中详解。
 
 还有一种情况就是，在有些创建线程池的方法里，线程数量设置不会直接暴露给我们。比如，用 Executors.newCachedThreadPool() 创建的线程池，该线程池会复用其内部空闲的线程来处理新提交的任务，如果没有，再创建新的线程（不受 MAX_VALUE 限制），这样的线程池如果碰到大量且耗时长的任务场景，就会创建非常多的工作线程，从而导致频繁的上下文切换。因此，这类线程池就只适合处理大量且耗时短的非阻塞任务。
@@ -1792,6 +3203,7 @@ Condition 接口定义的 await 方法 、signal 方法和 signalAll 方法分�
 ---
 
 ### 3.5.4 使用协程实现非阻塞等待
+
 相信很多人一听到协程（Coroutines），马上想到的就是Go语言。协程对于大部分 Java 程序员来说可能还有点陌生，但其在 Go 中的使用相对来说已经很成熟了。
 
 协程是一种比线程更加轻量级的东西，相比于由操作系统内核来管理的进程和线程，协程则完全由程序本身所控制，也就是在用户态执行。协程避免了像线程切换那样产生的上下文切换，在性能方面得到了很大的提升。协程在多线程业务上的运用，我会在第18讲中详述。
@@ -1799,6 +3211,7 @@ Condition 接口定义的 await 方法 、signal 方法和 signalAll 方法分�
 ---
 
 ### 3.5.5 减少Java虚拟机的垃圾回收
+
 我们在上一讲讲上下文切换的诱因时，曾提到过“垃圾回收会导致上下文切换”。
 
 很多 JVM 垃圾回收器（serial收集器、ParNew收集器）在回收旧对象时，会产生内存碎片，从而需要进行内存整理，在这个过程中就需要移动存活的对象。而移动内存对象就意味着这些对象所在的内存地址会发生变化，因此在移动对象前需要暂停线程，在移动完成后需要再次唤醒该线程。因此减少 JVM 垃圾回收的频率可以有效地减少上下文切换。
@@ -1806,6 +3219,7 @@ Condition 接口定义的 await 方法 、signal 方法和 signalAll 方法分�
 ---
 
 ### 3.5.6 总结
+
 上下文切换是多线程编程性能消耗的原因之一，而竞争锁、线程间的通信以及过多地创建线程等多线程编程操作，都会给系统带来上下文切换。除此之外，I/O阻塞以及JVM的垃圾回收也会增加上下文切换。
 
 总的来说，过于频繁的上下文切换会影响系统的性能，所以我们应该避免它。另外，我们还可以将上下文切换也作为系统的性能参考指标，并将该指标纳入到服务性能监控，防患于未然。
@@ -1813,9 +3227,11 @@ Condition 接口定义的 await 方法 、signal 方法和 signalAll 方法分�
 ---
 
 ## 3.6 并发容器的使用：识别不同场景下最优容器
+
 在并发编程中，我们经常会用到容器。今天我要和你分享的话题就是：在不同场景下我们该如何选择最优容器。
 
 ### 3.6.1 并发场景下的Map容器
+
 假设我们现在要给一个电商系统设计一个简单的统计商品销量TOP 10的功能。常规情况下，我们是用一个哈希表来存储商品和销量键值对，然后使用排序获得销量前十的商品。在这里，哈希表是实现该功能的关键。那么请思考一下，如果要你设计这个功能，你会使用哪个容器呢？在07讲中，我曾详细讲过HashMap的实现原理，以及HashMap结构的各个优化细节。我说过HashMap的性能优越，经常被用来存储键值对。那么这里我们可以使用HashMap吗？
 
 答案是不可以，我们切忌在并发场景下使用HashMap。因为在JDK1.7之前，在并发场景下使用HashMap会出现死循环，从而导致CPU使用率居高不下，而扩容是导致死循环的主要原因。虽然Java在JDK1.8中修复了HashMap扩容导致的死循环问题，但在高并发场景下，依然会有数据丢失以及不准确的情况出现。
@@ -1830,6 +3246,7 @@ ConcurrentSkipListMap是基于TreeMap的设计原理实现的，略有不同的�
 ---
 
 ### 3.6.2 Hashtable 🆚 ConcurrentHashMap
+
 更精准的话，我们可以进一步对比看看以上两种容器。
 
 在数据不断地写入和删除，且不存在数据量累积以及数据排序的场景下，我们可以选用Hashtable或ConcurrentHashMap。Hashtable使用Synchronized同步锁修饰了put、get、remove等方法，因此在高并发场景下，读写操作都会存在大量锁竞争，给系统带来性能开销。
@@ -1846,6 +3263,7 @@ ConcurrentSkipListMap是基于TreeMap的设计原理实现的，略有不同的�
 ---
 
 ### 3.6.3 ConcurrentHashMap 🆚 ConcurrentSkipListMap
+
 我们再看一个案例，我上家公司的操作系统中有这样一个功能，提醒用户手机卡实时流量不足。主要的流程是服务端先通过虚拟运营商同步用户实时流量，再通过手机端定时触发查询功能，如果流量不足，就弹出系统通知。
 
 该功能的特点是用户量大，并发量高，写入多于查询操作。这时我们就需要设计一个缓存，用来存放这些用户以及对应的流量键值对信息。那么假设让你来实现一个简单的缓存，你会怎么设计呢？
@@ -1871,6 +3289,7 @@ ConcurrentSkipListMap是基于TreeMap的设计原理实现的，略有不同的�
 ---
 
 ### 3.6.4 并发场景下的List容器
+
 下面我们再来看一个实际生产环境中的案例。在大部分互联网产品中，都会设置一份黑名单。例如，在电商系统中，系统可能会将一些频繁参与抢购却放弃付款的用户放入到黑名单列表。想想这个时候你又会使用哪个容器呢？首先用户黑名单的数据量并不会很大，但在抢购中需要查询该容器，快速获取到该用户是否存在于黑名单中。其次用户ID是整数类型，因此我们可以考虑使用数组来存储。那么ArrayList是否是你第一时间想到的呢？
 
 我讲过ArrayList是非线程安全容器，在并发场景下使用很可能会导致线程安全问题。这时，我们就可以考虑使用Java在并发编程中提供的线程安全数组，包括Vector和CopyOnWriteArrayList。Vector也是基于Synchronized同步锁实现的线程安全，Synchronized关键字几乎修饰了所有对外暴露的方法，所以在读远大于写的操作场景中，Vector将会发生大量锁竞争，从而给系统带来性能开销。
@@ -1883,6 +3302,7 @@ ConcurrentSkipListMap是基于TreeMap的设计原理实现的，略有不同的�
 ---
 
 ### 3.6.5 总结
+
 在并发编程中，我们经常会使用容器来存储数据或对象。Java在JDK1.1到JDK1.8这个漫长的发展过程中，依据场景的变化实现了同类型的多种容器。我将今天的主要内容为你总结了一张表格，希望能对你有所帮助，也欢迎留言补充。
 ![alt text](Java-performance-tuning/6d6371fda6214743d69c54528cd8ff99.jpg)
 
@@ -1892,9 +3312,11 @@ ConcurrentSkipListMap是基于TreeMap的设计原理实现的，略有不同的�
 ---
 
 ## 3.7 如何设置线程池大小？
+
 还记得我在16讲中说过“线程池的线程数量设置过多会导致线程竞争激烈”吗？今天再补一句，如果线程数量设置过少的话，还会导致系统无法充分利用计算机资源。那么如何设置才不会影响系统性能呢？其实线程池的设置是有方法的，不是凭借简单的估算来决定的。今天我们就来看看究竟有哪些计算方法可以复用，线程池中各个参数之间又存在怎样的关系。
 
 ### 3.7.1 线程池原理
+
 开始优化之前，我们先来看看线程池的实现原理，有助于你更好地理解后面的内容。在HotSpot VM的线程模型中，Java线程被一对一映射为内核线程。Java在使用线程执行程序时，需要创建一个内核线程；当该Java线程被终止时，这个内核线程也会被回收。因此Java线程的创建与销毁将会消耗一定的计算机资源，从而增加系统的性能开销。除此之外，大量创建线程同样会给系统带来性能问题，因为内存和CPU资源都将被线程抢占，如果处理不当，就会发生内存溢出、CPU使用率超负荷等问题。
 
 为了解决上述两类问题，Java提供了线程池概念，对于频繁创建线程的业务场景，线程池可以创建固定的线程数量，并且在操作系统底层，轻量级进程将会把这些线程映射到内核。
@@ -1902,6 +3324,7 @@ ConcurrentSkipListMap是基于TreeMap的设计原理实现的，略有不同的�
 线程池可以提高线程复用，又可以固定最大线程使用量，防止无限制地创建线程。当程序提交一个任务需要一个线程时，会去线程池中查找是否有空闲的线程，若有，则直接使用线程池中的线程工作，若没有，会去判断当前已创建的线程数量是否超过最大线程数量，如未超过，则创建新线程，如已超过，则进行排队等待或者直接抛出异常。
 
 ### 3.7.2 线程池框架Executor
+
 Java最开始提供了ThreadPool实现了线程池，为了更好地实现用户级的线程调度，更有效地帮助开发人员进行多线程开发，Java提供了一套Executor框架。
 
 这个框架中包括了ScheduledThreadPoolExecutor和ThreadPoolExecutor两个核心线程池。前者是用来定时执行任务，后者是用来执行被提交的任务。鉴于这两个线程池的核心原理是一样的，下面我们就重点看看ThreadPoolExecutor类是如何实现线程池的。Executors实现了以下四种类型的ThreadPoolExecutor：
@@ -1910,6 +3333,7 @@ Java最开始提供了ThreadPool实现了线程池，为了更好地实现用户
 Executors利用工厂模式实现的四种线程池，我们在使用的时候需要结合生产环境下的实际场景。不过我不太推荐使用它们，因为选择使用Executors提供的工厂类，将会忽略很多线程池的参数设置，工厂类一旦选择设置默认参数，就很容易导致无法调优参数设置，从而产生性能问题或者资源浪费。
 
 这里我建议你使用ThreadPoolExecutor自我定制一套线程池。进入四种工厂类后，我们可以发现除了newScheduledThreadPool类，其它类均使用了ThreadPoolExecutor类进行实现，你可以通过以下代码简单看下该方法：
+
 ```
 public ThreadPoolExecutor
     (int corePoolSize,//线程池的核心线程数量
@@ -1919,7 +3343,6 @@ public ThreadPoolExecutor
     BlockingQueue<Runnable> workQueue,//任务队列，用来储存等待执行任务的队列
     ThreadFactory threadFactory,//线程工厂，用来创建线程，一般默认即可
     RejectedExecutionHandler handler) //拒绝策略，当提交的任务过多而不能及时处理时，我们可以定制策略来处理任务
-
 ```
 
 我们还可以通过下面这张图来了解下线程池中各个参数的相互关系：
@@ -1939,9 +3362,12 @@ public ThreadPoolExecutor
 ---
 
 ### 3.7.3 计算线程数量
+
 了解完线程池的实现原理和框架，我们就可以动手实践优化线程池的设置了。我们知道，环境具有多变性，设置一个绝对精准的线程数其实是不大可能的，但我们可以通过一些实际操作因素来计算出一个合理的线程数，避免由于线程池设置不合理而导致的性能问题。下面我们就来看看具体的计算方法。
+
 - 一般多线程执行的任务类型可以分为CPU密集型和I/O密集型，根据不同的任务类型，我们计算线程数的方法也不一样。
 - CPU密集型任务：这种任务消耗的主要是CPU资源，可以将线程数设置为N（CPU核心数）+1，比CPU核心数多出来的一个线程是为了防止线程偶发的缺页中断，或者其它原因导致的任务暂停而带来的影响。一旦任务暂停，CPU就会处于空闲状态，而在这种情况下多出来的一个线程就可以充分利用CPU的空闲时间。下面我们用一个例子来验证下这个方法的可行性，通过观察CPU密集型任务在不同线程数下的性能情况就可以得出结果，你可以点击Github下载到本地运行测试：
+
 ```
 public class CPUTypeTest implements Runnable {
 
@@ -1949,9 +3375,9 @@ public class CPUTypeTest implements Runnable {
 	List<Long> wholeTimeList;
 	//真正执行时间
 	List<Long> runTimeList;
-	
+
 	private long initStartTime = 0;
-	
+
 	/**
 	 * 构造函数
 	 * @param runTimeList
@@ -1962,7 +3388,7 @@ public class CPUTypeTest implements Runnable {
 		this.runTimeList = runTimeList;
 		this.wholeTimeList = wholeTimeList;
 	}
-	
+
 	/**
 	 * 判断素数
 	 * @param number
@@ -2015,6 +3441,7 @@ public class CPUTypeTest implements Runnable {
 综上可知：当线程数量太小，同一时间大量请求将被阻塞在线程队列中排队等待执行线程，此时CPU没有得到充分利用；当线程数量太大，被创建的执行线程同时在争取CPU资源，又会导致大量的上下文切换，从而增加线程的执行时间，影响了整体执行效率。通过测试可知，4~6个线程数是最合适的。
 
 - I/O密集型任务：这种任务应用起来，系统会用大部分的时间来处理I/O交互，而线程在处理I/O的时间段内不会占用CPU来处理，这时就可以将CPU交出给其它线程使用。因此在I/O密集型任务的应用中，我们可以多配置一些线程，具体的计算方法是2N。这里我们还是通过一个例子来验证下这个公式是否可以标准化：
+
 ```
 public class IOTypeTest implements Runnable {
 
@@ -2022,9 +3449,9 @@ public class IOTypeTest implements Runnable {
     Vector<Long> wholeTimeList;
     //真正执行时间
     Vector<Long> runTimeList;
-    
+  
     private long initStartTime = 0;
-    
+  
     /**
      * 构造函数
      * @param runTimeList
@@ -2035,7 +3462,7 @@ public class IOTypeTest implements Runnable {
     this.runTimeList = runTimeList;
     this.wholeTimeList = wholeTimeList;
     }
-    
+  
     /**
      *IO操作
      * @param number
@@ -2074,10 +3501,12 @@ public class IOTypeTest implements Runnable {
     }
 }
 ```
+
 备注：由于测试代码读取2MB大小的文件，涉及到大内存，所以在运行之前，我们需要调整JVM的堆内存空间：-Xms4g -Xmx4g，避免发生频繁的FullGC，影响测试结果。
 ![alt text](Java-performance-tuning/0bb0fe79bc9fc3c386815e3d0bfcf088.jpg)
 
 - 通过测试结果，我们可以看到每个线程所花费的时间。当线程数量在8时，线程平均执行时间是最佳的，这个线程数量和我们的计算公式所得的结果就差不多。看完以上两种情况下的线程计算方法，你可能还想说，在平常的应用场景中，我们常常遇不到这两种极端情况，那么碰上一些常规的业务操作，比如，通过一个线程池实现向用户定时推送消息的业务，我们又该如何设置线程池的数量呢？此时我们可以参考以下公式来计算线程数：
+
 ```
 线程数=N（CPU核数）*（1+WT（线程等待时间）/ST（线程时间运行时间））
 ```
@@ -2095,6 +3524,7 @@ WT（线程等待时间）= 36788ms [线程运行总时间] - 36788ms[ST（线�
 ---
 
 ### 3.7.4 总结
+
 今天我们主要学习了线程池的实现原理，Java线程的创建和消耗会给系统带来性能开销，因此Java提供了线程池来复用线程，提高程序的并发效率。
 
 Java通过用户线程与内核线程结合的1:1线程模型来实现，Java将线程的调度和管理设置在了用户态，提供了一套Executor框架来帮助开发人员提高效率。Executor框架不仅包括了线程池的管理，还提供了线程工厂、队列以及拒绝策略等，可以说Executor框架为并发编程提供了一个完善的架构体系。
@@ -2106,6 +3536,7 @@ Java通过用户线程与内核线程结合的1:1线程模型来实现，Java将
 **思考题:** 在程序中，除了并行段代码，还有串行段代码。那么当程序同时存在串行和并行操作时，优化并行操作是不是优化系统的关键呢？
 
 **解答：**
+
 - 关键因素
   - 程序中的串行部分：无论并行部分优化得多好，串行部分的存在都会限制程序的整体性能提升。如果程序有较大比例的串行部分，即使并行部分显著优化，整体性能提高仍有限。
   - 程序中的并行部分：如果并行部分在程序中占据较大比例，通过提升并行部分的性能可以大幅提升整体性能，这时并行优化是关键。
@@ -2117,9 +3548,11 @@ Java通过用户线程与内核线程结合的1:1线程模型来实现，Java将
 近一两年，国内很多互联网公司开始使用或转型Go语言，其中一个很重要的原因就是Go语言优越的性能表现，而这个优势与Go实现的轻量级线程Goroutines（协程Coroutine）不无关系。那么Go协程的实现与Java线程的实现有什么区别呢？
 
 ### 3.8.1 线程实现模型
+
 了解协程和线程的区别之前，我们不妨先来了解下底层实现线程几种方式，为后面的学习打个基础。实现线程主要有三种方式：轻量级进程和内核线程一对一相互映射实现的1:1线程模型、用户线程和内核线程实现的N:1线程模型以及用户线程和轻量级进程混合实现的N:M线程模型。
 
 #### 1:1线程模型
+
 以上我提到的内核线程（Kernel-Level Thread, KLT）是由操作系统内核支持的线程，内核通过调度器对线程进行调度，并负责完成线程的切换。
 
 我们知道在Linux操作系统编程中，往往都是通过fork()函数创建一个子进程来代表一个内核中的线程。一个进程调用fork()函数后，系统会先给新的进程分配资源，例如，存储数据和代码的空间。然后把原来进程的所有值都复制到新的进程中，只有少数值与原来进程的值（比如PID）不同，这相当于复制了一个主进程。
@@ -2129,11 +3562,13 @@ Java通过用户线程与内核线程结合的1:1线程模型来实现，Java将
 相对于fork()系统调用创建的线程来说，LWP使用clone()系统调用创建线程，该函数是将部分父进程的资源的数据结构进行复制，复制内容可选，且没有被复制的资源可以通过指针共享给子进程。因此，轻量级进程的运行单元更小，运行速度更快。LWP是跟内核线程一对一映射的，每个LWP都是由一个内核线程支持。
 
 #### N:1线程模型
+
 1:1线程模型由于跟内核是一对一映射，所以在线程创建、切换上都存在用户态和内核态的切换，性能开销比较大。除此之外，它还存在局限性，主要就是指系统的资源有限，不能支持创建大量的LWP。N:1线程模型就可以很好地解决1:1线程模型的这两个问题。
 
 该线程模型是在用户空间完成了线程的创建、同步、销毁和调度，已经不需要内核的帮助了，也就是说在线程创建、同步、销毁的过程中不会产生用户态和内核态的空间切换，因此线程的操作非常快速且低消耗。
 
 #### N:M线程模型
+
 N:1线程模型的缺点在于操作系统不能感知用户态的线程，因此容易造成某一个线程进行系统调用内核线程时被阻塞，从而导致整个进程被阻塞。
 
 N:M线程模型是基于上述两种线程模型实现的一种混合线程管理模型，即支持用户态线程通过LWP与内核线程连接，用户态的线程数量和内核态的LWP数量是N:M的映射关系。
@@ -2149,6 +3584,7 @@ N:M线程模型是基于上述两种线程模型实现的一种混合线程管�
 ---
 
 ### 3.8.2 协程的实现原理
+
 协程不只在Go语言中实现了，其实目前大部分语言都实现了自己的一套协程，包括C#、erlang、python、lua、javascript、ruby等。
 
 - 相对于协程，你可能对进程和线程更为熟悉。进程一般代表一个应用服务，在一个应用服务中可以创建多个线程，而协程与进程、线程的概念不一样，我们可以将协程看作是一个类函数或者一块函数中的代码，我们可以在一个主线程里面轻松创建多个协程。
@@ -2164,6 +3600,7 @@ N:M线程模型是基于上述两种线程模型实现的一种混合线程管�
 ---
 
 ### 3.8.3 Kilim协程框架
+
 虽然这么多的语言都实现了协程，但目前Java原生语言暂时还不支持协程。不过你也不用泄气，我们可以通过协程框架在Java中使用协程。目前Kilim协程框架在Java中应用得比较多，通过这个框架，开发人员就可以低成本地在Java中使用协程了。
 
 在Java中引入 Kilim，和我们平时引入第三方组件不太一样，除了引入jar包之外，还需要通过Kilim提供的织入（Weaver）工具对Java代码编译生成的字节码进行增强处理，比如，识别哪些方式是可暂停的，对相关的方法添加上下文处理。通常有以下四种方式可以实现这种织入操作：
@@ -2184,7 +3621,9 @@ Kilim框架包含了四个核心组件，分别为：任务载体（Task）、�
 ---
 
 ### 3.8.4 协程与线程的性能比较
+
 接下来，我们通过一个简单的生产者和消费者的案例，来对比下协程和线程的性能。可通过[Github](https://github.com/nickliuchao/coroutine)下载本地运行代码。Java多线程实现源码：
+
 ```
 public class MyThread {
 	private static Integer count = 0;//
@@ -2261,6 +3700,7 @@ public class MyThread {
 ```
 
 **Kilim协程框架实现源码：**
+
 ```
 public class Coroutine  {
 
@@ -2278,18 +3718,18 @@ public class Coroutine  {
 			new Producer(i, mb).start();
 			mailMap.put(i, mb);
 		}
-		
+
 		for (int i = 0; i < 1000; i++) {//创建一千个消费者
 			new Consumer(mailMap.get(i)).start();
 		}
-		
+
 		Task.idledown();//开始运行
-		
+
 		 long endTime = System.currentTimeMillis();
-	        
+	  
 	     System.out.println( Thread.currentThread().getName()  + "总计花费时长：" + (endTime- startTime));
 	}
-	
+
 }
 
 //生产者
@@ -2329,7 +3769,7 @@ public class Consumer extends Task<Object> {
 		Integer c = null;
 		for (int i = 0; i < 10000; i++)  {
 			c = mb.get();//获取消息，阻塞协程线程
-			
+
 			if (c == null) {
 				System.out.println("计数");
 			}else {
@@ -2339,21 +3779,24 @@ public class Consumer extends Task<Object> {
 		}
 	}
 }
-
 ```
 
 在这个案例中，我创建了1000个生产者和1000个消费者，每个生产者生产10个产品，1000个消费者同时消费产品。我们可以看到两个例子运行的结果如下：
+
 ```
 多线程执行时长：2761
 ```
+
 ```
 协程执行时长：1050
 ```
+
 通过上述性能对比，我们可以发现：在有严重阻塞的场景下，协程的性能更胜一筹。其实，I/O阻塞型场景也就是协程在Java中的主要应用。
 
 ---
 
 ### 3.8.5 总结
+
 协程和线程密切相关，协程可以认为是运行在线程上的代码块，协程提供的挂起操作会使协程暂停执行，而不会导致线程阻塞。协程又是一种轻量级资源，即使创建了上千个协程，对于系统来说也不是很大的负担，但如果在程序中创建上千个线程，那系统可真就压力山大了。可以说，协程的设计方式极大地提高了线程的使用率。
 
 通过今天的学习，当其他人侃侃而谈Go语言在网络编程中的优势时，相信你不会一头雾水。学习Java的我们也不要觉得，协程离我们很遥远了。协程是一种设计思想，不仅仅局限于某一门语言，况且Java已经可以借助协程框架实现协程了。
@@ -2365,9 +3808,11 @@ public class Consumer extends Task<Object> {
 ---
 
 ## 3.9 什么是数据的强、弱一致性？
+
 说到一致性，其实在系统的很多地方都存在数据一致性的相关问题。除了在并发编程中保证共享变量数据的一致性之外，还有数据库的ACID中的C（Consistency 一致性）、分布式系统的CAP理论中的C（Consistency 一致性）。下面我们主要讨论的就是“并发编程中共享变量的一致性”。
 
 在并发编程中，Java是通过共享内存来实现共享变量操作的，所以在多线程编程中就会涉及到数据一致性的问题。我先通过一个经典的案例来说明下多线程操作共享变量可能出现的问题，假设我们有两个线程（线程1和线程2）分别执行下面的方法，x是共享变量：
+
 ```
 //代码1
 public class Example {
@@ -2378,11 +3823,13 @@ public class Example {
     }
 }
 ```
+
 ![alt text](Java-performance-tuning/e1dfb18f71c76d1468fa94d43f8ca933.jpg)
 如果两个线程同时运行，两个线程的变量的值可能会出现以下三种结果：
 ![alt text](Java-performance-tuning/fb45f0c91af1a063d1f2db28dd21c49b.jpg)
 
 ### 3.9.1 Java存储模型
+
 2,1和1,2的结果我们很好理解，那为什么会出现以上1,1的结果呢？
 
 我们知道，Java采用共享内存模型来实现多线程之间的信息交换和数据同步。在解释为什么会出现这样的结果之前，我们先通过下图来简单了解下Java的内存模型（第21讲还会详解），程序在运行时，局部变量将会存放在虚拟机栈中，而共享变量将会被保存在堆内存中。
@@ -2403,6 +3850,7 @@ CPU 缓存可以分为一级缓存（L1）、二级缓存（L2）和三级缓存
 
 重排序
 除此之外，在Java内存模型中，还存在重排序的问题。请看以下代码：
+
 ```
 //代码1
 public class Example {
@@ -2421,6 +3869,7 @@ public class Example {
     }
 }
 ```
+
 ![alt text](Java-performance-tuning/ae1dc00bfc5e3a751cc427841d14c9a8.jpg)
 如果两个线程同时运行，线程2中的变量的值可能会出现以下两种可能：
 ![alt text](Java-performance-tuning/ca6a5d4bb77ff67b1d30fcaac37c25d6.jpg)
@@ -2430,16 +3879,19 @@ public class Example {
 ![alt text](Java-performance-tuning/880cbe050a2f65b1d9b457588f64f117.jpg)
 
 在不影响运算结果的前提下，编译器有可能会改变顺序代码的指令执行顺序，特别是在一些可以优化的场景。例如，在以下案例中，编译器为了尽可能地减少寄存器的读取、存储次数，会充分复用寄存器的存储值。如果没有进行重排序优化，正常的执行顺序是步骤1\2\3，而在编译期间进行了重排序优化之后，执行的步骤有可能就变成了步骤1/3/2或者2/1/3，这样就能减少一次寄存器的存取次数。
+
 ```
 int x = 1;//步骤1：加载x变量的内存地址到寄存器中，加载1到寄存器中，CPU通过mov指令把1写入到寄存器指定的内存中
 boolean flag = true; //步骤2 加载flag变量的内存地址到寄存器中，加载true到寄存器中，CPU通过mov指令把1写入到寄存器指定的内存中
 int y = x + 1;//步骤3 重新加载x变量的内存地址到寄存器中，加载1到寄存器中，CPU通过mov指令把1写入到寄存器指定的内存中
 ```
+
 在 JVM 中，重排序是十分重要的一环，特别是在并发编程中。可 JVM 要是能对它们进行任意排序的话，也可能会给并发编程带来一系列的问题，其中就包括了一致性的问题。
 
 ---
 
 ### 3.9.2 Happens-before规则
+
 为了解决这个问题，Java提出了Happens-before规则来规范线程的执行顺序：
 
 - 程序次序规则：在单线程中，代码的执行是有序的，虽然可能会存在运行指令的重排序，但最终执行的结果和顺序执行的结果是一致的；
@@ -2455,5 +3907,2705 @@ int y = x + 1;//步骤3 重新加载x变量的内存地址到寄存器中，加�
 
 - 严格一致性（强一致性）：所有的读写操作都按照全局时钟下的顺序执行，且任何时刻线程读取到的缓存数据都是一样的，Hashtable就是严格一致性；![alt text](Java-performance-tuning/650c9490bad5962cfcdd4bedf3e41f6b.jpg)
 - 顺序一致性：多个线程的整体执行可能是无序的，但对于单个线程而言执行是有序的，要保证任何一次读都能读到最近一次写入的数据，volatile可以阻止指令重排序，所以修饰的变量的程序属于顺序一致性；
-![alt text](Java-performance-tuning/6d70a02e0a4fb51259bd6ffcac0f75c6.jpg)
+  ![alt text](Java-performance-tuning/6d70a02e0a4fb51259bd6ffcac0f75c6.jpg)
 - 弱一致性：不能保证任何一次读都能读到最近一次写入的数据，但能保证最终可以读到写入的数据，单个写锁+无锁读，就是弱一致性的一种实现。
+
+# 四、JVM性能调优和检测
+
+## 4.1 磨刀不误砍柴工:欲知JVM调优先了解JVM内存模型
+
+从今天开始，我将和你一起探讨Java虚拟机（JVM）的性能调优。JVM算是面试中的高频问题了，通常情况下总会有人问到：请你讲解下JVM的内存模型，JVM的性能调优做过吗？
+
+### 4.1.1 为什么JVM在Java中如此重要？
+
+首先你应该知道，运行一个Java应用程序，我们必须要先安装JDK或者JRE包。这是因为Java应用在编译后会变成字节码，然后通过字节码运行在JVM中，而JVM是JRE的核心组成部分。
+
+JVM不仅承担了Java字节码的分析（JIT compiler）和执行（Runtime），同时也内置了自动内存分配管理机制。这个机制可以大大降低手动分配回收机制可能带来的内存泄露和内存溢出风险，使Java开发人员不需要关注每个对象的内存分配以及回收，从而更专注于业务本身。
+
+### 4.1.2 从了解内存模型开始
+
+JVM自动内存分配管理机制的好处很多，但实则是把双刃剑。这个机制在提升Java开发效率的同时，也容易使Java开发人员过度依赖于自动化，弱化对内存的管理能力，这样系统就很容易发生JVM的堆内存异常，垃圾回收（GC）的方式不合适以及GC次数过于频繁等问题，这些都将直接影响到应用服务的性能。
+
+因此，要进行JVM层面的调优，就需要深入了解JVM内存分配和回收原理，这样在遇到问题时，我们才能通过日志分析快速地定位问题；也能在系统遇到性能瓶颈时，通过分析JVM调优来优化系统性能。这也是整个模块四的重点内容，今天我们就从JVM的内存模型学起，为后续的学习打下一个坚实的基础。
+
+
+### 4.1.3 JVM内存模型的具体设计
+
+我们先通过一张JVM内存模型图，来熟悉下其具体设计。在Java中，JVM内存模型主要分为堆、程序计数器、方法区、虚拟机栈和本地方法栈。
+
+![1719123556082](images/Java-performance-tuning/1719123556082.png)
+
+JVM的5个分区具体是怎么实现的呢？我们一一分析。
+
+#### 1. 堆（Heap）
+
+堆是JVM内存中最大的一块内存空间，该内存被所有线程共享，几乎所有对象和数组都被分配到了堆内存中。堆被划分为新生代和老年代，新生代又被进一步划分为Eden和Survivor区，最后Survivor由From Survivor和To Survivor组成。
+
+在Java6版本中，永久代在非堆内存区；到了Java7版本，永久代的静态变量和运行时常量池被合并到了堆中；而到了Java8，永久代被元空间取代了。 结构如下图所示：
+
+![1719123725667](images/Java-performance-tuning/1719123725667.png)
+
+
+
+#### 2. 程序计数器（Program Counter Register）
+
+程序计数器是一块很小的内存空间，主要用来记录各个线程执行的字节码的地址，例如，分支、循环、跳转、异常、线程恢复等都依赖于计数器。由于Java是多线程语言，当执行的线程数量超过CPU核数时，线程之间会根据时间片轮询争夺CPU资源。如果一个线程的时间片用完了，或者是其它原因导致这个线程的CPU资源被提前抢夺，那么这个退出的线程就需要单独的一个程序计数器，来记录下一条运行的指令。
+
+#### 3. 方法区（Method Area）
+
+很多开发者都习惯将方法区称为“永久代”，其实这两者并不是等价的。HotSpot虚拟机使用永久代来实现方法区，但在其它虚拟机中，例如，Oracle的JRockit、IBM的J9就不存在永久代一说。因此，方法区只是JVM中规范的一部分，可以说，在HotSpot虚拟机中，设计人员使用了永久代来实现了JVM规范的方法区。
+
+方法区主要是用来存放已被虚拟机加载的类相关信息，包括类信息、运行时常量池、字符串常量池。类信息又包括了类的版本、字段、方法、接口和父类等信息。JVM在执行某个类的时候，必须经过加载、连接、初始化，而连接又包括验证、准备、解析三个阶段。在加载类的时候，JVM会先加载class文件，而在class文件中除了有类的版本、字段、方法和接口等描述信息外，还有一项信息是常量池(Constant Pool Table)，用于存放编译期间生成的各种字面量和符号引用。
+
+字面量包括字符串（String a=“b”）、基本类型的常量（final修饰的变量），符号引用则包括类和方法的全限定名（例如String这个类，它的全限定名就是Java/lang/String）、字段的名称和描述符以及方法的名称和描述符。而当类加载到内存中后，JVM就会将class文件常量池中的内容存放到运行时的常量池中；在解析阶段，JVM会把符号引用替换为直接引用（对象的索引值）。
+
+例如，类中的一个字符串常量在class文件中时，存放在class文件常量池中的；在JVM加载完类之后，JVM会将这个字符串常量放到运行时常量池中，并在解析阶段，指定该字符串对象的索引值。运行时常量池是全局共享的，多个类共用一个运行时常量池，class文件中常量池多个相同的字符串在运行时常量池只会存在一份。
+
+方法区与堆空间类似，也是一个共享内存区，所以方法区是线程共享的。假如两个线程都试图访问方法区中的同一个类信息，而这个类还没有装入JVM，那么此时就只允许一个线程去加载它，另一个线程必须等待。
+
+在HotSpot虚拟机、Java7版本中已经将永久代的静态变量和运行时常量池转移到了堆中，其余部分则存储在JVM的非堆内存中，而Java8版本已经将方法区中实现的永久代去掉了，并用元空间（class metadata）代替了之前的永久代，并且元空间的存储位置是本地内存。之前永久代的类的元数据存储在了元空间，永久代的静态变量（class static variables）以及运行时常量池（runtime constant pool）则跟Java7一样，转移到了堆中。那你可能又有疑问了，Java8为什么使用元空间替代永久代，这样做有什么好处呢？官方给出的解释是：
+
+* 移除永久代是为了融合 HotSpot JVM 与 JRockit VM 而做出的努力，因为JRockit没有永久代，所以不需要配置永久代。
+* 永久代内存经常不够用或发生内存溢出，爆出异常java.lang.OutOfMemoryError: PermGen。这是因为在JDK1.7版本中，指定的PermGen区大小为8M，由于PermGen中类的元数据信息在每次FullGC的时候都可能被收集，回收率都偏低，成绩很难令人满意；还有，为PermGen分配多大的空间很难确定，PermSize的大小依赖于很多因素，比如，JVM加载的class总数、常量池的大小和方法的大小等。
+
+#### 4.虚拟机栈（VM stack）
+
+Java虚拟机栈是线程私有的内存空间，它和Java线程一起创建。当创建一个线程时，会在虚拟机栈中申请一个线程栈，用来保存方法的局部变量、操作数栈、动态链接方法和返回地址等信息，并参与方法的调用和返回。每一个方法的调用都伴随着栈帧的入栈操作，方法的返回则是栈帧的出栈操作。
+
+#### 5.本地方法栈（Native Method Stack）
+
+本地方法栈跟Java虚拟机栈的功能类似，Java虚拟机栈用于管理Java函数的调用，而本地方法栈则用于管理本地方法的调用。但本地方法并不是用Java实现的，而是由C语言实现的。
+
+### 4.1.3 JVM的运行原理
+
+看到这里，相信你对JVM内存模型已经有个充分的了解了。接下来，我们通过一个案例来了解下代码和对象是如何分配存储的，Java代码又是如何在JVM中运行的。
+
+```java
+public class JVMCase {
+
+	// 常量
+	public final static String MAN_SEX_TYPE = "man";
+
+	// 静态变量
+	public static String WOMAN_SEX_TYPE = "woman";
+
+	public static void main(String[] args) {
+
+		Student stu = new Student();
+		stu.setName("nick");
+		stu.setSexType(MAN_SEX_TYPE);
+		stu.setAge(20);
+
+		JVMCase jvmcase = new JVMCase();
+
+		// 调用静态方法
+		print(stu);
+		// 调用非静态方法
+		jvmcase.sayHello(stu);
+	}
+
+
+	// 常规静态方法
+	public static void print(Student stu) {
+		System.out.println("name: " + stu.getName() + "; sex:" + stu.getSexType() + "; age:" + stu.getAge()); 
+	}
+
+
+	// 非静态方法
+	public void sayHello(Student stu) {
+		System.out.println(stu.getName() + "say: hello"); 
+	}
+}
+
+class Student{
+	String name;
+	String sexType;
+	int age;
+
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getSexType() {
+		return sexType;
+	}
+	public void setSexType(String sexType) {
+		this.sexType = sexType;
+	}
+	public int getAge() {
+		return age;
+	}
+	public void setAge(int age) {
+		this.age = age;
+	}
+}
+```
+
+
+当我们通过Java运行以上代码时，JVM的整个处理过程如下：
+
+1.JVM向操作系统申请内存，JVM第一步就是通过配置参数或者默认配置参数向操作系统申请内存空间，根据内存大小找到具体的内存分配表，然后把内存段的起始地址和终止地址分配给JVM，接下来JVM就进行内部分配。
+
+2.JVM获得内存空间后，会根据配置参数分配堆、栈以及方法区的内存大小。
+
+3.class文件加载、验证、准备以及解析，其中准备阶段会为类的静态变量分配内存，初始化为系统的初始值（这部分我在第21讲还会详细介绍）。
+
+![1719125002643](images/Java-performance-tuning/1719125002643.png)
+
+4.完成上一个步骤后，将会进行最后一个初始化阶段。在这个阶段中，JVM首先会执行构造器<clinit>方法，编译器会在.java 文件被编译成.class 文件时，收集所有类的初始化代码，包括静态变量赋值语句、静态代码块、静态方法，收集在一起成为 \<clinit>() 方法。
+
+![1719125182254](images/Java-performance-tuning/1719125182254.png)
+
+5.执行方法。启动main线程，执行main方法，开始执行第一行代码。此时堆内存中会创建一个student对象，对象引用student就存放在栈中。
+
+![1719125234712](images/Java-performance-tuning/1719125234712.png)
+
+6.此时再次创建一个JVMCase对象，调用sayHello非静态方法，sayHello方法属于对象JVMCase，此时sayHello方法入栈，并通过栈中的student引用调用堆中的Student对象；之后，调用静态方法print，print静态方法属于JVMCase类，是从静态方法中获取，之后放入到栈中，也是通过student引用调用堆中的student对象。
+
+![1719125327548](images/Java-performance-tuning/1719125327548.png)
+
+
+了解完实际代码在JVM中分配的内存空间以及运行原理，相信你会更加清楚内存模型中各个区域的职责分工。
+
+### 4.1.4 总结
+
+这讲我们主要深入学习了最基础的内存模型设计，了解其各个分区的作用及实现原理。如今，JVM在很大程度上减轻了Java开发人员投入到对象生命周期的管理精力。在使用对象的时候，JVM会自动分配内存给对象，在不使用的时候，垃圾回收器会自动回收对象，释放占用的内存。
+
+但在某些情况下，正常的生命周期不是最优的选择，有些对象按照JVM默认的方式，创建成本会很高。比如，我在[第03讲](https://time.geekbang.org/column/article/97215)讲到的String对象，在特定的场景使用String.intern可以很大程度地节约内存成本。我们可以使用不同的引用类型，改变一个对象的正常生命周期，从而提高JVM的回收效率，这也是JVM性能调优的一种方式。
+
+**思考题:**
+
+这讲我只提到了堆内存中对象分配内存空间的过程，那如果有一个类中定义了String a="b"和String c = new String(“b”)，请问这两个对象会分别创建在JVM内存模型中的哪块区域呢？
+
+
+## 4.2 深入JVM即时编译器JIT,优化Java编译
+
+说到编译，我猜你一定会想到 .java文件被编译成 .class文件的过程，这个编译我们一般称为前端编译。Java的编译和运行过程非常复杂，除了前端编译，还有运行时编译。由于机器无法直接运行Java生成的字节码，所以在运行时，JIT或解释器会将字节码转换成机器码，这个过程就叫运行时编译。
+
+类文件在运行时被进一步编译，它们可以变成高度优化的机器代码，由于C/C++编译器的所有优化都是在编译期间完成的，运行期间的性能监控仅作为基础的优化措施则无法进行，例如，调用频率预测、分支频率预测、裁剪未被选择的分支等，而Java在运行时的再次编译，就可以进行基础的优化措施。因此，JIT编译器可以说是JVM中运行时编译最重要的部分之一。
+
+然而许多Java开发人员对JIT编译器的了解并不多，不深挖其工作原理，也不深究如何检测应用程序的即时编译情况，线上发生问题后很难做到从容应对。今天我们就来学习运行时编译如何实现对Java代码的优化。
+
+### 4.2.1 类编译加载执行过程
+
+在这之前，我们先了解下Java从编译到运行的整个过程，为后面的学习打下基础。请看下图：
+
+![1719285770418](images/Java-performance-tuning/1719285770418.png)
+
+
+
+#### 类编译
+
+在编写好代码之后，我们需要将 .java文件编译成 .class文件，才能在虚拟机上正常运行代码。文件的编译通常是由JDK中自带的Javac工具完成，一个简单的 .java文件，我们可以通过javac命令来生成 .class文件。下面我们通过javap（ [第12讲](https://time.geekbang.org/column/article/101244)讲过如何使用javap反编译命令行）反编译来看看一个class文件结构中主要包含了哪些信息：![1719285791997](images/Java-performance-tuning/1719285791997.png)
+
+
+看似一个简单的命令执行，前期编译的过程其实是非常复杂的，包括词法分析、填充符号表、注解处理、语义分析以及生成class文件，这个过程我们不用过多关注。只要从上图中知道，编译后的字节码文件主要包括常量池和方法表集合这两部分就可以了。常量池主要记录的是类文件中出现的字面量以及符号引用。字面常量包括字符串常量（例如String str=“abc”，其中"abc"就是常量），声明为final的属性以及一些基本类型（例如，范围在-127-128之间的整型）的属性。符号引用包括类和接口的全限定名、类引用、方法引用以及成员变量引用（例如String str=“abc”，其中str就是成员变量引用）等。方法表集合中主要包含一些方法的字节码、方法访问权限（public、protect、prviate等）、方法名索引（与常量池中的方法引用对应）、描述符索引、JVM执行指令以及属性集合等。
+
+#### 类加载
+
+当一个类被创建实例或者被其它对象引用时，虚拟机在没有加载过该类的情况下，会通过类加载器将字节码文件加载到内存中。
+
+不同的实现类由不同的类加载器加载，JDK中的本地方法类一般由根加载器（Bootstrp loader）加载进来，JDK中内部实现的扩展类一般由扩展加载器（ExtClassLoader ）实现加载，而程序中的类文件则由系统加载器（AppClassLoader ）实现加载。
+
+在类加载后，class类文件中的常量池信息以及其它数据会被保存到JVM内存的方法区中。
+
+#### 类连接
+
+类在加载进来之后，会进行连接、初始化，最后才会被使用。在连接过程中，又包括验证、准备和解析三个部分。
+
+- 验证：验证类符合Java规范和JVM规范，在保证符合规范的前提下，避免危害虚拟机安全。
+
+- 准备：为类的静态变量分配内存，初始化为系统的初始值。对于final static修饰的变量，直接赋值为用户的定义值。例如，private final static int value=123，会在准备阶段分配内存，并初始化值为123，而如果是 private static int value=123，这个阶段value的值仍然为0。
+
+- 解析：将符号引用转为直接引用的过程。我们知道，在编译时，Java类并不知道所引用的类的实际地址，因此只能使用符号引用来代替。类结构文件的常量池中存储了符号引用，包括类和接口的全限定名、类引用、方法引用以及成员变量引用等。如果要使用这些类和方法，就需要把它们转化为JVM可以直接获取的内存地址或指针，即直接引用。
+
+#### 类初始化
+
+类初始化阶段是类加载过程的最后阶段，在这个阶段中，JVM首先将执行构造器<clinit>方法，编译器会在将 .java 文件编译成 .class 文件时，收集所有类初始化代码，包括静态变量赋值语句、静态代码块、静态方法，收集在一起成为 <clinit>() 方法。初始化类的静态变量和静态代码块为用户自定义的值，初始化的顺序和Java源码从上到下的顺序一致。例如：
+
+```java
+private static int i=1；
+static{
+  i=0;
+}
+public static void main(String [] args){
+  System.out.println(i);
+}
+```
+
+此时运行结果为：0
+
+再来看看以下代码：
+
+```
+static{
+  i=0;
+}
+private static int i=1；
+public static void main(String [] args){
+  System.out.println(i);
+}
+```
+
+此时运行结果为：
+
+```
+1
+```
+
+子类初始化时会首先调用父类的 <clinit>() 方法，再执行子类的<clinit>() 方法，运行以下代码：
+
+```
+public class Parent{
+  public static String parentStr= "parent static string";
+  static{
+    System.out.println("parent static fields");
+    System.out.println(parentStr);
+  }
+  public Parent(){
+    System.out.println("parent instance initialization");
+ }
+}
+
+public class Sub extends Parent{
+  public static String subStr= "sub static string";
+  static{
+    System.out.println("sub static fields");
+    System.out.println(subStr);
+  }
+
+  public Sub(){
+    System.out.println("sub instance initialization");
+  }
+ 
+  public static void main(String[] args){
+    System.out.println("sub main");
+    new Sub();
+ }
+}
+```
+
+运行结果：
+
+```java
+parent static fields
+parent static string
+sub static fields
+sub static string
+sub main
+parent instance initialization
+sub instance initialization
+```
+
+
+JVM 会保证 <clinit>() 方法的线程安全，保证同一时间只有一个线程执行。
+
+JVM在初始化执行代码时，如果实例化一个新对象，会调用<init>方法对实例变量进行初始化，并执行对应的构造方法内的代码。
+
+### 4.2.2 即时编译
+
+初始化完成后，类在调用执行过程中，执行引擎会把字节码转为机器码，然后在操作系统中才能执行。在字节码转换为机器码的过程中，虚拟机中还存在着一道编译，那就是即时编译。
+
+最初，虚拟机中的字节码是由解释器（ Interpreter ）完成编译的，当虚拟机发现某个方法或代码块的运行特别频繁的时候，就会把这些代码认定为“热点代码”。
+
+为了提高热点代码的执行效率，在运行时，即时编译器（JIT）会把这些代码编译成与本地平台相关的机器码，并进行各层次的优化，然后保存到内存中。
+
+#### 即时编译器类型
+
+在HotSpot虚拟机中，内置了两个JIT，分别为C1编译器和C2编译器，这两个编译器的编译过程是不一样的。
+
+C1编译器是一个简单快速的编译器，主要的关注点在于局部性的优化，适用于执行时间较短或对启动性能有要求的程序，例如，GUI应用对界面启动速度就有一定要求。
+
+C2编译器是为长期运行的服务器端应用程序做性能调优的编译器，适用于执行时间较长或对峰值性能有要求的程序。根据各自的适配性，这两种即时编译也被称为Client Compiler和Server Compiler。
+
+在Java7之前，需要根据程序的特性来选择对应的JIT，虚拟机默认采用解释器和其中一个编译器配合工作。
+
+Java7引入了分层编译，这种方式综合了C1的启动性能优势和C2的峰值性能优势，我们也可以通过参数 “-client”“-server” 强制指定虚拟机的即时编译模式。分层编译将JVM的执行状态分为了5个层次：
+
+* 第0层：程序解释执行，默认开启性能监控功能（Profiling），如果不开启，可触发第二层编译；
+* 第1层：可称为C1编译，将字节码编译为本地代码，进行简单、可靠的优化，不开启Profiling；
+* 第2层：也称为C1编译，开启Profiling，仅执行带方法调用次数和循环回边执行次数profiling的C1编译；
+* 第3层：也称为C1编译，执行所有带Profiling的C1编译；
+* 第4层：可称为C2编译，也是将字节码编译为本地代码，但是会启用一些编译耗时较长的优化，甚至会根据性能监控信息进行一些不可靠的激进优化。
+
+在Java8中，默认开启分层编译，-client和-server的设置已经是无效的了。如果只想开启C2，可以关闭分层编译（-XX:-TieredCompilation），如果只想用C1，可以在打开分层编译的同时，使用参数：-XX:TieredStopAtLevel=1。
+
+除了这种默认的混合编译模式，我们还可以使用“-Xint”参数强制虚拟机运行于只有解释器的编译模式下，这时JIT完全不介入工作；我们还可以使用参数“-Xcomp”强制虚拟机运行于只有JIT的编译模式下。
+
+通过 java -version 命令行可以直接查看到当前系统使用的编译模式。如下图所示：
+
+![1719286127767](images/Java-performance-tuning/1719286127767.png)
+
+
+
+#### 热点探测
+
+在HotSpot虚拟机中的热点探测是JIT优化的条件，热点探测是基于计数器的热点探测，采用这种方法的虚拟机会为每个方法建立计数器统计方法的执行次数，如果执行次数超过一定的阈值就认为它是“热点方法” 。
+
+虚拟机为每个方法准备了两类计数器：方法调用计数器（Invocation Counter）和回边计数器（Back Edge Counter）。在确定虚拟机运行参数的前提下，这两个计数器都有一个确定的阈值，当计数器超过阈值溢出了，就会触发JIT编译。
+
+方法调用计数器：用于统计方法被调用的次数，方法调用计数器的默认阈值在C1模式下是1500次，在C2模式在是10000次，可通过-XX: CompileThreshold来设定；而在分层编译的情况下，-XX: CompileThreshold指定的阈值将失效，此时将会根据当前待编译的方法数以及编译线程数来动态调整。当方法计数器和回边计数器之和超过方法计数器阈值时，就会触发JIT编译器。
+
+回边计数器：用于统计一个方法中循环体代码执行的次数，在字节码中遇到控制流向后跳转的指令称为“回边”（Back Edge），该值用于计算是否触发C1编译的阈值，在不开启分层编译的情况下，C1默认为13995，C2默认为10700，可通过-XX: OnStackReplacePercentage=N来设置；而在分层编译的情况下，-XX: OnStackReplacePercentage指定的阈值同样会失效，此时将根据当前待编译的方法数以及编译线程数来动态调整。
+
+建立回边计数器的主要目的是为了触发OSR（On StackReplacement）编译，即栈上编译。在一些循环周期比较长的代码段中，当循环达到回边计数器阈值时，JVM会认为这段是热点代码，JIT编译器就会将这段代码编译成机器语言并缓存，在该循环时间段内，会直接将执行代码替换，执行缓存的机器语言。
+
+#### 编译优化技术
+
+JIT编译运用了一些经典的编译优化技术来实现代码的优化，即通过一些例行检查优化，可以智能地编译出运行时的最优性能代码。今天我们主要来学习以下两种优化手段：
+
+##### 方法内联
+
+调用一个方法通常要经历压栈和出栈。调用方法是将程序执行顺序转移到存储该方法的内存地址，将方法的内容执行完后，再返回到执行该方法前的位置。
+
+这种执行操作要求在执行前保护现场并记忆执行的地址，执行后要恢复现场，并按原来保存的地址继续执行。 因此，方法调用会产生一定的时间和空间方面的开销。
+
+那么对于那些方法体代码不是很大，又频繁调用的方法来说，这个时间和空间的消耗会很大。方法内联的优化行为就是把目标方法的代码复制到发起调用的方法之中，避免发生真实的方法调用。
+
+例如以下方法：
+
+```
+private int add1(int x1, int x2, int x3, int x4) {
+    return add2(x1, x2) + add2(x3, x4);
+}
+private int add2(int x1, int x2) {
+    return x1 + x2;
+}
+```
+
+最终会被优化为：
+
+```
+private int add1(int x1, int x2, int x3, int x4) {
+    return x1 + x2+ x3 + x4;
+}
+```
+
+JVM会自动识别热点方法，并对它们使用方法内联进行优化。我们可以通过-XX:CompileThreshold来设置热点方法的阈值。但要强调一点，热点方法不一定会被JVM做内联优化，如果这个方法体太大了，JVM将不执行内联操作。而方法体的大小阈值，我们也可以通过参数设置来优化：
+
+* 经常执行的方法，默认情况下，方法体大小小于325字节的都会进行内联，我们可以通过-XX:MaxFreqInlineSize=N来设置大小值；
+* 不是经常执行的方法，默认情况下，方法大小小于35字节才会进行内联，我们也可以通过-XX:MaxInlineSize=N来重置大小值。
+
+之后我们就可以通过配置JVM参数来查看到方法被内联的情况：
+
+```
+-XX:+PrintCompilation //在控制台打印编译过程信息
+-XX:+UnlockDiagnosticVMOptions //解锁对JVM进行诊断的选项参数。默认是关闭的，开启后支持一些特定参数对JVM进行诊断
+-XX:+PrintInlining //将内联方法打印出来
+```
+
+当我们设置VM参数：-XX:+PrintCompilation -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining之后，运行以下代码：
+
+```
+	public static void main(String[] args) {
+		for(int i=0; i<1000000; i++) {//方法调用计数器的默认阈值在C1模式下是1500次，在C2模式在是10000次，我们循环遍历超过需要阈值
+			add1(1,2,3,4);
+		}
+	}
+```
+
+我们可以看到运行结果中，显示了方法内联的日志：
+
+![1719286237639](images/Java-performance-tuning/1719286237639.png)
+
+热点方法的优化可以有效提高系统性能，一般我们可以通过以下几种方式来提高方法内联：
+
+* 通过设置JVM参数来减小热点阈值或增加方法体阈值，以便更多的方法可以进行内联，但这种方法意味着需要占用更多地内存；
+* 在编程中，避免在一个方法中写大量代码，习惯使用小方法体；
+* 尽量使用final、private、static关键字修饰方法，编码方法因为继承，会需要额外的类型检查。
+
+##### 逃逸分析
+
+逃逸分析（Escape Analysis）是判断一个对象是否被外部方法引用或外部线程访问的分析技术，编译器会根据逃逸分析的结果对代码进行优化。
+
+**栈上分配**
+
+我们知道，在Java中默认创建一个对象是在堆中分配内存的，而当堆内存中的对象不再使用时，则需要通过垃圾回收机制回收，这个过程相对分配在栈中的对象的创建和销毁来说，更消耗时间和性能。这个时候，逃逸分析如果发现一个对象只在方法中使用，就会将对象分配在栈上。
+
+以下是通过循环获取学生年龄的案例，方法中创建一个学生对象，我们现在通过案例来看看打开逃逸分析和关闭逃逸分析后，堆内存对象创建的数量对比。
+
+```
+public static void main(String[] args) {
+    for (int i = 0; i < 200000 ; i++) {
+    	getAge();
+    }
+}
+
+public static int getAge(){
+	Student person = new Student("小明",18,30);   
+    return person.getAge();
+}
+
+static class Student {
+    private String name;
+    private int age;
+   
+    public Student(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+}
+```
+
+然后，我们分别设置VM参数：Xmx1000m -Xms1000m -XX:-DoEscapeAnalysis -XX:+PrintGC以及 -Xmx1000m -Xms1000m -XX:+DoEscapeAnalysis -XX:+PrintGC，通过之前讲过的VisualVM工具，查看堆中创建的对象数量。
+
+然而，运行结果却没有达到我们想要的优化效果，也许你怀疑是JDK版本的问题，然而我分别在1.6\~1.8版本都测试过了，效果还是一样的：（-server -Xmx1000m -Xms1000m -XX:-DoEscapeAnalysis -XX:+PrintGC）
+
+![1719286266499](images/Java-performance-tuning/1719286266499.png)
+
+（-server -Xmx1000m -Xms1000m -XX:+DoEscapeAnalysis -XX:+PrintGC）
+
+![1719286290969](images/Java-performance-tuning/1719286290969.png)
+
+
+
+这其实是因为HotSpot虚拟机目前的实现导致栈上分配实现比较复杂，可以说，在HotSpot中暂时没有实现这项优化。随着即时编译器的发展与逃逸分析技术的逐渐成熟，相信不久的将来HotSpot也会实现这项优化功能。
+
+##### 锁消除
+
+在非线程安全的情况下，尽量不要使用线程安全容器，比如StringBuffer。由于StringBuffer中的append方法被Synchronized关键字修饰，会使用到锁，从而导致性能下降。
+
+但实际上，在以下代码测试中，StringBuffer和StringBuilder的性能基本没什么区别。这是因为在局部方法中创建的对象只能被当前线程访问，无法被其它线程访问，这个变量的读写肯定不会有竞争，这个时候JIT编译会对这个对象的方法锁进行锁消除。
+
+```
+     public static String getString(String s1, String s2) {
+        StringBuffer sb = new StringBuffer();
+        sb.append(s1);
+        sb.append(s2);
+        return sb.toString();
+    }
+```
+
+##### 标量替换
+
+逃逸分析证明一个对象不会被外部访问，如果这个对象可以被拆分的话，当程序真正执行的时候可能不创建这个对象，而直接创建它的成员变量来代替。将对象拆分后，可以分配对象的成员变量在栈或寄存器上，原本的对象就无需分配内存空间了。这种编译优化就叫做标量替换。
+
+我们用以下代码验证：
+
+```
+   public void foo() {
+        TestInfo info = new TestInfo();
+        info.id = 1;
+        info.count = 99;
+          ...//to do something
+    }
+```
+
+逃逸分析后，代码会被优化为：
+
+```
+   
+   public void foo() {
+        id = 1;
+        count = 99;
+        ...//to do something
+    }
+```
+
+我们可以通过设置JVM参数来开关逃逸分析，还可以单独开关同步消除和标量替换，在JDK1.8中JVM是默认开启这些操作的。
+
+```
+-XX:+DoEscapeAnalysis开启逃逸分析（jdk1.8默认开启，其它版本未测试）
+-XX:-DoEscapeAnalysis 关闭逃逸分析
+
+-XX:+EliminateLocks开启锁消除（jdk1.8默认开启，其它版本未测试）
+-XX:-EliminateLocks 关闭锁消除
+
+-XX:+EliminateAllocations开启标量替换（jdk1.8默认开启，其它版本未测试）
+-XX:-EliminateAllocations 关闭就可以了
+```
+
+### 4.2.3总结
+
+今天我们主要了解了JKD1.8以及之前的类的编译和加载过程，Java源程序是通过Javac编译器编译成 .class文件，其中文件中包含的代码格式我们称之为Java字节码（bytecode）。
+
+这种代码格式无法直接运行，但可以被不同平台JVM中的Interpreter解释执行。由于Interpreter的效率低下，JVM中的JIT会在运行时有选择性地将运行次数较多的方法编译成二进制代码，直接运行在底层硬件上。
+
+在Java8之前，HotSpot集成了两个JIT，用C1和C2来完成JVM中的即时编译。虽然JIT优化了代码，但收集监控信息会消耗运行时的性能，且编译过程会占用程序的运行时间。
+
+到了Java9，AOT编译器被引入。和JIT不同，AOT是在程序运行前进行的静态编译，这样就可以避免运行时的编译消耗和内存消耗，且 .class文件通过AOT编译器是可以编译成 .so的二进制文件的。
+
+到了Java10，一个新的JIT编译器Graal被引入。Graal 是一个以 Java 为主要编程语言、面向 Java bytecode 的编译器。与用 C++ 实现的 C1 和 C2 相比，它的模块化更加明显，也更容易维护。Graal 既可以作为动态编译器，在运行时编译热点方法；也可以作为静态编译器，实现 AOT 编译。
+
+**思考题:**
+
+我们知道Class.forName和ClassLoader.loadClass都能加载类，你知道这两者在加载类时的区别吗？
+
+1. **类的初始化**：
+   * `Class.forName`：不仅会加载类，还会**初始化**该类（例如执行静态块和静态变量赋值）。
+   * `ClassLoader.loadClass`：只是加载类，不会初始化类（除非显示调用 `Class.forName` 或者其他需要初始化的操作）。
+2. **类加载器**：
+   * `Class.forName`：默认使用调用者的类加载器（即当前线程的上下文类加载器）来加载类。
+   * `ClassLoader.loadClass`：需要手动指定类加载器来加载类。
+3. **用法和参数**：
+   * `Class.forName` 有两个常见的重载方法：
+   * ```
+     // 加载并初始化类
+     public static Class<?> forName(String className) throws ClassNotFoundException;
+
+     // 使用指定的类加载器加载类，并确定是否初始化
+     public static Class<?> forName(String name, boolean initialize, ClassLoader loader) throws ClassNotFoundException;
+
+     ```
+   * `ClassLoader.loadClass` 主要方法：
+   * ```
+     // 仅加载类，不会初始化
+     public Class<?> loadClass(String name) throws ClassNotFoundException;
+
+     ```
+
+
+# 五、设计模式调优
+
+## 5.1 单例模式:如何创建单一对象优化系统性能?
+
+从这一讲开始，我们将一起探讨设计模式的性能调优。在《Design Patterns: Elements of Reusable Object-Oriented Software》一书中，有23种设计模式的描述，其中，单例设计模式是最常用的设计模式之一。无论是在开源框架，还是在我们的日常开发中，单例模式几乎无处不在。
+
+### 5.1.1 什么是单例模式？
+
+它的核心在于，单例模式可以保证一个类仅创建一个实例，并提供一个访问它的全局访问点。该模式有三个基本要点：一是这个类只能有一个实例；二是它必须自行创建这个实例；三是它必须自行向整个系统提供这个实例。
+
+结合这三点，我们来实现一个简单的单例：
+
+```
+//饿汉模式
+public final class Singleton {
+    private static Singleton instance=new Singleton();//自行创建实例
+    private Singleton(){}//构造函数
+    public static Singleton getInstance(){//通过该函数向整个系统提供实例
+        return instance;
+    }
+}
+```
+
+由于在一个系统中，一个类经常会被使用在不同的地方，通过单例模式，我们可以避免多次创建多个实例，从而节约系统资源。
+
+### 5.1.2 饿汉模式
+
+我们可以发现，以上第一种实现单例的代码中，使用了static修饰了成员变量instance，所以该变量会在类初始化的过程中被收集进类构造器即<clinit>方法中。在多线程场景下，JVM会保证只有一个线程能执行该类的<clinit>方法，其它线程将会被阻塞等待。等到唯一的一次<clinit>方法执行完成，其它线程将不会再执行<clinit>方法，转而执行自己的代码。也就是说，static修饰了成员变量instance，在多线程的情况下能保证只实例化一次。
+
+这种方式实现的单例模式，在类初始化阶段就已经在堆内存中开辟了一块内存，用于存放实例化对象，所以也称为饿汉模式。饿汉模式实现的单例的优点是，可以保证多线程情况下实例的唯一性，而且getInstance直接返回唯一实例，性能非常高。然而，在类成员变量比较多，或变量比较大的情况下，这种模式可能会在没有使用类对象的情况下，一直占用堆内存。试想下，如果一个第三方开源框架中的类都是基于饿汉模式实现的单例，这将会初始化所有单例类，无疑是灾难性的。
+
+### 5.1.3 懒汉模式
+
+懒汉模式就是为了避免直接加载类对象时提前创建对象的一种单例设计模式。该模式使用懒加载方式，只有当系统使用到类对象时，才会将实例加载到堆内存中。通过以下代码，我们可以简单地了解下懒加载的实现方式：
+
+```
+//懒汉模式
+public final class Singleton {
+    private static Singleton instance= null;//不实例化
+    private Singleton(){}//构造函数
+    public static Singleton getInstance(){//通过该函数向整个系统提供实例
+        if(null == instance){//当instance为null时，则实例化对象，否则直接返回对象
+            instance = new Singleton();//实例化对象
+        }
+        return instance;//返回已存在的对象
+    }
+}
+```
+
+以上代码在单线程下运行是没有问题的，但要运行在多线程下，就会出现实例化多个类对象的情况。这是怎么回事呢？当线程A进入到if判断条件后，开始实例化对象，此时instance依然为null；又有线程B进入到if判断条件中，之后也会通过条件判断，进入到方法里面创建一个实例对象。所以我们需要对该方法进行加锁，保证多线程情况下仅创建一个实例。这里我们使用Synchronized同步锁来修饰getInstance方法：
+
+```
+//懒汉模式 + synchronized同步锁
+public final class Singleton {
+    private static Singleton instance= null;//不实例化
+    private Singleton(){}//构造函数
+    public static synchronized Singleton getInstance(){//加同步锁，通过该函数向整个系统提供实例
+        if(null == instance){//当instance为null时，则实例化对象，否则直接返回对象
+            instance = new Singleton();//实例化对象
+        }
+        return instance;//返回已存在的对象
+    }
+}
+```
+
+但我们前面讲过，同步锁会增加锁竞争，带来系统性能开销，从而导致系统性能下降，因此这种方式也会降低单例模式的性能。还有，每次请求获取类对象时，都会通过getInstance()方法获取，除了第一次为null，其它每次请求基本都是不为null的。在没有加同步锁之前，是因为if判断条件为null时，才导致创建了多个实例。基于以上两点，我们可以考虑将同步锁放在if条件里面，这样就可以减少同步锁资源竞争。
+
+```
+//懒汉模式 + synchronized同步锁
+public final class Singleton {
+    private static Singleton instance= null;//不实例化
+    private Singleton(){}//构造函数
+    public static Singleton getInstance(){//加同步锁，通过该函数向整个系统提供实例
+        if(null == instance){//当instance为null时，则实例化对象，否则直接返回对象
+          synchronized (Singleton.class){
+              instance = new Singleton();//实例化对象
+          } 
+        }
+        return instance;//返回已存在的对象
+    }
+}
+```
+
+看到这里，你是不是觉得这样就可以了呢？答案是依然会创建多个实例。这是因为当多个线程进入到if判断条件里，虽然有同步锁，但是进入到判断条件里面的线程依然会依次获取到锁创建对象，然后再释放同步锁。所以我们还需要在同步锁里面再加一个判断条件：
+
+```
+//懒汉模式 + synchronized同步锁 + double-check
+public final class Singleton {
+    private static Singleton instance= null;//不实例化
+    private Singleton(){}//构造函数
+    public static Singleton getInstance(){//加同步锁，通过该函数向整个系统提供实例
+        if(null == instance){//第一次判断，当instance为null时，则实例化对象，否则直接返回对象
+          synchronized (Singleton.class){//同步锁
+             if(null == instance){//第二次判断
+                instance = new Singleton();//实例化对象
+             }
+          } 
+        }
+        return instance;//返回已存在的对象
+    }
+}
+
+```
+
+以上这种方式，通常被称为Double-Check，它可以大大提高支持多线程的懒汉模式的运行性能。那这样做是不是就能保证万无一失了呢？还会有什么问题吗？其实这里又跟Happens-Before规则和重排序扯上关系了，这里我们先来简单了解下Happens-Before规则和重排序。
+
+我们在第二期[加餐](https://time.geekbang.org/column/article/105756)中分享过，编译器为了尽可能地减少寄存器的读取、存储次数，会充分复用寄存器的存储值，比如以下代码，如果没有进行重排序优化，正常的执行顺序是步骤1/2/3，而在编译期间进行了重排序优化之后，执行的步骤有可能就变成了步骤1/3/2，这样就能减少一次寄存器的存取次数。
+
+```
+int a = 1;//步骤1：加载a变量的内存地址到寄存器中，加载1到寄存器中，CPU通过mov指令把1写入到寄存器指定的内存中
+int b = 2;//步骤2 加载b变量的内存地址到寄存器中，加载2到寄存器中，CPU通过mov指令把2写入到寄存器指定的内存中
+a = a + 1;//步骤3 重新加载a变量的内存地址到寄存器中，加载1到寄存器中，CPU通过mov指令把1写入到寄存器指定的内存中
+```
+
+在 JMM 中，重排序是十分重要的一环，特别是在并发编程中。如果JVM可以对它们进行任意排序以提高程序性能，也可能会给并发编程带来一系列的问题。例如，我上面讲到的Double-Check的单例问题，假设类中有其它的属性也需要实例化，这个时候，除了要实例化单例类本身，还需要对其它属性也进行实例化：
+
+```
+//懒汉模式 + synchronized同步锁 + double-check
+public final class Singleton {
+    private static Singleton instance= null;//不实例化
+    public List<String> list = null;//list属性
+    private Singleton(){
+      list = new ArrayList<String>();
+    }//构造函数
+    public static Singleton getInstance(){//加同步锁，通过该函数向整个系统提供实例
+        if(null == instance){//第一次判断，当instance为null时，则实例化对象，否则直接返回对象
+          synchronized (Singleton.class){//同步锁
+             if(null == instance){//第二次判断
+                instance = new Singleton();//实例化对象
+             }
+          } 
+        }
+        return instance;//返回已存在的对象
+    }
+}
+```
+
+在执行instance = new Singleton();代码时，正常情况下，实例过程这样的：
+
+* 给 Singleton 分配内存；
+* 调用 Singleton 的构造函数来初始化成员变量；
+* 将 Singleton 对象指向分配的内存空间（执行完这步 singleton 就为非 null 了）。
+
+如果虚拟机发生了重排序优化，这个时候步骤3可能发生在步骤2之前。如果初始化线程刚好完成步骤3，而步骤2没有进行时，则刚好有另一个线程到了第一次判断，这个时候判断为非null，并返回对象使用，这个时候实际没有完成其它属性的构造，因此使用这个属性就很可能会导致异常。在这里，Synchronized只能保证可见性、原子性，无法保证执行的顺序。这个时候，就体现出Happens-Before规则的重要性了。通过字面意思，你可能会误以为是前一个操作发生在后一个操作之前。然而真正的意思是，前一个操作的结果可以被后续的操作获取。这条规则规范了编译器对程序的重排序优化。我们知道volatile关键字可以保证线程间变量的可见性，简单地说就是当线程A对变量X进行修改后，在线程A后面执行的其它线程就能看到变量X的变动。除此之外，volatile在JDK1.5之后还有一个作用就是阻止局部重排序的发生，也就是说，volatile变量的操作指令都不会被重排序。所以使用volatile修饰instance之后，Double-Check懒汉单例模式就万无一失了。
+
+```
+//懒汉模式 + synchronized同步锁 + double-check
+public final class Singleton {
+    private volatile static Singleton instance= null;//不实例化
+    public List<String> list = null;//list属性
+    private Singleton(){
+      list = new ArrayList<String>();
+    }//构造函数
+    public static Singleton getInstance(){//加同步锁，通过该函数向整个系统提供实例
+        if(null == instance){//第一次判断，当instance为null时，则实例化对象，否则直接返回对象
+          synchronized (Singleton.class){//同步锁
+             if(null == instance){//第二次判断
+                instance = new Singleton();//实例化对象
+             }
+          } 
+        }
+        return instance;//返回已存在的对象
+    }
+}
+```
+
+### 5.1.4 通过内部类实现
+
+以上这种同步锁+Double-Check的实现方式相对来说，复杂且加了同步锁，那有没有稍微简单一点儿的可以实现线程安全的懒加载方式呢？我们知道，在饿汉模式中，我们使用了static修饰了成员变量instance，所以该变量会在类初始化的过程中被收集进类构造器即\<clinit>方法中。在多线程场景下，JVM会保证只有一个线程能执行该类的\<clinit>方法，其它线程将会被阻塞等待。这种方式可以保证内存的可见性、顺序性以及原子性。
+
+如果我们在Singleton类中创建一个内部类来实现成员变量的初始化，则可以避免多线程下重复创建对象的情况发生。这种方式，只有在第一次调用getInstance()方法时，才会加载InnerSingleton类，而只有在加载InnerSingleton类之后，才会实例化创建对象。具体实现如下：
+
+```
+//懒汉模式 内部类实现
+public final class Singleton {
+	public List<String> list = null;// list属性
+
+	private Singleton() {//构造函数
+		list = new ArrayList<String>();
+	}
+
+	// 内部类实现
+	public static class InnerSingleton {
+		private static Singleton instance=new Singleton();//自行创建实例
+	}
+
+	public static Singleton getInstance() {
+		return InnerSingleton.instance;// 返回内部类中的静态变量
+	}
+}
+```
+
+### 5.1.5 总结
+
+单例的实现方式其实有很多，但总结起来就两种：饿汉模式和懒汉模式，我们可以根据自己的需求来做选择。如果我们在程序启动后，一定会加载到类，那么用饿汉模式实现的单例简单又实用；如果我们是写一些工具类，则优先考虑使用懒汉模式，因为很多项目可能会引用到jar包，但未必会使用到这个工具类，懒汉模式实现的单例可以避免提前被加载到内存中，占用系统资源。
+
+**思考题:**除了以上那些实现单例的方式，你还知道其它实现方式吗？
+
+## 5.2 原型模式与享元模式:提升系统性能的利器
+
+原型模式和享元模式，前者是在创建多个实例时，对创建过程的性能进行调优；后者是用减少创建实例的方式，来调优系统性能。这么看，你会不会觉得两个模式有点相互矛盾呢？其实不然，它们的使用是分场景的。在有些场景下，我们需要重复创建多个实例，例如在循环体中赋值一个对象，此时我们就可以采用原型模式来优化对象的创建过程；而在有些场景下，我们则可以避免重复创建多个实例，在内存中共享对象就好了。今天我们就来看看这两种模式的适用场景，了解了这些你就可以更高效地使用它们提升系统性能了。
+
+### 5.2.1 原型模式
+
+我们先来了解下原型模式的实现。原型模式是通过给出一个原型对象来指明所创建的对象的类型，然后使用自身实现的克隆接口来复制这个原型对象，该模式就是用这种方式来创建出更多同类型的对象。使用这种方式创建新的对象的话，就无需再通过new实例化来创建对象了。这是因为Object类的clone方法是一个本地方法，它可以直接操作内存中的二进制流，所以性能相对new实例化来说，更佳。
+
+#### 实现原型模式
+
+我们现在通过一个简单的例子来实现一个原型模式：
+
+```
+//实现Cloneable 接口的原型抽象类Prototype 
+   class Prototype implements Cloneable {
+        //重写clone方法
+        public Prototype clone(){
+            Prototype prototype = null;
+            try{
+                prototype = (Prototype)super.clone();
+            }catch(CloneNotSupportedException e){
+                e.printStackTrace();
+            }
+            return prototype;
+        }
+    }
+    //实现原型类
+    class ConcretePrototype extends Prototype{
+        public void show(){
+            System.out.println("原型模式实现类");
+        }
+    }
+
+    public class Client {
+        public static void main(String[] args){
+            ConcretePrototype cp = new ConcretePrototype();
+            for(int i=0; i< 10; i++){
+                ConcretePrototype clonecp = (ConcretePrototype)cp.clone();
+                clonecp.show();
+            }
+        }
+    }
+```
+
+要实现一个原型类，需要具备三个条件：
+
+* 实现Cloneable接口：Cloneable接口与序列化接口的作用类似，它只是告诉虚拟机可以安全地在实现了这个接口的类上使用clone方法。在JVM中，只有实现了Cloneable接口的类才可以被拷贝，否则会抛出CloneNotSupportedException异常。
+* 重写Object类中的clone方法：在Java中，所有类的父类都是Object类，而Object类中有一个clone方法，作用是返回对象的一个拷贝。
+* 在重写的clone方法中调用super.clone()：默认情况下，类不具备复制对象的能力，需要调用super.clone()来实现。
+
+从上面我们可以看出，原型模式的主要特征就是使用clone方法复制一个对象。通常，有些人会误以为 Object a=new Object();Object b=a; 这种形式就是一种对象复制的过程，然而这种复制只是对象引用的复制，也就是a和b对象指向了同一个内存地址，如果b修改了，a的值也就跟着被修改了。我们可以通过一个简单的例子来看看普通的对象复制问题：
+
+```java
+class Student {  
+    private String name;  
+  
+    public String getName() {  
+        return name;  
+    }  
+  
+    public void setName(String name) {  
+        this.name= name;  
+    }  
+  
+}  
+public class Test {  
+  
+    public static void main(String args[]) {  
+        Student stu1 = new Student();  
+        stu1.setName("test1");  
+
+        Student stu2 = stu1;  
+        stu2.setName("test2");  
+ 
+        System.out.println("学生1:" + stu1.getName());  
+        System.out.println("学生2:" + stu2.getName());  
+    }  
+}
+```
+
+如果是复制对象，此时打印的日志应该为：
+
+```
+学生1:test1
+学生2:test2
+```
+
+然而，实际上是：
+
+```
+学生1:test2
+学生2:test2
+```
+
+通过clone方法复制的对象才是真正的对象复制，clone方法赋值的对象完全是一个独立的对象。刚刚讲过了，Object类的clone方法是一个本地方法，它直接操作内存中的二进制流，特别是复制大对象时，性能的差别非常明显。我们可以用 clone 方法再实现一遍以上例子。
+
+```java
+//学生类实现Cloneable接口
+class Student implements Cloneable{  
+    private String name;  //姓名
+  
+    public String getName() {  
+        return name;  
+    }  
+  
+    public void setName(String name) {  
+        this.name= name;  
+    } 
+   //重写clone方法
+   public Student clone() { 
+        Student student = null; 
+        try { 
+            student = (Student) super.clone(); 
+            } catch (CloneNotSupportedException e) { 
+            e.printStackTrace(); 
+            } 
+            return student; 
+   } 
+  
+}  
+public class Test {  
+  
+    public static void main(String args[]) {  
+        Student stu1 = new Student();  //创建学生1
+        stu1.setName("test1");  
+
+        Student stu2 = stu1.clone();  //通过克隆创建学生2
+        stu2.setName("test2");  
+ 
+        System.out.println("学生1:" + stu1.getName());  
+        System.out.println("学生2:" + stu2.getName());  
+    }  
+}
+```
+
+运行结果：
+
+```
+学生1:test1
+学生2:test2
+```
+
+#### 深拷贝和浅拷贝
+
+在调用super.clone()方法之后，首先会检查当前对象所属的类是否支持clone，也就是看该类是否实现了Cloneable接口。如果支持，则创建当前对象所属类的一个新对象，并对该对象进行初始化，使得新对象的成员变量的值与当前对象的成员变量的值一模一样，但对于其它对象的引用以及List等类型的成员属性，则只能复制这些对象的引用了。所以简单调用super.clone()这种克隆对象方式，就是一种浅拷贝。所以，当我们在使用clone()方法实现对象的克隆时，就需要注意浅拷贝带来的问题。我们再通过一个例子来看看浅拷贝。
+
+```
+//定义学生类
+class Student implements Cloneable{  
+    private String name; //学生姓名
+    private Teacher teacher; //定义老师类
+  
+    public String getName() {  
+        return name;  
+    }  
+  
+    public void setName(String name) {  
+        this.name = name;  
+    } 
+
+    public Teacher getTeacher() {  
+        return teacher;  
+    }  
+  
+    public void setTeacher(Teacher teacher) {  
+        this.teacher = teacher;  
+    } 
+   //重写克隆方法
+   public Student clone() { 
+        Student student = null; 
+        try { 
+            student = (Student) super.clone(); 
+            } catch (CloneNotSupportedException e) { 
+            e.printStackTrace(); 
+            } 
+            return student; 
+   } 
+      
+}  
+
+//定义老师类
+class Teacher implements Cloneable{  
+    private String name;  //老师姓名
+  
+    public String getName() {  
+        return name;  
+    }  
+  
+    public void setName(String name) {  
+        this.name= name;  
+    } 
+
+   //重写克隆方法，堆老师类进行克隆
+   public Teacher clone() { 
+        Teacher teacher= null; 
+        try { 
+            teacher= (Teacher) super.clone(); 
+            } catch (CloneNotSupportedException e) { 
+            e.printStackTrace(); 
+            } 
+            return student; 
+   } 
+      
+}
+public class Test {  
+      
+    public static void main(String args[]) {
+        Teacher teacher = new Teacher (); //定义老师1
+        teacher.setName("刘老师");
+        Student stu1 = new Student();  //定义学生1
+        stu1.setName("test1");           
+        stu1.setTeacher(teacher);
+        
+        Student stu2 = stu1.clone(); //定义学生2
+        stu2.setName("test2");  
+        stu2.getTeacher().setName("王老师");//修改老师
+        System.out.println("学生" + stu1.getName + "的老师是:" + stu1.getTeacher().getName);  
+        System.out.println("学生" + stu1.getName + "的老师是:" + stu2.getTeacher().getName);  
+    }  
+}
+```
+
+运行结果：
+
+```
+学生test1的老师是：王老师
+学生test2的老师是：王老师
+```
+
+观察以上运行结果，我们可以发现：在我们给学生2修改老师的时候，学生1的老师也跟着被修改了。这就是浅拷贝带来的问题。
+
+我们可以通过深拷贝来解决这种问题，其实深拷贝就是基于浅拷贝来递归实现具体的每个对象，代码如下：
+
+```
+   public Student clone() { 
+        Student student = null; 
+        try { 
+            student = (Student) super.clone(); 
+            Teacher teacher = this.teacher.clone();//克隆teacher对象
+            student.setTeacher(teacher);
+            } catch (CloneNotSupportedException e) { 
+            e.printStackTrace(); 
+            } 
+            return student; 
+   } 
+```
+
+#### 适用场景
+
+前面我详述了原型模式的实现原理，那到底什么时候我们要用它呢？在一些重复创建对象的场景下，我们就可以使用原型模式来提高对象的创建性能。例如，我在开头提到的，循环体内创建对象时，我们就可以考虑用clone的方式来实现。
+
+例如：
+
+```
+for(int i=0; i<list.size(); i++){
+  Student stu = new Student(); 
+  ...
+}
+
+```
+
+我们可以优化为：
+
+```
+Student stu = new Student(); 
+for(int i=0; i<list.size(); i++){
+ Student stu1 = (Student)stu.clone();
+  ...
+}
+```
+
+除此之外，原型模式在开源框架中的应用也非常广泛。例如Spring中，@Service默认都是单例的。用了私有全局变量，若不想影响下次注入或每次上下文获取bean，就需要用到原型模式，我们可以通过以下注解来实现，@Scope(“prototype”)。
+
+### 5.2.2 享元模式
+
+享元模式是运用共享技术有效地最大限度地复用细粒度对象的一种模式。该模式中，以对象的信息状态划分，可以分为内部数据和外部数据。内部数据是对象可以共享出来的信息，这些信息不会随着系统的运行而改变；外部数据则是在不同运行时被标记了不同的值。
+
+享元模式一般可以分为三个角色，分别为 Flyweight（抽象享元类）、ConcreteFlyweight（具体享元类）和 FlyweightFactory（享元工厂类）。抽象享元类通常是一个接口或抽象类，向外界提供享元对象的内部数据或外部数据；具体享元类是指具体实现内部数据共享的类；享元工厂类则是主要用于创建和管理享元对象的工厂类。
+
+#### 实现享元模式
+
+我们还是通过一个简单的例子来实现一个享元模式：
+
+```
+//抽象享元类
+interface Flyweight {
+    //对外状态对象
+    void operation(String name);
+    //对内对象
+    String getType();
+}
+```
+
+```
+//具体享元类
+class ConcreteFlyweight implements Flyweight {
+    private String type;
+
+    public ConcreteFlyweight(String type) {
+        this.type = type;
+    }
+
+    @Override
+    public void operation(String name) {
+        System.out.printf("[类型(内在状态)] - [%s] - [名字(外在状态)] - [%s]\n", type, name);
+    }
+
+    @Override
+    public String getType() {
+        return type;
+    }
+}
+```
+
+```
+//享元工厂类
+class FlyweightFactory {
+    private static final Map<String, Flyweight> FLYWEIGHT_MAP = new HashMap<>();//享元池，用来存储享元对象
+
+    public static Flyweight getFlyweight(String type) {
+        if (FLYWEIGHT_MAP.containsKey(type)) {//如果在享元池中存在对象，则直接获取
+            return FLYWEIGHT_MAP.get(type);
+        } else {//在响应池不存在，则新创建对象，并放入到享元池
+            ConcreteFlyweight flyweight = new ConcreteFlyweight(type);
+            FLYWEIGHT_MAP.put(type, flyweight);
+            return flyweight;
+        }
+    }
+}
+```
+
+```
+public class Client {
+
+    public static void main(String[] args) {
+        Flyweight fw0 = FlyweightFactory.getFlyweight("a");
+        Flyweight fw1 = FlyweightFactory.getFlyweight("b");
+        Flyweight fw2 = FlyweightFactory.getFlyweight("a");
+        Flyweight fw3 = FlyweightFactory.getFlyweight("b");
+        fw1.operation("abc");
+        System.out.printf("[结果(对象对比)] - [%s]\n", fw0 == fw2);
+        System.out.printf("[结果(内在状态)] - [%s]\n", fw1.getType());
+    }
+}
+```
+
+输出结果：
+
+```
+[类型(内在状态)] - [b] - [名字(外在状态)] - [abc]
+[结果(对象对比)] - [true]
+[结果(内在状态)] - [b]
+```
+
+观察以上代码运行结果，我们可以发现：如果对象已经存在于享元池中，则不会再创建该对象了，而是共用享元池中内部数据一致的对象。这样就减少了对象的创建，同时也节省了同样内部数据的对象所占用的内存空间。
+
+#### 适用场景
+
+享元模式在实际开发中的应用也非常广泛。例如Java的String字符串，在一些字符串常量中，会共享常量池中字符串对象，从而减少重复创建相同值对象，占用内存空间。代码如下：
+
+```
+ String s1 = "hello";
+ String s2 = "hello";
+ System.out.println(s1==s2);//true
+```
+
+还有，在日常开发中的应用。例如，线程池就是享元模式的一种实现；将商品存储在应用服务的缓存中，那么每当用户获取商品信息时，则不需要每次都从redis缓存或者数据库中获取商品信息，并在内存中重复创建商品信息了。
+
+### 5.2.3 总结
+
+通过以上讲解，相信你对原型模式和享元模式已经有了更清楚的了解了。两种模式无论是在开源框架，还是在实际开发中，应用都十分广泛。在不得已需要重复创建大量同一对象时，我们可以使用原型模式，通过clone方法复制对象，这种方式比用new和序列化创建对象的效率要高；在创建对象时，如果我们可以共用对象的内部数据，那么通过享元模式共享相同的内部数据的对象，就可以减少对象的创建，实现系统调优。
+
+**思考题:**
+
+上一讲的单例模式和这一讲的享元模式都是为了避免重复创建对象，你知道这两者的区别在哪儿吗？
+
+**解答：**
+
+* 单例模式：确保一个类在程序中只有一个实例，提供全局访问点。
+* 享元模式：通过共享技术有效支持大量细粒度对象的复用，优化内存使用。
+
+两者的核心区别在于意图和实现方式，单例模式关注于单一实例的全局性，而享元模式关注于共享对象的复用性和内存优化。
+
+## 5.3 如何使用设计模式优化并发编程？
+
+在我们使用多线程编程时，很多时候需要根据业务场景设计一套业务功能。其实，在多线程编程中，本身就存在很多成熟的功能设计模式，学好它们，用好它们，那就是如虎添翼了。今天我就带你了解几种并发编程中常用的设计模式。
+
+### 5.3.1 线程上下文设计模式
+
+线程上下文是指贯穿线程整个生命周期的对象中的一些全局信息。例如，我们比较熟悉的Spring中的ApplicationContext就是一个关于上下文的类，它在整个系统的生命周期中保存了配置信息、用户信息以及注册的bean等上下文信息。这样的解释可能有点抽象，我们不妨通过一个具体的案例，来看看到底在什么的场景下才需要上下文呢？
+
+在执行一个比较长的请求任务时，这个请求可能会经历很多层的方法调用，假设我们需要将最开始的方法的中间结果传递到末尾的方法中进行计算，一个简单的实现方式就是在每个函数中新增这个中间结果的参数，依次传递下去。代码如下：
+
+```java
+public class ContextTest {
+
+	// 上下文类
+	public class Context {
+		private String name;
+		private long id
+
+		public long getId() {
+			return id;
+		}
+
+		public void setId(long id) {
+			this.id = id;
+		}
+
+		public String getName() {
+			return this.name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+	}
+
+	// 设置上下文名字
+	public class QueryNameAction {
+		public void execute(Context context) {
+			try {
+				Thread.sleep(1000L);
+				String name = Thread.currentThread().getName();
+				context.setName(name);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	// 设置上下文ID
+	public class QueryIdAction {
+		public void execute(Context context) {
+			try {
+				Thread.sleep(1000L);
+				long id = Thread.currentThread().getId();
+				context.setId(id);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	// 执行方法
+	public class ExecutionTask implements Runnable {
+
+		private QueryNameAction queryNameAction = new QueryNameAction();
+		private QueryIdAction queryIdAction = new QueryIdAction();
+
+		@Override
+		public void run() {
+			final Context context = new Context();
+			queryNameAction.execute(context);
+			System.out.println("The name query successful");
+			queryIdAction.execute(context);
+			System.out.println("The id query successful");
+
+			System.out.println("The Name is " + context.getName() + " and id " + context.getId());
+		}
+	}
+
+	public static void main(String[] args) {
+		IntStream.range(1, 5).forEach(i -> new Thread(new ContextTest().new ExecutionTask()).start());
+	}
+}
+```
+
+执行结果：
+
+```
+The name query successful
+The name query successful
+The name query successful
+The name query successful
+The id query successful
+The id query successful
+The id query successful
+The id query successful
+The Name is Thread-1 and id 11
+The Name is Thread-2 and id 12
+The Name is Thread-3 and id 13
+The Name is Thread-0 and id 10
+```
+
+然而这种方式太笨拙了，每次调用方法时，都需要传入Context作为参数，而且影响一些中间公共方法的封装。那能不能设置一个全局变量呢？如果是在多线程情况下，需要考虑线程安全，这样的话就又涉及到了锁竞争。
+
+除了以上这些方法，其实我们还可以使用ThreadLocal实现上下文。ThreadLocal是线程本地变量，可以实现多线程的数据隔离。ThreadLocal为每一个使用该变量的线程都提供一份独立的副本，线程间的数据是隔离的，每一个线程只能访问各自内部的副本变量。ThreadLocal中有三个常用的方法：set、get、initialValue，我们可以通过以下一个简单的例子来看看ThreadLocal的使用：
+
+```
+private void testThreadLocal() {
+    Thread t = new Thread() {
+        ThreadLocal<String> mStringThreadLocal = new ThreadLocal<String>();
+
+        @Override
+        public void run() {
+            super.run();
+            mStringThreadLocal.set("test");
+            mStringThreadLocal.get();
+        }
+    };
+
+    t.start();
+}
+```
+
+接下来，我们使用ThreadLocal来重新实现最开始的上下文设计。你会发现，我们在两个方法中并没有通过变量来传递上下文，只是通过ThreadLocal获取了当前线程的上下文信息：
+
+```java
+public class ContextTest {
+	// 上下文类
+	public static class Context {
+		private String name;
+		private long id;
+
+		public long getId() {
+			return id;
+		}
+
+		public void setId(long id) {
+			this.id = id;
+		}
+
+		public String getName() {
+			return this.name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+	}
+
+	// 复制上下文到ThreadLocal中
+	public final static class ActionContext {
+
+		private static final ThreadLocal<Context> threadLocal = new ThreadLocal<Context>() {
+			@Override
+			protected Context initialValue() {
+				return new Context();
+			}
+		};
+
+		public static ActionContext getActionContext() {
+			return ContextHolder.actionContext;
+		}
+
+		public Context getContext() {
+			return threadLocal.get();
+		}
+
+		// 获取ActionContext单例
+		public static class ContextHolder {
+			private final static ActionContext actionContext = new ActionContext();
+		}
+	}
+
+	// 设置上下文名字
+	public class QueryNameAction {
+		public void execute() {
+			try {
+				Thread.sleep(1000L);
+				String name = Thread.currentThread().getName();
+				ActionContext.getActionContext().getContext().setName(name);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		} 
+	}
+
+	// 设置上下文ID
+	public class QueryIdAction {
+		public void execute() {
+			try {
+				Thread.sleep(1000L);
+				long id = Thread.currentThread().getId();
+				ActionContext.getActionContext().getContext().setId(id);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	// 执行方法
+	public class ExecutionTask implements Runnable {
+		private QueryNameAction queryNameAction = new QueryNameAction();
+		private QueryIdAction queryIdAction = new QueryIdAction();
+
+		@Override
+		public void run() {
+			queryNameAction.execute();//设置线程名
+			System.out.println("The name query successful");
+			queryIdAction.execute();//设置线程ID
+			System.out.println("The id query successful");
+
+			System.out.println("The Name is " + ActionContext.getActionContext().getContext().getName() + " and id " + ActionContext.getActionContext().getContext().getId())
+		}
+	}
+
+	public static void main(String[] args) {
+		IntStream.range(1, 5).forEach(i -> new Thread(new ContextTest().new ExecutionTask()).start());
+	}
+}
+```
+
+**运行结果：**
+
+```java
+The name query successful
+The name query successful
+The name query successful
+The name query successful
+The id query successful
+The id query successful
+The id query successful
+The id query successful
+The Name is Thread-2 and id 12
+The Name is Thread-0 and id 10
+The Name is Thread-1 and id 11
+The Name is Thread-3 and id 13
+```
+
+### 5.3.2 Thread-Per-Message设计模式
+
+Thread-Per-Message设计模式翻译过来的意思就是每个消息一个线程的意思。例如，我们在处理Socket通信的时候，通常是一个线程处理事件监听以及I/O读写，如果I/O读写操作非常耗时，这个时候便会影响到事件监听处理事件。这个时候Thread-Per-Message模式就可以很好地解决这个问题，一个线程监听I/O事件，每当监听到一个I/O事件，则交给另一个处理线程执行I/O操作。下面，我们还是通过一个例子来学习下该设计模式的实现。
+
+```java
+//IO处理
+public class ServerHandler implements Runnable{
+	private Socket socket;
+	 
+    public ServerHandler(Socket socket) {
+        this.socket = socket;
+    }
+  
+    public void run() {
+        BufferedReader in = null;
+        PrintWriter out = null;
+        String msg = null;
+        try {
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(),true);
+            while ((msg = in.readLine()) != null && msg.length()!=0) {//当连接成功后在此等待接收消息（挂起，进入阻塞状态）
+                System.out.println("server received : " + msg);
+                out.print("received~\n");
+                out.flush();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+        	try {
+                in.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                out.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
+```
+
+```java
+//Socket启动服务
+public class Server {
+
+	private static int DEFAULT_PORT = 12345;
+	private static ServerSocket server;
+
+	public static void start() throws IOException {
+		start(DEFAULT_PORT);
+	}
+
+	public static void start(int port) throws IOException {
+		if (server != null) {
+			return;
+		}
+
+		try {
+			//启动服务
+			server = new ServerSocket(port);
+			// 通过无线循环监听客户端连接
+			while (true) {
+
+				Socket socket = server.accept();
+				// 当有新的客户端接入时，会执行下面的代码
+				long start = System.currentTimeMillis();
+				new Thread(new ServerHandler(socket)).start();
+
+				long end = System.currentTimeMillis();
+
+				System.out.println("Spend time is " + (end - start));
+			}
+		} finally {
+			if (server != null) {
+				System.out.println("服务器已关闭。");
+				server.close();
+			}
+
+		}
+
+	}
+
+	public static void main(String[] args) throws InterruptedException{
+
+		// 运行服务端
+		new Thread(new Runnable() {
+			public void run() {
+				try {
+					Server.start();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}).start();
+
+	}
+}
+
+```
+
+以上，我们是完成了一个使用Thread-Per-Message设计模式实现的Socket服务端的代码。但这里是有一个问题的，你发现了吗？使用这种设计模式，如果遇到大的高并发，就会出现严重的性能问题。如果针对每个I/O请求都创建一个线程来处理，在有大量请求同时进来时，就会创建大量线程，而此时JVM有可能会因为无法处理这么多线程，而出现内存溢出的问题。
+
+退一步讲，即使是不会有大量线程的场景，每次请求过来也都需要创建和销毁线程，这对系统来说，也是一笔不小的性能开销。面对这种情况，我们可以使用线程池来代替线程的创建和销毁，这样就可以避免创建大量线程而带来的性能问题，是一种很好的调优方法。
+
+### 5.3.3 Worker-Thread设计模式
+
+这里的Worker是工人的意思，代表在Worker Thread设计模式中，会有一些工人（线程）不断轮流处理过来的工作，当没有工作时，工人则会处于等待状态，直到有新的工作进来。除了工人角色，Worker Thread设计模式中还包括了流水线和产品。这种设计模式相比Thread-Per-Message设计模式，可以减少频繁创建、销毁线程所带来的性能开销，还有无限制地创建线程所带来的内存溢出风险。
+
+我们可以假设一个场景来看下该模式的实现，通过Worker Thread设计模式来完成一个物流分拣的作业。假设一个物流仓库的物流分拣流水线上有8个机器人，它们不断从流水线上获取包裹并对其进行包装，送其上车。当仓库中的商品被打包好后，会投放到物流分拣流水线上，而不是直接交给机器人，机器人会再从流水线中随机分拣包裹。代码如下：
+
+```java
+//包裹类
+public class Package {
+	private String name;
+	private String address;
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public void execute() {
+		System.out.println(Thread.currentThread().getName()+" executed "+this);
+	}
+}
+
+```
+
+```java
+//流水线
+public class PackageChannel {
+	private final static int MAX_PACKAGE_NUM = 100;
+
+	private final Package[] packageQueue;
+	private final Worker[] workerPool;
+	private int head;
+	private int tail;
+	private int count;
+
+	public PackageChannel(int workers) {
+		this.packageQueue = new Package[MAX_PACKAGE_NUM];
+		this.head = 0;
+		this.tail = 0;
+		this.count = 0;
+		this.workerPool = new Worker[workers];
+		this.init();
+	}
+
+	private void init() {
+		for (int i = 0; i < workerPool.length; i++) {
+			workerPool[i] = new Worker("Worker-" + i, this);
+		}
+	}
+
+	/**
+	 * push switch to start all of worker to work
+	 */
+	public void startWorker() {
+		Arrays.asList(workerPool).forEach(Worker::start);
+	}
+
+	public synchronized void put(Package packagereq) {
+		while (count >= packageQueue.length) {
+			try {
+				this.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		this.packageQueue[tail] = packagereq;
+		this.tail = (tail + 1) % packageQueue.length;
+		this.count++;
+		this.notifyAll();
+	}
+
+	public synchronized Package take() {
+		while (count <= 0) {
+			try {
+				this.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		Package request = this.packageQueue[head];
+		this.head = (this.head + 1) % this.packageQueue.length;
+		this.count--;
+		this.notifyAll();
+		return request;
+	}
+
+}
+
+```
+
+```java
+//机器人
+public class Worker extends Thread{
+	 private static final Random random = new Random(System.currentTimeMillis());
+	 private final PackageChannel channel;
+
+	    public Worker(String name, PackageChannel channel) {
+	        super(name);
+	        this.channel = channel;
+	    }
+
+	    @Override
+	    public void run() {
+	        while (true) {
+	            channel.take().execute();
+
+	            try {
+	                Thread.sleep(random.nextInt(1000));
+	            } catch (InterruptedException e) {
+	                e.printStackTrace();
+	            }
+	        }
+	    }
+
+}
+
+```
+
+```java
+public class Test {
+	   public static void main(String[] args) {
+            //新建8个工人
+	        final PackageChannel channel = new PackageChannel(8);
+            //开始工作
+	        channel.startWorker();
+            //为流水线添加包裹
+	        for(int i=0; i<100; i++) {
+	        	 Package packagereq = new Package();
+	 	        packagereq.setAddress("test");
+	 	        packagereq.setName("test");
+	 	        channel.put(packagereq);
+	        }
+	    }
+}
+```
+
+我们可以看到，这里有8个工人在不断地分拣仓库中已经包装好的商品。
+
+### 5.3.4 总结
+
+平时，如果需要传递或隔离一些线程变量时，我们可以考虑使用上下文设计模式。在数据库读写分离的业务场景中，则经常会用到ThreadLocal实现动态切换数据源操作。但在使用ThreadLocal时，我们需要注意内存泄漏问题，在之前的[第25讲](https://time.geekbang.org/column/article/109201)中，我们已经讨论过这个问题了。
+
+当主线程处理每次请求都非常耗时时，就可能出现阻塞问题，这时候我们可以考虑将主线程业务分工到新的业务线程中，从而提高系统的并行处理能力。而 Thread-Per-Message 设计模式以及 Worker-Thread 设计模式则都是通过多线程分工来提高系统并行处理能力的设计模式。
+
+**思考题:**
+
+除了以上这些多线程的设计模式，平时你还使用过其它的设计模式来优化多线程业务吗？
+
+## 5.4 生产者消费者模式：电商库存设计优化
+
+生产者消费者模式，在之前的一些案例中，我们是有使用过的，相信你有一定的了解。这个模式是一个十分经典的多线程并发协作模式，生产者与消费者是通过一个中间容器来解决强耦合关系，并以此来实现不同的生产与消费速度，从而达到缓冲的效果。使用生产者消费者模式，可以提高系统的性能和吞吐量，今天我们就来看看该模式的几种实现方式，还有其在电商库存中的应用。
+
+### 5.4.1 Object的wait/notify/notifyAll实现生产者消费者
+
+在[第16讲](https://time.geekbang.org/column/article/102974)中，我就曾介绍过使用Object的wait/notify/notifyAll实现生产者消费者模式，这种方式是基于Object的wait/notify/notifyAll与对象监视器（Monitor）实现线程间的等待和通知。还有，在[第12讲](https://time.geekbang.org/column/article/101244)中我也详细讲解过Monitor的工作原理，借此我们可以得知，这种方式实现的生产者消费者模式是基于内核来实现的，有可能会导致大量的上下文切换，所以性能并不是最理想的。
+
+### 5.4.2 Lock中Condition的await/signal/signalAll实现生产者消费者
+
+相对Object类提供的wait/notify/notifyAll方法实现的生产者消费者模式，我更推荐使用java.util.concurrent包提供的Lock && Condition实现的生产者消费者模式。在接口Condition类中定义了await/signal/signalAll 方法，其作用与Object的wait/notify/notifyAll方法类似，该接口类与显示锁Lock配合，实现对线程的阻塞和唤醒操作。
+
+我在[第13讲](https://time.geekbang.org/column/article/101651)中详细讲到了显示锁，显示锁ReentrantLock或ReentrantReadWriteLock都是基于AQS实现的，而在AQS中有一个内部类ConditionObject实现了Condition接口。我们知道AQS中存在一个同步队列（CLH队列），当一个线程没有获取到锁时就会进入到同步队列中进行阻塞，如果被唤醒后获取到锁，则移除同步队列。除此之外，AQS中还存在一个条件队列，通过addWaiter方法，可以将await()方法调用的线程放入到条件队列中，线程进入等待状态。当调用signal以及signalAll 方法后，线程将会被唤醒，并从条件队列中删除，之后进入到同步队列中。条件队列是通过一个单向链表实现的，所以Condition支持多个等待队列。由上可知，Lock中Condition的await/signal/signalAll实现的生产者消费者模式，是基于Java代码层实现的，所以在性能和扩展性方面都更有优势。
+
+下面来看一个案例，我们通过一段代码来实现一个商品库存的生产和消费。
+
+```
+public class LockConditionTest {
+
+	private LinkedList<String> product = new LinkedList<String>();
+
+	private int maxInventory = 10; // 最大库存
+
+	private Lock lock = new ReentrantLock();// 资源锁
+
+	private Condition condition = lock.newCondition();// 库存非满和非空条件
+
+	/**
+	 * 新增商品库存
+	 * @param e
+	 */
+	public void produce(String e) {
+		lock.lock();
+		try {
+			while (product.size() == maxInventory) {
+				condition.await();
+			}
+
+			product.add(e);
+			System.out.println("放入一个商品库存，总库存为：" + product.size());
+			condition.signalAll();
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			lock.unlock();
+		}
+	}
+
+	/**
+	 * 消费商品
+	 * @return
+	 */
+	public String consume() {
+		String result = null;
+		lock.lock();
+		try {
+			while (product.size() == 0) {
+				condition.await();
+			}
+
+			result = product.removeLast();
+			System.out.println("消费一个商品，总库存为：" + product.size());
+			condition.signalAll();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			lock.unlock();
+		}
+
+		return result;
+	}
+
+	/**
+	 * 生产者
+	 * @author admin
+	 *
+	 */
+	private class Producer implements Runnable {
+
+		public void run() {
+			for (int i = 0; i < 20; i++) {
+				produce("商品" + i);
+			}
+		}
+
+	}
+
+	/**
+	 * 消费者
+	 * @author admin
+	 *
+	 */
+	private class Customer implements Runnable {
+
+		public void run() {
+			for (int i = 0; i < 20; i++) {
+				consume();
+			}
+		}
+	}
+
+	public static void main(String[] args) {
+
+		LockConditionTest lc = new LockConditionTest();
+		new Thread(lc.new Producer()).start();
+		new Thread(lc.new Customer()).start();
+		new Thread(lc.new Producer()).start();
+		new Thread(lc.new Customer()).start();
+
+	}
+}
+```
+
+看完案例，请你思考下，我们对此还有优化的空间吗？从代码中应该不难发现，生产者和消费者都在竞争同一把锁，而实际上两者没有同步关系，由于Condition能够支持多个等待队列以及不响应中断， 所以我们可以将生产者和消费者的等待条件和锁资源分离，从而进一步优化系统并发性能，代码如下：
+
+```
+	private LinkedList<String> product = new LinkedList<String>();
+	private AtomicInteger inventory = new AtomicInteger(0);//实时库存
+
+	private int maxInventory = 10; // 最大库存
+
+	private Lock consumerLock = new ReentrantLock();// 资源锁
+	private Lock productLock = new ReentrantLock();// 资源锁
+
+	private Condition notEmptyCondition = consumerLock.newCondition();// 库存满和空条件
+	private Condition notFullCondition = productLock.newCondition();// 库存满和空条件
+
+	/**
+	 * 新增商品库存
+	 * @param e
+	 */
+	public void produce(String e) {
+		productLock.lock();
+		try {
+			while (inventory.get() == maxInventory) {
+				notFullCondition.await();
+			}
+
+			product.add(e);
+
+			System.out.println("放入一个商品库存，总库存为：" + inventory.incrementAndGet());
+
+			if(inventory.get()<maxInventory) {
+				notFullCondition.signalAll();
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			productLock.unlock();
+		}
+
+		if(inventory.get()>0) {
+			try {
+				consumerLock.lockInterruptibly();
+				notEmptyCondition.signalAll();
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}finally {
+				consumerLock.unlock();
+			}
+		}
+
+	}
+
+	/**
+	 * 消费商品
+	 * @return
+	 */
+	public String consume() {
+		String result = null;
+		consumerLock.lock();
+		try {
+			while (inventory.get() == 0) {
+				notEmptyCondition.await();
+			}
+
+			result = product.removeLast();
+			System.out.println("消费一个商品，总库存为：" + inventory.decrementAndGet());
+
+			if(inventory.get()>0) {
+				notEmptyCondition.signalAll();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			consumerLock.unlock();
+		}
+
+		if(inventory.get()<maxInventory) {
+
+			try {
+				productLock.lockInterruptibly();
+				notFullCondition.signalAll();
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}finally {
+				productLock.unlock();
+			}
+		}
+		return result;
+	}
+	/**
+	 * 生产者
+	 * @author admin
+	 *
+	 */
+	private class Producer implements Runnable {
+
+		public void run() {
+			for (int i = 0; i < 20; i++) {
+				produce("商品" + i);
+			}
+		}
+	}
+
+	/**
+	 * 消费者
+	 * @author admin
+	 *
+	 */
+	private class Customer implements Runnable {
+
+		public void run() {
+			for (int i = 0; i < 20; i++) {
+				consume();
+			}
+		}
+	}
+
+	public static void main(String[] args) {
+
+		LockConditionTest2 lc = new LockConditionTest2();
+		new Thread(lc.new Producer()).start();
+		new Thread(lc.new Customer()).start();
+
+	}
+}
+```
+
+我们分别创建 productLock 以及 consumerLock 两个锁资源，前者控制生产者线程并行操作，后者控制消费者线程并发运行；同时也设置两个条件变量，一个是notEmptyCondition，负责控制消费者线程状态，一个是notFullCondition，负责控制生产者线程状态。这样优化后，可以减少消费者与生产者的竞争，实现两者并发执行。我们这里是基于LinkedList来存取库存的，虽然LinkedList是非线程安全，但我们新增是操作头部，而消费是操作队列的尾部，理论上来说没有线程安全问题。而库存的实际数量inventory是基于AtomicInteger（CAS锁）线程安全类实现的，既可以保证原子性，也可以保证消费者和生产者之间是可见的。
+
+### 5.4.3 BlockingQueue实现生产者消费者
+
+相对前两种实现方式，BlockingQueue实现是最简单明了的，也是最容易理解的。因为BlockingQueue是线程安全的，且从队列中获取或者移除元素时，如果队列为空，获取或移除操作则需要等待，直到队列不为空；同时，如果向队列中添加元素，假设此时队列无可用空间，添加操作也需要等待。所以BlockingQueue非常适合用来实现生产者消费者模式。还是以一个案例来看下它的优化，代码如下：
+
+```java
+public class BlockingQueueTest {
+
+	private int maxInventory = 10; // 最大库存
+
+	private BlockingQueue<String> product = new LinkedBlockingQueue<>(maxInventory);//缓存队列
+
+	/**
+	 * 新增商品库存
+	 * @param e
+	 */
+	public void produce(String e) {
+		try {
+			product.put(e);
+			System.out.println("放入一个商品库存，总库存为：" + product.size());
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
+
+	/**
+	 * 消费商品
+	 * @return
+	 */
+	public String consume() {
+		String result = null;
+		try {
+			result = product.take();
+			System.out.println("消费一个商品，总库存为：" + product.size());
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return result;
+	}
+
+	/**
+	 * 生产者
+	 * @author admin
+	 *
+	 */
+	private class Producer implements Runnable {
+
+		public void run() {
+			for (int i = 0; i < 20; i++) {
+				produce("商品" + i);
+			}
+		}
+
+	}
+
+	/**
+	 * 消费者
+	 * @author admin
+	 *
+	 */
+	private class Customer implements Runnable {
+
+		public void run() {
+			for (int i = 0; i < 20; i++) {
+				consume();
+			}
+		}
+	}
+
+	public static void main(String[] args) {
+
+		BlockingQueueTest lc = new BlockingQueueTest();
+		new Thread(lc.new Producer()).start();
+		new Thread(lc.new Customer()).start();
+		new Thread(lc.new Producer()).start();
+		new Thread(lc.new Customer()).start();
+
+	}
+}
+```
+
+在这个案例中，我们创建了一个LinkedBlockingQueue，并设置队列大小。之后我们创建一个消费方法consume()，方法里面调用LinkedBlockingQueue中的take()方法，消费者通过该方法获取商品，当队列中商品数量为零时，消费者将进入等待状态；我们再创建一个生产方法produce()，方法里面调用LinkedBlockingQueue中的put()方法，生产方通过该方法往队列中放商品，如果队列满了，生产者就将进入等待状态。
+
+### 5.4.4 生产者消费者优化电商库存设计
+
+> 了解完生产者消费者模式的几种常见实现方式，接下来我们就具体看看该模式是如何优化电商库存设计的。
+
+电商系统中经常会有抢购活动，在这类促销活动中，抢购商品的库存实际是存在库存表中的。为了提高抢购性能，我们通常会将库存存放在缓存中，通过缓存中的库存来实现库存的精确扣减。在提交订单并付款之后，我们还需要再去扣除数据库中的库存。如果遇到瞬时高并发，我们还都去操作数据库的话，那么在单表单库的情况下，数据库就很可能会出现性能瓶颈。
+
+而我们库存表如果要实现分库分表，势必会增加业务的复杂度。试想一个商品的库存分别在不同库的表中，我们在扣除库存时，又该如何判断去哪个库中扣除呢？如果随意扣除表中库存，那么就会出现有些表已经扣完了，有些表中还有库存的情况，这样的操作显然是不合理的，此时就需要额外增加逻辑判断来解决问题。
+
+在不分库分表的情况下，为了提高订单中扣除库存业务的性能以及吞吐量，我们就可以采用生产者消费者模式来实现系统的性能优化。创建订单等于生产者，存放订单的队列则是缓冲容器，而从队列中消费订单则是数据库扣除库存操作。其中存放订单的队列可以极大限度地缓冲高并发给数据库带来的压力。
+
+我们还可以基于消息队列来实现生产者消费者模式，如今RabbitMQ、RocketMQ都实现了事务，我们只需要将订单通过事务提交到MQ中，扣除库存的消费方只需要通过消费MQ来逐步操作数据库即可。
+
+### 5.4.5 总结
+
+使用生产者消费者模式来缓冲高并发数据库扣除库存压力，类似这样的例子其实还有很多。例如，我们平时使用消息队列来做高并发流量削峰，也是基于这个原理。抢购商品时，如果所有的抢购请求都直接进入判断是否有库存和冻结缓存库存等逻辑业务中，由于这些逻辑业务操作会增加资源消耗，就可能会压垮应用服务。此时，为了保证系统资源使用的合理性，我们可以通过一个消息队列来缓冲瞬时的高并发请求。
+
+生产者消费者模式除了可以做缓冲优化系统性能之外，它还可以应用在处理一些执行任务时间比较长的场景中。例如导出报表业务，用户在导出一种比较大的报表时，通常需要等待很长时间，这样的用户体验是非常差的。通常我们可以固定一些报表内容，比如用户经常需要在今天导出昨天的销量报表，或者在月初导出上个月的报表，我们就可以提前将报表导出到本地或内存中，这样用户就可以在很短的时间内直接下载报表了。
+
+**思考题：**
+
+我们可以用生产者消费者模式来实现瞬时高并发的流量削峰，然而这样做虽然缓解了消费方的压力，但生产方则会因为瞬时高并发，而发生大量线程阻塞。面对这样的情况，你知道有什么方式可以优化线程阻塞所带来的性能问题吗？
+
+**解答：**
+
+- **使用无锁的数据结构**，减小线程的阻塞时间。
+- **分级限流**，避免瞬时高并发对系统的冲击。
+  - **应用层限流**：限制应用层的请求速率。
+  - **队列层限流**：限制进入队列的生产速率，避免队列过度堆积导致内存问题。
+  - 自定义使用RateLimiter等
+- **提前拆分任务**，分散请求压力。
+- **动态调整线程池大小**，提高资源的利用率。
+- **使用异步非阻塞 I/O 操作**，减少I/O密集型任务的阻塞时间。
+- **使用消息队列进行流量削峰**，通过异步消息处理进一步提升系统的并发处理能力。
+
+
+## 5.5 装饰器模式:如何优化电商系统中复杂的商品价格策略?
+
+开始今天的学习之前，我想先请你思考一个问题。假设现在有这样一个需求，让你设计一个装修功能，用户可以动态选择不同的装修功能来装饰自己的房子。例如，水电装修、天花板以及粉刷墙等属于基本功能，而设计窗帘装饰窗户、设计吊顶装饰房顶等未必是所有用户都需要的，这些功能则需要实现动态添加。还有就是一旦有新的装修功能，我们也可以实现动态添加。如果要你来负责，你会怎么设计呢？此时你可能会想了，通常给一个对象添加功能，要么直接修改代码，在对象中添加相应的功能，要么派生对应的子类来扩展。然而，前者每次都需要修改对象的代码，这显然不是理想的面向对象设计，即便后者是通过派生对应的子类来扩展，也很难满足复杂的随意组合功能需求。
+
+面对这种情况，使用装饰器模式应该再合适不过了。它的优势我想你多少知道一点，我在这里总结一下。装饰器模式能够实现为对象动态添加装修功能，它是从一个对象的外部来给对象添加功能，所以有非常灵活的扩展性，我们可以在对原来的代码毫无修改的前提下，为对象添加新功能。除此之外，装饰器模式还能够实现对象的动态组合，借此我们可以很灵活地给动态组合的对象，匹配所需要的功能。下面我们就通过实践，具体看看该模式的优势。
+
+### 5.5.1 什么是装饰器模式？
+
+在这之前，我先简单介绍下什么是装饰器模式。装饰器模式包括了以下几个角色：
+
+- 接口、具体对象、装饰类、具体装饰类。
+
+接口定义了具体对象的一些实现方法；具体对象定义了一些初始化操作，比如开头设计装修功能的案例中，水电装修、天花板以及粉刷墙等都是初始化操作；装饰类则是一个抽象类，主要用来初始化具体对象的一个类；其它的具体装饰类都继承了该抽象类。下面我们就通过装饰器模式来实现下装修功能，代码如下：
+
+```
+/**
+ * 定义一个基本装修接口
+ * @author admin
+ *
+ */
+public interface IDecorator {
+
+	/**
+	 * 装修方法
+	 */
+	void decorate();
+
+}
+```
+
+```
+/**
+ * 装修基本类
+ * @author admin
+ *
+ */
+public class Decorator implements IDecorator{
+
+	/**
+	 * 基本实现方法
+	 */
+	public void decorate() {
+		System.out.println("水电装修、天花板以及粉刷墙。。。");
+	}
+
+}
+```
+
+```
+/**
+ * 基本装饰类
+ * @author admin
+ *
+ */
+public abstract class BaseDecorator implements IDecorator{
+
+	private IDecorator decorator;
+
+	public BaseDecorator(IDecorator decorator) {
+		this.decorator = decorator;
+	}
+
+	/**
+	 * 调用装饰方法
+	 */
+	public void decorate() {
+		if(decorator != null) {
+			decorator.decorate();
+		}
+	}
+}
+```
+
+```
+/**
+ * 窗帘装饰类
+ * @author admin
+ *
+ */
+public class CurtainDecorator extends BaseDecorator{
+
+	public CurtainDecorator(IDecorator decorator) {
+		super(decorator);
+	}
+
+	/**
+	 * 窗帘具体装饰方法
+	 */
+	@Override
+	public void decorate() {
+		System.out.println("窗帘装饰。。。");
+		super.decorate();
+	}
+
+}
+```
+
+```
+    public static void main( String[] args )
+    {
+    	IDecorator decorator = new Decorator();
+    	IDecorator curtainDecorator = new CurtainDecorator(decorator);
+    	curtainDecorator.decorate();
+        
+    }
+```
+
+运行结果：
+
+```
+窗帘装饰。。。
+水电装修、天花板以及粉刷墙。。。
+```
+
+通过这个案例，我们可以了解到：如果我们想要在基础类上添加新的装修功能，只需要基于抽象类BaseDecorator去实现继承类，通过构造函数调用父类，以及重写装修方法实现装修窗帘的功能即可。在main函数中，我们通过实例化装饰类，调用装修方法，即可在基础装修的前提下，获得窗帘装修功能。基于装饰器模式实现的装修功能的代码结构简洁易读，业务逻辑也非常清晰，并且如果我们需要扩展新的装修功能，只需要新增一个继承了抽象装饰类的子类即可。
+
+在这个案例中，我们仅实现了业务扩展功能，接下来，我将通过装饰器模式优化电商系统中的商品价格策略，实现不同促销活动的灵活组合。
+
+
+### 5.5.2 优化电商系统中的商品价格策略
+
+相信你一定不陌生，购买商品时经常会用到的限时折扣、红包、抵扣券以及特殊抵扣金等，种类很多，如果换到开发视角，实现起来就更复杂了。例如，每逢双十一，为了加大商城的优惠力度，开发往往要设计红包+限时折扣或红包+抵扣券等组合来实现多重优惠。而在平时，由于某些特殊原因，商家还会赠送特殊抵扣券给购买用户，而特殊抵扣券+各种优惠又是另一种组合方式。
+
+要实现以上这类组合优惠的功能，最快、最普遍的实现方式就是通过大量if-else的方式来实现。但这种方式包含了大量的逻辑判断，致使其他开发人员很难读懂业务， 并且一旦有新的优惠策略或者价格组合策略出现，就需要修改代码逻辑。这时，刚刚介绍的装饰器模式就很适合用在这里，其相互独立、自由组合以及方便动态扩展功能的特性，可以很好地解决if-else方式的弊端。下面我们就用装饰器模式动手实现一套商品价格策略的优化方案。
+
+首先，我们先建立订单和商品的属性类，在本次案例中，为了保证简洁性，我只建立了几个关键字段。以下几个重要属性关系为，主订单包含若干详细订单，详细订单中记录了商品信息，商品信息中包含了促销类型信息，一个商品可以包含多个促销类型（本案例只讨论单个促销和组合促销）：
+
+```
+/**
+ * 主订单
+ * @author admin
+ *
+ */
+public class Order {
+
+	private int id; //订单ID
+	private String orderNo; //订单号
+	private BigDecimal totalPayMoney; //总支付金额
+	private List<OrderDetail> list; //详细订单列表
+}
+```
+
+```
+/**
+ * 详细订单
+ * @author admin
+ *
+ */
+public class OrderDetail {
+	private int id; //详细订单ID
+	private int orderId;//主订单ID
+	private Merchandise merchandise; //商品详情
+	private BigDecimal payMoney; //支付单价
+}
+```
+
+```
+/**
+ * 商品
+ * @author admin
+ *
+ */
+public class Merchandise {
+
+	private String sku;//商品SKU
+	private String name; //商品名称
+	private BigDecimal price; //商品单价
+	private Map<PromotionType, SupportPromotions> supportPromotions; //支持促销类型
+}
+```
+
+```
+/**
+ * 促销类型
+ * @author admin
+ *
+ */
+public class SupportPromotions implements Cloneable{
+
+	private int id;//该商品促销的ID
+	private PromotionType promotionType;//促销类型 1\优惠券 2\红包
+	private int priority; //优先级
+	private UserCoupon userCoupon; //用户领取该商品的优惠券
+	private UserRedPacket userRedPacket; //用户领取该商品的红包
+
+	//重写clone方法
+    public SupportPromotions clone(){
+    	SupportPromotions supportPromotions = null;
+        try{
+        	supportPromotions = (SupportPromotions)super.clone();
+        }catch(CloneNotSupportedException e){
+            e.printStackTrace();
+        }
+        return supportPromotions;
+    }
+}
+```
+
+```
+/**
+ * 优惠券
+ * @author admin
+ *
+ */
+public class UserCoupon {
+
+	private int id; //优惠券ID
+	private int userId; //领取优惠券用户ID
+	private String sku; //商品SKU
+	private BigDecimal coupon; //优惠金额
+}
+```
+
+```
+/**
+ * 红包
+ * @author admin
+ *
+ */
+public class UserRedPacket {
+
+	private int id; //红包ID
+	private int userId; //领取用户ID
+	private String sku; //商品SKU
+	private BigDecimal redPacket; //领取红包金额
+}
+```
+
+接下来，我们再建立一个计算支付金额的接口类以及基本类：
+
+```
+/**
+ * 计算支付金额接口类
+ * @author admin
+ *
+ */
+public interface IBaseCount {
+
+	BigDecimal countPayMoney(OrderDetail orderDetail);
+
+}
+```
+
+```
+/**
+ * 支付基本类
+ * @author admin
+ *
+ */
+public class BaseCount implements IBaseCount{
+
+	public BigDecimal countPayMoney(OrderDetail orderDetail) {
+orderDetail.setPayMoney(orderDetail.getMerchandise().getPrice());
+		System.out.println("商品原单价金额为：" +  orderDetail.getPayMoney());
+	
+		return orderDetail.getPayMoney();
+	}
+
+}
+```
+
+然后，我们再建立一个计算支付金额的抽象类，由抽象类调用基本类：
+
+```
+/**
+ * 计算支付金额的抽象类
+ * @author admin
+ *
+ */
+public abstract class BaseCountDecorator implements IBaseCount{
+
+	private IBaseCount count;
+
+	public BaseCountDecorator(IBaseCount count) {
+		this.count = count;
+	}
+
+	public BigDecimal countPayMoney(OrderDetail orderDetail) {
+		BigDecimal payTotalMoney = new BigDecimal(0);
+		if(count!=null) {
+			payTotalMoney = count.countPayMoney(orderDetail);
+		}
+		return payTotalMoney;
+	}
+}
+```
+
+然后，我们再通过继承抽象类来实现我们所需要的修饰类（优惠券计算类、红包计算类）：
+
+```
+/**
+ * 计算使用优惠券后的金额
+ * @author admin
+ *
+ */
+public class CouponDecorator extends BaseCountDecorator{
+
+	public CouponDecorator(IBaseCount count) {
+		super(count);
+	}
+
+	public BigDecimal countPayMoney(OrderDetail orderDetail) {
+		BigDecimal payTotalMoney = new BigDecimal(0);
+		payTotalMoney = super.countPayMoney(orderDetail);
+		payTotalMoney = countCouponPayMoney(orderDetail);
+		return payTotalMoney;
+	}
+
+	private BigDecimal countCouponPayMoney(OrderDetail orderDetail) {
+	
+		BigDecimal coupon =  orderDetail.getMerchandise().getSupportPromotions().get(PromotionType.COUPON).getUserCoupon().getCoupon();
+		System.out.println("优惠券金额：" + coupon);
+	
+		orderDetail.setPayMoney(orderDetail.getPayMoney().subtract(coupon));
+		return orderDetail.getPayMoney();
+	}
+}
+```
+
+```
+/**
+ * 计算使用红包后的金额
+ * @author admin
+ *
+ */
+public class RedPacketDecorator extends BaseCountDecorator{
+
+	public RedPacketDecorator(IBaseCount count) {
+		super(count);
+	}
+
+	public BigDecimal countPayMoney(OrderDetail orderDetail) {
+		BigDecimal payTotalMoney = new BigDecimal(0);
+		payTotalMoney = super.countPayMoney(orderDetail);
+		payTotalMoney = countCouponPayMoney(orderDetail);
+		return payTotalMoney;
+	}
+
+	private BigDecimal countCouponPayMoney(OrderDetail orderDetail) {
+	
+		BigDecimal redPacket = orderDetail.getMerchandise().getSupportPromotions().get(PromotionType.REDPACKED).getUserRedPacket().getRedPacket();
+		System.out.println("红包优惠金额：" + redPacket);
+	
+		orderDetail.setPayMoney(orderDetail.getPayMoney().subtract(redPacket));
+		return orderDetail.getPayMoney();
+	}
+}
+```
+
+最后，我们通过一个工厂类来组合商品的促销类型：
+
+```
+/**
+ * 计算促销后的支付价格
+ * @author admin
+ *
+ */
+public class PromotionFactory {
+
+	public static BigDecimal getPayMoney(OrderDetail orderDetail) {
+	
+		//获取给商品设定的促销类型
+		Map<PromotionType, SupportPromotions> supportPromotionslist = orderDetail.getMerchandise().getSupportPromotions();
+	
+		//初始化计算类
+		IBaseCount baseCount = new BaseCount();
+		if(supportPromotionslist!=null && supportPromotionslist.size()>0) {
+			for(PromotionType promotionType: supportPromotionslist.keySet()) {//遍历设置的促销类型，通过装饰器组合促销类型
+				baseCount = protmotion(supportPromotionslist.get(promotionType), baseCount);
+			}
+		}
+		return baseCount.countPayMoney(orderDetail);
+	}
+
+	/**
+	 * 组合促销类型
+	 * @param supportPromotions
+	 * @param baseCount
+	 * @return
+	 */
+	private static IBaseCount protmotion(SupportPromotions supportPromotions, IBaseCount baseCount) {
+		if(supportPromotions.getPromotionType()==PromotionType.COUPON) {
+			baseCount = new CouponDecorator(baseCount);
+		}else if(supportPromotions.getPromotionType()==PromotionType.REDPACKED) {
+			baseCount = new RedPacketDecorator(baseCount);
+		}
+		return baseCount;
+	}
+
+}
+```
+
+```
+    public static void main( String[] args ) throws InterruptedException, IOException
+    {
+    	Order order = new Order();
+    	init(order);
+    
+    	for(OrderDetail orderDetail: order.getList()) {
+    		BigDecimal payMoney = PromotionFactory.getPayMoney(orderDetail);
+    		orderDetail.setPayMoney(payMoney);
+    		System.out.println("最终支付金额：" + orderDetail.getPayMoney());
+    	}
+    }
+```
+
+运行结果：
+
+```
+商品原单价金额为：20
+优惠券金额：3
+红包优惠金额：10
+最终支付金额：7
+```
+
+以上源码可以通过 [Github](https://github.com/nickliuchao/decorator.git)下载运行。通过以上案例可知：使用装饰器模式设计的价格优惠策略，实现各个促销类型的计算功能都是相互独立的类，并且可以通过工厂类自由组合各种促销类型。
+
+### 5.5.3 总结
+
+这讲介绍的装饰器模式主要用来优化业务的复杂度，它不仅简化了我们的业务代码，还优化了业务代码的结构设计，使得整个业务逻辑清晰、易读易懂。通常，装饰器模式用于扩展一个类的功能，且支持动态添加和删除类的功能。在装饰器模式中，装饰类和被装饰类都只关心自身的业务，不相互干扰，真正实现了解耦。
+
+**思考题:**
+
+责任链模式、策略模式与装饰器模式有很多相似之处。平时，这些设计模式除了在业务中被用到以外，在架构设计中也经常被用到，你是否在源码中见过这几种设计模式的使用场景呢？
+
+**解答：**
+
+- 责任链模式
+  - 案例：Servlet Filter链（Java Servlet）：在Java Servlet API中，责任链模式被用在过滤器（Filter）的设计中。Filte能够对请求和响应进行预处理或后处理，并且可以形成一个处理链。
+- 策略模式
+  - 案例：Java集合框架中的Comparator：在Java的集合框架中，策略模式被用来定义元素的比较行为。`Comparator`接口定义了一个策略接口，而具体的比较算法则通过多个实现类来定义。
+- 装饰器模式
+  - 案例：Java I/O中的装饰者模式：在Java I/O库中，装饰者模式被广泛应用在 `InputStream` 和 `OutputStream` 的设计中。使用装饰器模式可以动态地为对象添加职责，而无需修改类的定义。
+
+## 5.6 答疑课堂:模块五思考题集锦
+
+模块五我们都在讨论设计模式，在我看来，设计模式不仅可以优化我们的代码结构，使代码可扩展性、可读性强，同时也起到了优化系统性能的作用，这是我设置这个模块的初衷。特别是在一些高并发场景中，线程协作相关的设计模式可以大大提高程序的运行性能。这一讲的答疑课堂我就来为你总结下课后思考题，希望我的答案能让你有新的收获。
+
+[第 26 讲](https://time.geekbang.org/column/article/109564)
+
+除了以上那些实现单例的方式，你还知道其它实现方式吗？
+
+在[第9讲](https://time.geekbang.org/column/article/99774)中，我曾提到过一个单例序列化问题，其答案就是使用枚举来实现单例，这样可以避免Java序列化破坏一个类的单例。枚举生来就是单例，枚举类的域（field）其实是相应的enum类型的一个实例对象，因为在Java中枚举是一种语法糖，所以在编译后，枚举类中的枚举域会被声明为static属性。
+
+在[第26讲](https://time.geekbang.org/column/article/109564)中，我已经详细解释了JVM是如何保证static成员变量只被实例化一次的，我们不妨再来回顾下。使用了static修饰的成员变量，会在类初始化的过程中被收集进类构造器即<clinit>方法中，在多线程场景下，JVM会保证只有一个线程能执行该类的<clinit>方法，其它线程将会被阻塞等待。等到唯一的一次<clinit>方法执行完成，其它线程将不会再执行<clinit>方法，转而执行自己的代码。也就是说，static修饰了成员变量，在多线程的情况下能保证只实例化一次。我们可以通过代码简单了解下使用枚举实现的饿汉单例模式：
+
+```
+//饿汉模式 枚举实现
+public enum Singleton {
+    INSTANCE;//不实例化
+    public List<String> list = null;// list属性
+
+	private Singleton() {//构造函数
+		list = new ArrayList<String>();
+	}
+    public static Singleton getInstance(){
+        return INSTANCE;//返回已存在的对象
+    }
+}
+```
+
+该方式实现的单例没有实现懒加载功能，那如果我们要使用到懒加载功能呢？此时，我们就可以基于内部类来实现：
+
+```
+//懒汉模式 枚举实现
+public class Singleton {
+    //不实例化
+    public List<String> list = null;// list属性
+
+	private Singleton(){//构造函数
+		list = new ArrayList<String>();
+	}
+    //使用枚举作为内部类
+    private enum EnumSingleton {
+        INSTANCE;//不实例化
+        private Singleton instance = null;
+
+        private EnumSingleton(){//构造函数
+		    instance = new Singleton();
+     	}
+        public Singleton getSingleton(){
+            return instance;//返回已存在的对象
+        }
+    }
+
+    public static Singleton getInstance(){
+        return EnumSingleton.INSTANCE.getSingleton();//返回已存在的对象
+    }
+}
+```
+
+[第27讲](https://time.geekbang.org/column/article/109980)
+
+上一讲的单例模式和这一讲的享元模式都是为了避免重复创建对象，你知道这两者的区别在哪儿吗？首先，这两种设计模式的实现方式是不同的。我们使用单例模式是避免每次调用一个类实例时，都要重复实例化该实例，目的是在类本身获取实例化对象的唯一性；而享元模式则是通过一个共享容器来实现一系列对象的共享。
+
+其次，两者在使用场景上也是有区别的。单例模式更多的是强调减少实例化提升性能，因此它一般是使用在一些需要频繁创建和销毁实例化对象，或创建和销毁实例化对象非常消耗资源的类中。
+
+例如，连接池和线程池中的连接就是使用单例模式实现的，数据库操作是非常频繁的，每次操作都需要创建和销毁连接，如果使用单例，可以节省不断新建和关闭数据库连接所引起的性能消耗。而享元模式更多的是强调共享相同对象或对象属性，以此节约内存使用空间。除了区别，这两种设计模式也有共性，单例模式可以避免重复创建对象，节约内存空间，享元模式也可以避免一个类的重复实例化。总之，两者很相似，但侧重点不一样，假如碰到一些要在两种设计模式中做选择的场景，我们就可以根据侧重点来选择。
+
+[第28讲](https://time.geekbang.org/column/article/110862)
+
+除了以上这些多线程的设计模式（线程上下文设计模式、Thread-Per-Message设计模式、Worker-Thread设计模式），平时你还使用过其它的设计模式来优化多线程业务吗？在这一讲的留言区，undifined同学问到了，如果我们使用Worker-Thread设计模式，worker线程如果是异步请求处理，当我们监听到有请求进来之后，将任务交给工作线程，怎么拿到返回结果，并返回给主线程呢？回答这个问题的过程中就会用到一些别的设计模式，可以一起看看。
+
+如果要获取到异步线程的执行结果，我们可以使用Future设计模式来解决这个问题。假设我们有一个任务，需要一台机器执行，但是该任务需要一个工人分配给机器执行，当机器执行完成之后，需要通知工人任务的具体完成结果。这个时候我们就可以设计一个Future模式来实现这个业务。
+
+首先，我们申明一个任务接口，主要提供给任务设计：
+
+```
+public interface Task<T, P> {
+	T doTask(P param);//完成任务
+}
+```
+
+其次，我们申明一个提交任务接口类，TaskService主要用于提交任务，提交任务可以分为需要返回结果和不需要返回结果两种：
+
+```
+public interface TaskService<T, P> {
+	Future<?> submit(Runnable  runnable);//提交任务，不返回结果
+    Future<?> submit(Task<T,P> task, P param);//提交任务，并返回结果
+}
+```
+
+接着，我们再申明一个查询执行结果的接口类，用于提交任务之后，在主线程中查询执行结果：
+
+```
+public interface Future<T> {
+
+	T get(); //获取返回结果
+	boolean done(); //判断是否完成
+}
+```
+
+然后，我们先实现这个任务接口类，当需要返回结果时，我们通过调用获取结果类的finish方法将结果传回给查询执行结果类：
+
+```
+public class TaskServiceImpl<T, P> implements TaskService<T, P> {
+
+	/**
+	 * 提交任务实现方法，不需要返回执行结果
+	 */
+	@Override
+	public Future<?> submit(Runnable runnable) {
+		final FutureTask<Void> future = new FutureTask<Void>();
+		new Thread(() -> {
+			runnable.run();
+		}, Thread.currentThread().getName()).start();
+		return future;
+	}
+
+	/**
+	 * 提交任务实现方法，需要返回执行结果
+	 */
+	@Override
+	public Future<?> submit(Task<T, P> task, P param) {
+		final FutureTask<T> future = new FutureTask<T>();
+		new Thread(() -> {
+			T result = task.doTask(param);
+			future.finish(result);
+		}, Thread.currentThread().getName()).start();
+		return future;
+	}
+}
+```
+
+最后，我们再实现这个查询执行结果接口类，FutureTask中，get 和 finish 方法利用了线程间的通信wait和notifyAll实现了线程的阻塞和唤醒。当任务没有完成之前通过get方法获取结果，主线程将会进入阻塞状态，直到任务完成，再由任务线程调用finish方法将结果传回给主线程，并唤醒该阻塞线程：
+
+```
+public class FutureTask<T> implements Future<T> {
+
+	private T result;
+	private boolean isDone = false;
+	private final Object LOCK = new Object();
+
+	@Override
+	public T get() {
+		synchronized (LOCK) {
+			while (!isDone) {
+				try {
+					LOCK.wait();//阻塞等待
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * 获取到结果，并唤醒阻塞线程
+	 * @param result
+	 */
+	public void finish(T result) {
+		synchronized (LOCK) {
+			if (isDone) {
+				return;
+			}
+			this.result = result;
+			this.isDone = true;
+			LOCK.notifyAll();
+		}
+	}
+
+	@Override
+	public boolean done() {
+		return isDone;
+	}
+}
+```
+
+我们可以实现一个造车任务，然后用任务提交类提交该造车任务：
+
+```
+public class MakeCarTask<T, P> implements Task<T, P> {
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public T doTask(P param) {
+	
+		String car = param + " is created success";
+	
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	
+		return (T) car;
+	}
+}
+```
+
+最后运行该任务：
+
+```
+public class App {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+		TaskServiceImpl<String, String> taskService = new TaskServiceImpl<String, String>();//创建任务提交类
+		 MakeCarTask<String, String> task = new MakeCarTask<String, String>();//创建任务
+		 
+		 Future<?> future = taskService.submit(task, "car1");//提交任务
+		 String result = (String) future.get();//获取结果
+		 
+		 System.out.print(result);
+	}
+
+}
+```
+
+运行结果：
+
+```
+car1 is created success
+```
+
+从JDK1.5起，Java就提供了一个Future类，它可以通过get()方法阻塞等待获取异步执行的返回结果，然而这种方式在性能方面会比较糟糕。在JDK1.8中，Java提供了CompletableFuture类，它是基于异步函数式编程。相对阻塞式等待返回结果，CompletableFuture可以通过回调的方式来处理计算结果，所以实现了异步非阻塞，从性能上来说它更加优越了。在Dubbo2.7.0版本中，Dubbo也是基于CompletableFuture实现了异步通信，基于回调方式实现了异步非阻塞通信，操作非常简单方便。
+
+[第29讲](https://time.geekbang.org/column/article/111288)
+
+我们可以用生产者消费者模式来实现瞬时高并发的流量削峰，然而这样做虽然缓解了消费方的压力，但生产方则会因为瞬时高并发，而发生大量线程阻塞。面对这样的情况，你知道有什么方式可以优化线程阻塞所带来的性能问题吗？无论我们的程序优化得有多么出色，只要并发上来，依然会出现瓶颈。虽然生产者消费者模式可以帮我们实现流量削峰，但是当并发量上来之后，依然有可能导致生产方大量线程阻塞等待，引起上下文切换，增加系统性能开销。这时，我们可以考虑在接入层做限流。
+
+- 限流的实现方式有很多，例如，使用线程池、使用Guava的RateLimiter等。但归根结底，它们都是基于这两种限流算法来实现的：漏桶算法和令牌桶算法。
+- 漏桶算法是基于一个漏桶来实现的，我们的请求如果要进入到业务层，必须经过漏桶，漏桶出口的请求速率是均衡的，当入口的请求量比较大的时候，如果漏桶已经满了，请求将会溢出（被拒绝），这样我们就可以保证从漏桶出来的请求量永远是均衡的，不会因为入口的请求量突然增大，致使进入业务层的并发量过大而导致系统崩溃。
+- 令牌桶算法是指系统会以一个恒定的速度在一个桶中放入令牌，一个请求如果要进来，它需要拿到一个令牌才能进入到业务层，当桶里没有令牌可以取时，则请求会被拒绝。Google的Guava包中的RateLimiter就是基于令牌桶算法实现的。
+- 我们可以发现，漏桶算法可以通过限制容量池大小来控制流量，而令牌算法则可以通过限制发放令牌的速率来控制流量。
+
+[第30讲](https://time.geekbang.org/column/article/111600)
+
+责任链模式、策略模式与装饰器模式有很多相似之处。在平时，这些设计模式除了在业务中被用到之外，在架构设计中也经常被用到，你是否在源码中见过这几种设计模式的使用场景呢？欢迎你与大家分享。
+
+- 责任链模式经常被用在一个处理需要经历多个事件处理的场景。为了避免一个处理跟多个事件耦合在一起，该模式会将多个事件连成一条链，通过这条链路将每个事件的处理结果传递给下一个处理事件。责任链模式由两个主要实现类组成：抽象处理类和具体处理类。
+
+- 另外，很多开源框架也用到了责任链模式，例如Dubbo中的Filter就是基于该模式实现的。而Dubbo的许多功能都是通过Filter扩展实现的，比如缓存、日志、监控、安全、telnet以及RPC本身，责任链中的每个节点实现了Filter接口，然后由ProtocolFilterWrapper将所有的Filter串连起来。
+
+- 策略模式与装饰器模式则更为相似，策略模式主要由一个策略基类、具体策略类以及一个工厂环境类组成，与装饰器模式不同的是，策略模式是指某个对象在不同的场景中，选择的实现策略不一样。例如，同样是价格策略，在一些场景中，我们就可以使用策略模式实现。基于红包的促销活动商品，只能使用红包策略，而基于折扣券的促销活动商品，也只能使用折扣券。
