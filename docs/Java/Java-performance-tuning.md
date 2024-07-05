@@ -4613,6 +4613,469 @@ G1通过并发标记和回收技术，在应用程序运行时对老年代进行
 ● 并发回收：在混合回收阶段，G1在应用程序执行的同时，使用后台线程对部分老年代进行整理和回收，减少对应用程序响应时间的影响。
 ```
 
+## 4.4 如何优化JVM内存分配？
+
+JVM调优是一个系统而又复杂的过程，但我们知道，在大多数情况下，我们基本不用去调整JVM内存分配，因为一些初始化的参数已经可以保证应用服务正常稳定地工作了。但所有的调优都是有目标性的，JVM内存分配调优也一样。没有性能问题的时候，我们自然不会随意改变JVM内存分配的参数。那有了问题呢？有了什么样的性能问题我们需要对其进行调优呢？又该如何调优呢？这就是我今天要分享的内容。
+
+### 4.4.1 JVM内存分配性能问题
+
+谈到JVM内存表现出的性能问题时，你可能会想到一些线上的JVM内存溢出事故。但这方面的事故往往是应用程序创建对象导致的内存回收对象难，一般属于代码编程问题。
+
+但其实很多时候，在应用服务的特定场景下，JVM内存分配不合理带来的性能表现并不会像内存溢出问题这么突出。可以说如果你没有深入到各项性能指标中去，是很难发现其中隐藏的性能损耗。
+
+JVM内存分配不合理最直接的表现就是频繁的GC，这会导致上下文切换等性能问题，从而降低系统的吞吐量、增加系统的响应时间。因此，如果你在线上环境或性能测试时，发现频繁的GC，且是正常的对象创建和回收，这个时候就需要考虑调整JVM内存分配了，从而减少GC所带来的性能开销。
+
+
+### 4.4.2 对象在堆中的生存周期
+
+了解了性能问题，那需要做的势必就是调优了。但先别急，在了解JVM内存分配的调优过程之前，我们先来看看一个新创建的对象在堆内存中的生存周期，为后面的学习打下基础。在[第20讲](https://time.geekbang.org/column/article/106203)中，我讲过JVM内存模型。我们知道，在JVM内存模型的堆中，堆被划分为新生代和老年代，新生代又被进一步划分为Eden区和Survivor区，最后Survivor由From Survivor和To Survivor组成。
+
+当我们新建一个对象时，对象会被优先分配到新生代的Eden区中，这时虚拟机会给对象定义一个对象年龄计数器（通过参数-XX:MaxTenuringThreshold设置）。同时，也有另外一种情况，当Eden空间不足时，虚拟机将会执行一个新生代的垃圾回收（Minor GC）。这时JVM会把存活的对象转移到Survivor中，并给对象的年龄+1。对象在Survivor中同样也会经历MinorGC，每经过一次MinorGC，对象的年龄将会+1。
+
+当然了，内存空间也是有设置阈值的，可以通过参数-XX:PetenureSizeThreshold设置直接被分配到老年代的最大对象，这时如果分配的对象超过了设置的阀值，对象就会直接被分配到老年代，这样做的好处就是可以减少新生代的垃圾回收。
+
+### 4.4.3 查看JVM堆内存分配
+
+我们知道了一个对象从创建至回收到堆中的过程，接下来我们再来了解下JVM堆内存是如何分配的。在默认不配置JVM堆内存大小的情况下，JVM根据默认值来配置当前内存大小。我们可以通过以下命令来查看堆内存配置的默认值：
+
+```plaintext
+java -XX:+PrintFlagsFinal -version | grep HeapSize
+jmap -heap 17284
+```
+
+![1720142750814](images/Java-performance-tuning/1720142750814.png)
+
+![1720142778583](images/Java-performance-tuning/1720142778583.png)
+
+
+通过命令，我们可以获得在这台机器上启动的JVM默认最大堆内存为1953MB，初始化大小为124MB。在JDK1.7中，默认情况下年轻代和老年代的比例是1:2，我们可以通过–XX:NewRatio重置该配置项。年轻代中的Eden和To Survivor、From Survivor的比例是8:1:1，我们可以通过-XX:SurvivorRatio重置该配置项。在JDK1.7中如果开启了-XX:+UseAdaptiveSizePolicy配置项，JVM将会动态调整Java堆中各个区域的大小以及进入老年代的年龄，–XX:NewRatio和-XX:SurvivorRatio将会失效，而JDK1.8是默认开启-XX:+UseAdaptiveSizePolicy配置项的。
+
+还有，在JDK1.8中，不要随便关闭UseAdaptiveSizePolicy配置项，除非你已经对初始化堆内存/最大堆内存、年轻代/老年代以及Eden区/Survivor区有非常明确的规划了。否则JVM将会分配最小堆内存，年轻代和老年代按照默认比例1:2进行分配，年轻代中的Eden和Survivor则按照默认比例8:2进行分配。这个内存分配未必是应用服务的最佳配置，因此可能会给应用服务带来严重的性能问题。
+
+
+### 4.4.4 JVM内存分配的调优过程
+
+我们先使用JVM的默认配置，观察应用服务的运行情况，下面我将结合一个实际案例来讲述。现模拟一个抢购接口，假设需要满足一个5W的并发请求，且每次请求会产生20KB对象，我们可以通过千级并发创建一个1MB对象的接口来模拟万级并发请求产生大量对象的场景，具体代码如下：
+
+```java
+	@RequestMapping(value = "/test1")
+	public String test1(HttpServletRequest request) {
+		List<Byte[]> temp = new ArrayList<Byte[]>();
+
+		Byte[] b = new Byte[1024*1024];
+		temp.add(b);
+
+		return "success";
+	}
+```
+
+
+#### AB压测
+
+分别对应用服务进行压力测试，以下是请求接口的吞吐量和响应时间在不同并发用户数下的变化情况：
+
+![1720143097575](images/Java-performance-tuning/1720143097575.png)
+
+
+
+可以看到，当并发数量到了一定值时，吞吐量就上不去了，响应时间也迅速增加。那么，在JVM内部运行又是怎样的呢？
+
+#### 分析GC日志
+
+此时我们可以通过GC日志查看具体的回收日志。我们可以通过设置VM配置参数，将运行期间的GC日志 dump下来，具体配置参数如下：
+
+```java
+ -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -Xloggc:/log/heapTest.log
+```
+
+以下是各个配置项的说明：
+
+* -XX:PrintGCTimeStamps：打印GC具体时间；
+* -XX:PrintGCDetails ：打印出GC详细日志；
+* -Xloggc: path：GC日志生成路径。
+
+收集到GC日志后，我们就可以使用[第22讲](https://time.geekbang.org/column/article/107396)中介绍过的GCViewer工具打开它，进而查看到具体的GC日志如下：
+
+![1720143295434](images/Java-performance-tuning/1720143295434.png)
+
+主页面显示FullGC发生了13次，右下角显示年轻代和老年代的内存使用率几乎达到了100%。而FullGC会导致stop-the-world的发生，从而严重影响到应用服务的性能。此时，我们需要调整堆内存的大小来减少FullGC的发生。
+
+#### 参考指标
+
+我们可以将某些指标的预期值作为参考指标，上面的GC频率就是其中之一，那么还有哪些指标可以为我们提供一些具体的调优方向呢？
+
+- GC频率：高频的FullGC会给系统带来非常大的性能消耗，虽然MinorGC相对FullGC来说好了许多，但过多的MinorGC仍会给系统带来压力。
+- 内存：这里的内存指的是堆内存大小，堆内存又分为年轻代内存和老年代内存。首先我们要分析堆内存大小是否合适，其实是分析年轻代和老年代的比例是否合适。如果内存不足或分配不均匀，会增加FullGC，严重的将导致CPU持续爆满，影响系统性能。
+- 吞吐量：频繁的FullGC将会引起线程的上下文切换，增加系统的性能开销，从而影响每次处理的线程请求，最终导致系统的吞吐量下降。
+- 延时：JVM的GC持续时间也会影响到每次请求的响应时间。
+
+#### 具体调优方法
+
+调整堆内存空间减少FullGC：通过日志分析，堆内存基本被用完了，而且存在大量FullGC，这意味着我们的堆内存严重不足，这个时候我们需要调大堆内存空间。
+
+```java
+java -jar -Xms4g -Xmx4g heapTest-0.0.1-SNAPSHOT.jar
+```
+
+以下是各个配置项的说明：
+
+* -Xms：堆初始大小；
+* -Xmx：堆最大值。
+
+调大堆内存之后，我们再来测试下性能情况，发现吞吐量提高了40%左右，响应时间也降低了将近50%。
+
+![1720143708416](images/Java-performance-tuning/1720143708416.png)
+
+再查看GC日志，发现FullGC频率降低了，老年代的使用率只有16%了。
+
+![1720143772702](images/Java-performance-tuning/1720143772702.png)
+
+调整年轻代减少MinorGC：通过调整堆内存大小，我们已经提升了整体的吞吐量，降低了响应时间。那还有优化空间吗？我们还可以将年轻代设置得大一些，从而减少一些MinorGC（[第22讲](https://time.geekbang.org/column/article/107396)有通过降低Minor GC频率来提高系统性能的详解）。
+
+```java
+java -jar -Xms4g -Xmx4g -Xmn3g heapTest-0.0.1-SNAPSHOT.jar
+```
+
+再进行AB压测，发现吞吐量上去了
+
+![1720144344226](images/Java-performance-tuning/1720144344226.png)
+
+再查看GC日志，发现MinorGC也明显降低了，GC花费的总时间也减少了。
+
+![1720144467510](images/Java-performance-tuning/1720144467510.png)
+
+设置Eden、Survivor区比例：在JVM中，如果开启 AdaptiveSizePolicy，则每次 GC 后都会重新计算 Eden、From Survivor和 To Survivor区的大小，计算依据是 GC 过程中统计的 GC 时间、吞吐量、内存占用量。这个时候SurvivorRatio默认设置的比例会失效。
+
+在JDK1.8中，默认是开启AdaptiveSizePolicy的，我们可以通过-XX:-UseAdaptiveSizePolicy关闭该项配置，或显示运行-XX:SurvivorRatio=8将Eden、Survivor的比例设置为8:2。大部分新对象都是在Eden区创建的，我们可以固定Eden区的占用比例，来调优JVM的内存分配性能。再进行AB性能测试，我们可以看到吞吐量提升了，响应时间降低了。
+
+![1720144540899](images/Java-performance-tuning/1720144540899.png)
+
+![1720144573143](images/Java-performance-tuning/1720144573143.png)
+
+### 4.4.5 总结
+
+JVM内存调优通常和GC调优是互补的，基于以上调优，我们可以继续对年轻代和堆内存的垃圾回收算法进行调优。这里可以结合上一讲的内容，一起完成JVM调优。虽然分享了一些JVM内存分配调优的常用方法，但我还是建议你在进行性能压测后如果没有发现突出的性能瓶颈，就继续使用JVM默认参数，起码在大部分的场景下，默认配置已经可以满足我们的需求了。但满足不了也不要慌张，结合今天所学的内容去实践一下，相信你会有新的收获。
+
+
+**思考题:** 以上我们都是基于堆内存分配来优化系统性能的，但在NIO的Socket通信中，其实还使用到了堆外内存来减少内存拷贝，实现Socket通信优化。你知道堆外内存是如何创建和回收的吗？
+
+## 4.5 内存持续上升,我该如何排查问题?
+
+我想你肯定遇到过内存溢出，或是内存使用率过高的问题。碰到内存持续上升的情况，其实我们很难从业务日志中查看到具体的问题，那么面对多个进程以及大量业务线程，我们该如何精准地找到背后的原因呢？
+
+### 4.5.1 常用的监控和诊断内存工具
+
+工欲善其事，必先利其器。平时排查内存性能瓶颈时，我们往往需要用到一些Linux命令行或者JDK工具来辅助我们监测系统或者虚拟机内存的使用情况，下面我就来介绍几种好用且常用的工具。
+
+#### Linux命令行工具之top命令
+
+top命令是我们在Linux下最常用的命令之一，它可以实时显示正在执行进程的CPU使用率、内存使用率以及系统负载等信息。其中上半部分显示的是系统的统计信息，下半部分显示的是进程的使用率统计信息。
+
+![1720145381385](images/Java-performance-tuning/1720145381385.png)
+
+除了简单的top之外，我们还可以通过top -Hp pid查看具体线程使用系统资源情况：
+
+![1720145491119](images/Java-performance-tuning/1720145491119.png)
+
+#### Linux命令行工具之vmstat命令
+
+vmstat是一款指定采样周期和次数的功能性监测工具，我们可以看到，它不仅可以统计内存的使用情况，还可以观测到CPU的使用率、swap的使用情况。但vmstat一般很少用来查看内存的使用情况，而是经常被用来观察进程的上下文切换。
+
+* r：等待运行的进程数；
+* b：处于非中断睡眠状态的进程数；
+* swpd：虚拟内存使用情况；
+* free：空闲的内存；
+* buff：用来作为缓冲的内存数；
+* si：从磁盘交换到内存的交换页数量；
+* so：从内存交换到磁盘的交换页数量；
+* bi：发送到块设备的块数；
+* bo：从块设备接收到的块数；
+* in：每秒中断数；
+* cs：每秒上下文切换次数；
+* us：用户CPU使用时间；
+* sy：内核CPU系统使用时间；
+* id：空闲时间；
+* wa：等待I/O时间；
+* st：运行虚拟机窃取的时间。
+
+#### Linux命令行工具之pidstat命令
+
+pidstat是Sysstat中的一个组件，也是一款功能强大的性能监测工具，我们可以通过命令：yum install sysstat安装该监控组件。之前的top和vmstat两个命令都是监测进程的内存、CPU以及I/O使用情况，而pidstat命令则是深入到线程级别。通过pidstat -help命令，我们可以查看到有以下几个常用的参数来监测线程的性能：
+
+![1720145673980](images/Java-performance-tuning/1720145673980.png)
+
+常用参数：
+
+* -u：默认的参数，显示各个进程的cpu使用情况；
+* -r：显示各个进程的内存使用情况；
+* -d：显示各个进程的I/O使用情况；
+* -w：显示每个进程的上下文切换情况；
+* -p：指定进程号；
+* -t：显示进程中线程的统计信息。
+
+我们可以通过相关命令（例如ps或jps）查询到相关进程ID，再运行以下命令来监测该进程的内存使用情况：
+
+![1720145902753](images/Java-performance-tuning/1720145902753.png)
+
+其中pidstat的参数-p用于指定进程ID，-r表示监控内存的使用情况，1表示每秒的意思，3则表示采样次数。其中显示的几个关键指标的含义是：
+
+* Minflt/s：任务每秒发生的次要错误，不需要从磁盘中加载页；
+* Majflt/s：任务每秒发生的主要错误，需要从磁盘中加载页；
+* VSZ：虚拟地址大小，虚拟内存使用KB；
+* RSS：常驻集合大小，非交换区内存使用KB。
+
+如果我们需要继续查看该进程下的线程内存使用率，则在后面添加-t指令即可：
+
+![1720146477859](images/Java-performance-tuning/1720146477859.png)
+
+我们知道，Java是基于JVM上运行的，大部分内存都是在JVM的用户内存中创建的，所以除了通过以上Linux命令来监控整个服务器内存的使用情况之外，我们更需要知道JVM中的内存使用情况。JDK中就自带了很多命令工具可以监测到JVM的内存分配以及使用情况。
+
+#### JDK工具之jstat命令
+
+jstat可以监测Java应用程序的实时运行情况，包括堆内存信息以及垃圾回收信息。我们可以运行jstat -help查看一些关键参数信息：
+
+![1720146798612](images/Java-performance-tuning/1720146798612.png)
+
+再通过jstat -option查看jstat有哪些操作：
+
+![1720146822730](images/Java-performance-tuning/1720146822730.png)
+
+* -class：显示ClassLoad的相关信息；
+* -compiler：显示JIT编译的相关信息；
+* -gc：显示和gc相关的堆信息；
+* -gccapacity：显示各个代的容量以及使用情况；
+* -gcmetacapacity：显示Metaspace的大小；
+* -gcnew：显示新生代信息；
+* -gcnewcapacity：显示新生代大小和使用情况；
+* -gcold：显示老年代和永久代的信息；
+* -gcoldcapacity ：显示老年代的大小；
+* -gcutil：显示垃圾收集信息；
+* -gccause：显示垃圾回收的相关信息（通-gcutil），同时显示最后一次或当前正在发生的垃圾回收的诱因；
+* -printcompilation：输出JIT编译的方法信息。
+
+它的功能比较多，在这里我例举一个常用功能，如何使用jstat查看堆内存的使用情况。我们可以用jstat -gc pid查看：
+
+![1720147068185](images/Java-performance-tuning/1720147068185.png)
+
+* S0C：年轻代中To Survivor的容量（单位KB）；
+* S1C：年轻代中From Survivor的容量（单位KB）；
+* S0U：年轻代中To Survivor目前已使用空间（单位KB）；
+* S1U：年轻代中From Survivor目前已使用空间（单位KB）；
+* EC：年轻代中Eden的容量（单位KB）；
+* EU：年轻代中Eden目前已使用空间（单位KB）；
+* OC：Old代的容量（单位KB）；
+* OU：Old代目前已使用空间（单位KB）；
+* MC：Metaspace的容量（单位KB）；
+* MU：Metaspace目前已使用空间（单位KB）；
+* YGC：从应用程序启动到采样时年轻代中gc次数；
+* YGCT：从应用程序启动到采样时年轻代中gc所用时间(s)；
+* FGC：从应用程序启动到采样时old代（全gc）gc次数；
+* FGCT：从应用程序启动到采样时old代（全gc）gc所用时间(s)；
+* GCT：从应用程序启动到采样时gc用的总时间(s)。
+
+#### JDK工具之jstack命令
+
+这个工具在模块三的[答疑课堂](https://time.geekbang.org/column/article/105234)中介绍过，它是一种线程堆栈分析工具，最常用的功能就是使用 jstack pid 命令查看线程的堆栈信息，通常会结合top -Hp pid 或 pidstat -p pid -t一起查看具体线程的状态，也经常用来排查一些死锁的异常。
+
+![1720147286323](images/Java-performance-tuning/1720147286323.png)
+
+每个线程堆栈的信息中，都可以查看到线程ID、线程的状态（wait、sleep、running 等状态）以及是否持有锁等。
+
+#### JDK工具之jmap命令
+
+在[第23讲](https://time.geekbang.org/column/article/108139)中我们使用过jmap查看堆内存初始化配置信息以及堆内存的使用情况。那么除了这个功能，我们其实还可以使用jmap输出堆内存中的对象信息，包括产生了哪些对象，对象数量多少等。我们可以用jmap来查看堆内存初始化配置信息以及堆内存的使用情况：
+
+![1720147532867](images/Java-performance-tuning/1720147532867.png)
+
+我们可以使用jmap -histo[:live] pid查看堆内存中的对象数目、大小统计直方图，如果带上live则只统计活对象：
+
+![1720147585799](images/Java-performance-tuning/1720147585799.png)
+
+我们可以通过jmap命令把堆内存的使用情况dump到文件中：
+
+![1720147656999](images/Java-performance-tuning/1720147656999.png)
+
+我们可以将文件下载下来，使用 [MAT](http://www.eclipse.org/mat/)工具打开文件进行分析：
+
+![1720147749907](images/Java-performance-tuning/1720147749907.png)
+
+下面我们用一个实战案例来综合使用下刚刚介绍的几种工具，具体操作一下如何分析一个内存泄漏问题。
+
+### 4.5.2 实战演练
+
+我们平时遇到的内存溢出问题一般分为两种，一种是由于大峰值下没有限流，瞬间创建大量对象而导致的内存溢出；另一种则是由于内存泄漏而导致的内存溢出。使用限流，我们一般就可以解决第一种内存溢出问题，但其实很多时候，内存溢出往往是内存泄漏导致的，这种问题就是程序的BUG，我们需要及时找到问题代码。下面我模拟了一个内存泄漏导致的内存溢出案例，我们来实践一下。
+
+我们知道，ThreadLocal的作用是提供线程的私有变量，这种变量可以在一个线程的整个生命周期中传递，可以减少一个线程在多个函数或类中创建公共变量来传递信息，避免了复杂度。但在使用时，如果ThreadLocal使用不恰当，就可能导致内存泄漏。
+
+这个案例的场景就是ThreadLocal，下面我们模拟对每个线程设置一个本地变量。运行以下代码，系统一会儿就发送了内存溢出异常：
+
+```java
+@RequestMapping(value = "/test0")
+    public String test0(HttpServletRequest request) {
+        ThreadLocal<Byte[]> localVariable = new ThreadLocal<Byte[]>();
+        localVariable.set(new Byte[4096*1024]);// 为线程添加变量
+        return "success";
+    }
+```
+
+在启动应用程序之前，我们可以通过HeapDumpOnOutOfMemoryError和HeapDumpPath这两个参数开启堆内存异常日志，通过以下命令启动应用程序：
+
+```java
+java -jar -Xms1000m -Xmx4000m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof  -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -Xloggc:/tmp/heapTest.log heapTest-0.0.1-SNAPSHOT.jar
+```
+
+首先，请求test0链接10000次，这个时候我们请求test0的接口报异常了。
+
+![1720147916573](images/Java-performance-tuning/1720147916573.png)
+
+通过日志，我们很好分辨这是一个内存溢出异常。我们首先通过Linux系统命令查看进程在整个系统中内存的使用率是多少，最简单就是top命令了。
+
+![1720148013915](images/Java-performance-tuning/1720148013915.png)
+
+从top命令查看进程的内存使用情况，可以发现在机器只有8G内存且只分配了4G内存给Java进程的情况下，Java进程内存使用率已经达到了55%，再通过top -Hp pid查看具体线程占用系统资源情况。
+
+![1720150183662](images/Java-performance-tuning/1720150183662.png)
+
+再通过jstack pid查看具体线程的堆栈信息，可以发现该线程一直处于 TIMED\_WAITING 状态，此时CPU使用率和负载并没有出现异常，我们可以排除死锁或I/O阻塞的异常问题了。
+
+![1720150572186](images/Java-performance-tuning/1720150572186.png)
+
+我们再通过jmap查看堆内存的使用情况，可以发现，老年代的使用率几乎快占满了，而且内存一直得不到释放：
+
+![1720150681145](images/Java-performance-tuning/1720150681145.png)
+
+通过以上堆内存的情况，我们基本可以判断系统发生了内存泄漏。下面我们就需要找到具体是什么对象一直无法回收，什么原因导致了内存泄漏。我们需要查看具体的堆内存对象，看看是哪个对象占用了堆内存，可以通过jmap查看存活对象的数量：
+
+![1720150735529](images/Java-performance-tuning/1720150735529.png)
+
+
+Byte对象占用内存明显异常，说明代码中Byte对象存在内存泄漏，我们在启动时，已经设置了dump文件，通过MAT打开dump的内存日志文件，我们可以发现MAT已经提示了byte内存异常：
+
+![1720150773885](images/Java-performance-tuning/1720150773885.png)
+
+再点击进入到Histogram页面，可以查看到对象数量排序，我们可以看到Byte[]数组排在了第一位，选中对象后右击选择with incomming reference功能，可以查看到具体哪个对象引用了这个对象。
+
+![1720150880459](images/Java-performance-tuning/1720150880459.png)
+
+在这里我们就可以很明显地查看到是ThreadLocal这块的代码出现了问题。
+
+![1720150906122](images/Java-performance-tuning/1720150906122.png)
+
+
+
+### 4.5.3 总结
+
+在一些比较简单的业务场景下，排查系统性能问题相对来说简单，且容易找到具体原因。但在一些复杂的业务场景下，或是一些开源框架下的源码问题，相对来说就很难排查了，有时候通过工具只能猜测到可能是某些地方出现了问题，而实际排查则要结合源码做具体分析。可以说没有捷径，排查线上的性能问题本身就不是一件很简单的事情，除了将今天介绍的这些工具融会贯通，还需要我们不断地去累积经验，真正做到性能调优。
+
+**思考题:** 除了以上我讲到的那些排查内存性能瓶颈的工具之外，你知道要在代码中对JVM的内存进行监控，常用的方法是什么？
+
+
+### 4.5.4 补充
+
+在 macOS 上，有多种工具可以帮助你查看和分析垃圾回收（GC）行为。这些工具可以是 JVM 提供的内置工具、独立的分析工具，甚至是一些第三方监控和分析平台。
+
+#### JVM 内置工具
+
+1. **jconsole**：
+
+   - Java 自带的监控工具，用于连接到 JVM 并监控其性能，包括内存使用、线程状态和 GC 活动。
+   - 启动方法：
+     ```bash
+     jconsole
+     ```
+   - 接下来通过选择本地或远程 JVM 进行连接，然后可以查看内存使用情况和 GC 活动。
+2. **VisualVM**：
+
+   - 图形化的性能监控和分析工具，可以用于监控 CPU、内存、线程和 GC 活动。
+   - 下载地址：[VisualVM](https://visualvm.github.io/)
+   - 启动后，选择你想监控的 JVM 实例，并查看 GC 活动以及其他详细信息。
+3. **jstat**：
+
+   - Java 提供的一个命令行工具，用于监控 JVM 性能，包括 GC 行为。
+   - 常用命令：
+     ```bash
+     jstat -gc <pid> 1000  # 每秒钟显示一次 GC 数据
+     ```
+
+#### 独立分析工具
+
+1. **Eclipse MAT (Memory Analyzer Tool)**：
+
+   - 专业的 Java 堆分析工具，主要用于分析内存泄漏和查看对象的内存占用情况。
+   - 下载地址：[Eclipse MAT](http://www.eclipse.org/mat/)
+   - 可以分析 `.hprof` 文件，帮助识别 GC 活动频繁的原因。
+2. **YourKit Java Profiler**：
+
+   - 强大的性能剖析工具，提供深入的 CPU 和内存分析，包括 GC 分析。
+   - 下载地址：[YourKit Java Profiler](https://www.yourkit.com/)
+   - 提供详细的 GC 活动、内存分配和线程分析视图。
+3. **JProfiler**：
+
+   - 一款集成化的性能剖析工具，支持线程分布、内存分配、GC 分析等功能。
+   - 下载地址：[JProfiler](https://www.ej-technologies.com/products/jprofiler/overview.html)
+   - 提供了有关 GC 的详细可视化信息，并与各种 IDE 兼容。
+
+#### 第三方监控和分析平台
+
+1. **Prometheus + Grafana**：
+
+   - Prometheus 可以收集 JVM 的 GC 指标数据，Grafana 可以用来可视化这些数据。
+   - 使用 [jmx_exporter](https://github.com/prometheus/jmx_exporter) 来从 JVM 中提取数据。
+   - 配置好 jmx_exporter 之后，你可以创建自定义的 Grafana 仪表板来监控 GC 活动。
+2. **AppDynamics**：
+
+   - 强大的应用性能管理工具，提供全面的 GC 数据监控功能。
+   - 下载地址：[AppDynamics](https://www.appdynamics.com/)
+   - 支持自动探测 GC 活动并提供详细的性能分析报告。
+3. **New Relic**：
+
+   - 另一款流行的应用性能管理工具，提供 JVM 的性能监控和 GC 活动分析。
+   - 下载地址：[New Relic](https://newrelic.com/)
+   - 提供实时 GC 活动监控和历史数据分析功能。
+
+#### 命令行工具
+
+1. **gcutil**：
+
+   - Google 提供的用于分析 Java GC 日志的工具，可以生成 HTML 报告。
+   - 下载地址：[GCViewer](https://github.com/chewiebug/GCViewer)
+2. **GCEasy**：
+
+   - 在线 GC 日志分析工具，可以将 GC 日志文件上传后获得详细的分析报告。
+   - 访问地址：[GCEasy.io](https://gceasy.io/)
+
+#### 示例：使用 `jstat` 监控 GC
+
+```bash
+# 首先找到 JVM 进程 ID
+jps -l
+
+# 然后使用 `jstat` 监控 GC 活动
+jstat -gc <pid> 1000  # 每秒钟刷新一次 GC 数据
+```
+
+```plaintext
+ S0C    S1C    S0U    S1U      EC       EU        OC         OU        MC     MU      CCSC   CCSU   YGC   YGCT   FGC    FGCT     GCT   
+1024.0 1024.0  0.0    0.0     8192.0   8192.0    20480.0    10240.0    4480.0 4169.5  550.0  489.4   20    0.104   3      0.042    0.146
+```
+
+- `S0C`, `S1C`：新生代的两个 Survivor 空间大小。
+- `S0U`, `S1U`：新生代的两个 Survivor 空间使用量。
+- `EC`：Eden 空间大小。
+- `EU`：Eden 空间使用量。
+- `OC`：老年代空间大小。
+- `OU`：老年代空间使用量。
+- `MC`：方法区空间大小。
+- `MU`：方法区空间使用量。
+- `CCSC`：压缩类空间大小。
+- `CCSU`：压缩类空间使用量。
+- `YGC`：年轻代 GC 次数。
+- `YGCT`：年轻代 GC 时间。
+- `FGC`：完全 GC 次数。
+- `FGCT`：完全 GC 时间。
+- `GCT`：GC 总时间。
+
+
 # 五、设计模式调优
 
 ## 5.1 单例模式:如何创建单一对象优化系统性能?
