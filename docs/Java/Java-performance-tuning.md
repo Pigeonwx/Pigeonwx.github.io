@@ -5112,7 +5112,23 @@ jstat -gc <pid> 1000  # 每秒钟刷新一次 GC 数据
     - 当老年代的空间使用率超过某阈值时，会触发Full GC；
     - 当元空间不足时（JDK1.7永久代不足），也会触发Full GC；
     - 当调用System.gc()也会安排一次Full GC。
+- 老师看完有两个疑问,第一怎么查看 minor gc回收之后eden区存活对象 的多少,第二jmap-heap pid在图中只能看年轻代parallel gc看不到老年代的是什么垃圾回收器。对于提问cms垃圾回收器还是分老年代和年轻代回收分多个阶段有和程序并行的阶 段也有 stop the world 阶段 回收一整块老年代时间比较久,而gc把年轻代和老年代也有划分,不过拆成一个 region了,对region的回收成本低,而且会判断那些region回收的对象更多,而且cms要经过多次full gc才可能把不用的内存归还给操作系统，而g1只需要一次full gc就可以
 
+  - 接下来解答 ninghtmare 的提问。我们可以通过 jstat -gc pid interval 查看每次GC之后，具体每一个分区的内存使用率变化情况。我们可以通过JVM的设置参数，来查看垃圾收集器的具体设置参数，使用的方式有很多，例如 jcmd pid VM.flags 就可以查看到相关的设置参数。![1720245039660](images/Java-performance-tuning/1720245039660.png)
+  - 这里附上第22讲中，我总结的各个设置参数对应的垃圾收集器图表。![1720245101382](images/Java-performance-tuning/1720245101382.png)
+  - 当第一次创建对象的时候eden空间不足会进行一次minor gc把存活的对象放到from s区。如果这个时候from s 放不下。会发生一次担保进入老年代吗？当一次创建对象的时候eden空间不足进入 from s 区。当第二次创建对象的时候 eden 空间又不足了，这个时候 会把, eden和第一次存在from s区的对象进行gc存活的放在to s区,to s 区空间不足，进行担保放入老年代？这样的理解对吗。
+
+    - 对的。前提是老年代有足够接受这些对象的空间，才会进行分配担保。如果老年代剩余空间小于每次Minor GC晋升到老年代的平均值，则会发起一次 Full GC。
+  - AdaptiveSizePolicy这个参数是不是不太智能啊?我项目4G内存默认开 启的AdaptiveSizePolicy,发现只给年轻代分配了136M内存。平时运行到没啥问题,没到定时任务的点就频繁FGC,每次定时任务执行完,都会往老年代推40多M,一天会堆300多M到老年代,也不见它把年轻代调大。用的parNew+CMS。后来把年轻代调整到1G(单次YGC耗时从20ms增加到了40ms),每天老年代内存涨20M 左右。
+
+    - 这个会根据我们创建对象占用的内存使用率，合理分配内存，并不仅仅考虑对象晋升的问题，还会综合考虑回收停顿时间等因素。针对某些特殊场景，我们可以手动来调优配置。
+  - 老师是否可以讲下如何避免 threadLocal 内存泄漏呢
+
+    - 我们知道，ThreadLocal是基于ThreadLocalMap实现的，这个Map的Entry继承了WeakReference，而Entry对象中的key使用了WeakReference封装，也就是说Entry中的key是一个弱引用类型，而弱引用类型只能存活在下次GC之前。
+    - 如果一个线程调用ThreadLocal的set设置变量，当前ThreadLocalMap则会新增一条记录，但由于发生了一次垃圾回收，此时的key值就会被回收，而value值依然存在内存中，由于当前线程一直存在，所以value值将一直被引用。
+    - 这些被垃圾回收掉的key就会一直存在一条引用链的关系：Thread --> ThreadLocalMap–>Entry–>Value。这条引用链会导致Entry不会被回收，Value也不会被回收，但Entry中的key却已经被回收的情况发生，从而造成内存泄漏。我们只需要在使用完该key值之后，将value值通过remove方法remove掉，就可以防止内存泄漏了。
+  - 请问一下老师内存泄露和内存溢出具体有啥区别,有点不太理解内存泄露的概念。
+  - 内存泄漏是指不再使用的对象无法得到及时的回收，持续占用内存空间，从而造成内存空间的浪费。例如，我在[第03讲](https://time.geekbang.org/column/article/97215)中说到的，Java6中substring方法就可能会导致内存泄漏。当调用substring方法时会调用new string构造函数，此时会复用原来字符串的char数组，而如果我们仅仅是用substring获取一小段字符，而在原本string字符串非常大的情况下，substring的对象如果一直被引用，由于substring里的char数组仍然指向原字符串，此时string字符串也无法回收，从而导致内存泄露。内存溢出则是发生了OutOfMemoryException，内存溢出的情况有很多，例如堆内存空间不足，栈空间不足，还有方法区空间不足等都会导致内存溢出。内存泄漏与内存溢出的关系：内存泄漏很容易导致内存溢出，但内存溢出不一定是内存泄漏导致的。
 
 
 
