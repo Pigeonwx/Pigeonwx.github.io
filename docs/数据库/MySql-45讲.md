@@ -2,6 +2,411 @@
 
 [toc]
 
+# 补充
+
+## 常见文件样式
+
+### 慢查询日志
+
+![1688097110432](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/1688097110432.jpg)
+
+
+
+### BinLog日志
+
+> https://cloud.tencent.com/developer/article/1697140
+>
+> https://cloud.tencent.com/developer/article/2322606
+
+
+
+```sql
+# at 886746
+#230902 17:53:37 server id 1  end_log_pos 886811 CRC32 0xa4b56817       Anonymous_GTID  last_committed=80       sequence_number=81      rbr_only=yes
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 886811
+#230902 17:53:37 server id 1  end_log_pos 886891 CRC32 0x1513701c       Query   thread_id=3086  exec_time=0     error_code=0
+SET TIMESTAMP=1693648417/*!*/;
+BEGIN
+/*!*/;
+# at 886891
+#230902 17:53:37 server id 1  end_log_pos 886989 CRC32 0xda1bb052       Table_map: `fatp`.`t_dw_conf_pipeline_template` mapped to number 244
+# at 886989
+#230902 17:53:37 server id 1  end_log_pos 887063 CRC32 0xc69ea049       Write_rows: table id 244 flags: STMT_END_F
+
+BINLOG '
+IQbzZBMBAAABGZhdHAAG3RfZHdfY29uZl9waXBlbGluZV90ZW1w
+bGF0ZQAQCAMPDAAAAAEAAgAQ//9C/QIAAAAAAAAAA2treAswIDAgMSAqICog
+PwGZsQUdZZmxBR1lAEmgnsY=
+'/*!*/;
+### INSERT INTO `fatp`.`t_dw_conf_pipeline_template`
+### SET
+###   @1=2
+###   @2=NULL
+###   @3='kkx'
+###   @4='0 0 1 * * ?'
+###   @5=1
+###   @6='2023-09-02 17:53:37'
+###   @7=NULL
+###   @8='2023-09-02 17:53:37'
+###   @9=NULL
+###   @10=0
+###   @11=NULL
+###   @12=NULL
+###   @13=NULL
+###   @14=NULL
+###   @15=NULL
+###   @16=NULL
+# at 887063
+#230902 17:53:37 server id 1  end_log_pos 887094 CRC32 0x5eb043a3       Xid = 22402
+COMMIT/*!*/;
+SET @@SESSION.GTID_NEXT= 'AUTOMATIC' /* added by mysqlbinlog */ /*!*/;
+DELIMITER ;
+# End of log file
+/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
+```
+
+### EXPLAIN结果
+
+![2e279757267f4cff8f916311803cbcb4~tplv-k3u1fbpfcp-jj-mark_3024_0_0_0_q75](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/2e279757267f4cff8f916311803cbcb4~tplv-k3u1fbpfcp-jj-mark_3024_0_0_0_q75.png)
+
+### SHOW TABLE STATUS
+
+![780228-20190509171435484-970110017](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/780228-20190509171435484-970110017.png)
+
+| 返回列          | 说明                                                         |
+| --------------- | ------------------------------------------------------------ |
+| Name            | 表名称                                                       |
+| Engine          | 表的存储引擎                                                 |
+| Version         | 版本                                                         |
+| Row_format      | 行格式                                                       |
+| Rows            | 表中的行数。对于非事务性表，这个值是精确的，对于事务性引擎，这个值通常是估算的。 |
+| Avg_row_length  | 平均每行的大下（字节）                                       |
+| Data_length     | 表的数据量(单位：字节)                                       |
+| Max_data_length | 表可以容纳的最大数据量                                       |
+| Index_length    | 索引占用磁盘的空间大小                                       |
+| Data_free       | 标识已分配，但现在未使用的空间，并且包含了已被删除行的空间。 |
+| Auto_increment  | 下一个Auto_increment的值                                     |
+| Create_time     | 表的创建时间                                                 |
+| Update_time     | 表的最近更新时间                                             |
+| Check_time      | 最近一次使用 check table 或myisamchk工具检查表的时间         |
+| Collation       | 表的字符集和字符排序规则                                     |
+| Checksum        | 如果启用，则对整个表的内容计算时的校验和                     |
+| Create_options  | 表创建时的其它                                               |
+| Comment         | 表在创建是添加的注释说明                                     |
+
+
+
+### ANALYZE TABLE
+
+![Snipaste_2024-07-10_11-58-31](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/Snipaste_2024-07-10_11-58-31.png)
+
+### SHOW PROFILES
+
+> show profile cpu,CONTEXT SWITCHES,PAGE FAULTS for query 2;
+>
+> reset query cache; 清空缓存
+
+![Snipaste_2024-07-10_20-24-12](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/Snipaste_2024-07-10_20-24-12.png)
+
+![Snipaste_2024-07-10_20-27-03](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/Snipaste_2024-07-10_20-27-03.png)
+
+```sql
+-- 启用 Profiling
+SET profiling = 1;
+
+-- 执行 SQL 查询
+SELECT 
+    COUNT(issue_id) AS count, 
+    type, 
+    user_id, 
+    SUM(score) AS score, 
+    MAX(date) AS end,
+    MIN(date) AS begin,
+    issue_id, 
+    url, 
+    name, 
+    nickname, 
+    dept_name 
+FROM 
+    quality_score_detail
+WHERE 
+    status = ?
+GROUP BY 
+    type, 
+    issue_id, 
+    user_id
+ORDER BY 
+    user_id;
+
+-- 查看 Profiling 结果
+SHOW PROFILES;
+
+-- 查看具体查询的详细 Profiling 信息
+SHOW PROFILE FOR QUERY 1;
+
+-- 禁用 Profiling
+SET profiling = 0;
+
+```
+
+
+
+### 统计索引使用频率
+
+
+
+Performance Schema 提供了详细的性能相关的指标，包括索引使用情况。首先，你需要确保 Performance Schema 已经启用。
+
+**启用 Performance Schema**
+
+通常，Performance Schema 是默认启用的。如果没有启用，你可以在 MySQL 配置文件（如 `my.cnf`）中添加以下行来启用它：
+
+```
+[mysqld]
+performance_schema=ON
+```
+
+然后重启 MySQL 服务。
+
+**查询索引使用情况**
+
+执行以下查询来获取索引使用统计信息：
+
+```
+SELECT 
+    object_schema AS table_schema,
+    object_name AS table_name,
+    index_name,
+    COUNT_READ AS index_reads,
+    COUNT_WRITE AS index_writes,
+    COUNT_FETCH AS index_fetches
+FROM
+    performance_schema.table_io_waits_summary_by_index_usage
+WHERE
+    object_schema NOT IN ('mysql', 'performance_schema', 'information_schema', 'sys')
+    AND index_name IS NOT NULL
+ORDER BY
+    index_reads DESC;
+```
+
+
+
+### 表空间优化
+
+- **碎片空间大于6G**：表内有超过6GB的数据空间由于删除、更新等操作而变成了"碎片"，这些空间实际上是未被有效使用的。
+  
+- **碎片率大于30%**：表的整体空间中，有超过30%的空间是碎片。这意味着，表的总空间中30%的部分是由于数据的删除或更新导致的无效空间。
+
+- **free空间大小14.62G**：表的总大小中有14.62GB被标记为可用，这部分空间是可以被数据插入时重新利用的。
+
+这些问题通常是由于频繁的删除或更新操作导致的，导致了表中很多"空洞"，影响了数据库的性能。这些碎片不仅增加了表的大小，也降低了查询和更新操作的效率。
+
+
+
+#### `OPTIMIZE TABLE`
+
+`OPTIMIZE TABLE` 是一个简单而强大的命令，可以重新组织表和索引的物理存储，删除碎片和释放未使用的空间。这是最常见的方法。
+
+```sql
+OPTIMIZE TABLE sre_main_score_detail;
+```
+
+这个命令会对表进行以下操作：
+
+- 重建表和索引。
+- 合并碎片。
+- 释放未使用的空间。
+
+请注意，这个命令可能会锁定表的写操作，取决于你的存储引擎。在使用过程中要小心，特别是在高并发的生产环境中。
+
+#### `ALTER TABLE ... ENGINE=InnoDB`
+
+这个命令重新组织表的物理存储和索引，类似于重建表。
+
+```sql
+ALTER TABLE sre_main_score_detail ENGINE=InnoDB;
+```
+
+它的工作原理是将表复制到一个新表，然后把旧表删除。这会移除所有的碎片并释放未使用的空间。
+
+
+
+> https://blog.csdn.net/weixin_43816711/article/details/135648862
+>
+> OPTIMIZE TABLE 语句在许多情况下都可以使用，而不仅仅限于 `innodb_file_per_table=1` 设置。然而，如果你使用 InnoDB 表引擎并且希望重新整理表以释放磁盘空间，只有在将 `innodb_file_per_table` 设为 `1` 时，`OPTIMIZE TABLE` 语句才能有效地释放表空间。下面是一些关键点：
+>
+> 1. **InnoDB 表引擎**: 对于 InnoDB 表，`OPTIMIZE TABLE` 会进行表重组，同时释放未使用的空间和碎片。如果 `innodb_file_per_table` 设置为 `OFF`（即值为 `0`），InnoDB 会将所有表的数据存储在一个共享的表空间（ibdata files）中。在这种情况下，`OPTIMIZE TABLE` 不会释放实际的磁盘空间，只会对表进行重组。
+> 2. **innodb_file_per_table = 1**: 如果 `innodb_file_per_table` 设置为 `ON`（即值为 `1`），InnoDB 会为每个表使用单独的表空间文件（.ibd 文件）。在这种设置下，使用 `OPTIMIZE TABLE` 可以有效地将未使用的空间释放回文件系统，同时重组表结构。
+>
+> 其他引擎，例如 MyISAM，也可以使用 `OPTIMIZE TABLE` 语句来修复表、更新表统计信息、和重新创建索引，但这与 `innodb_file_per_table` 设置无关。
+
+| 操作     | `ALTER TABLE ... ENGINE=InnoDB`              | `OPTIMIZE TABLE`                       |
+| -------- | -------------------------------------------- | -------------------------------------- |
+| 主要用途 | 改变表存储引擎，或即使存储引擎不变也会重建表 | 优化和重组表，释放未使用的空间         |
+| 适用引擎 | 所有存储引擎（但需要特定的引擎支持转换）     | InnoDB 和 MyISAM                       |
+| 锁定     | 会锁定表                                     | 会锁定表                               |
+| 磁盘空间 | 可能需要额外的磁盘空间来重建表               | 可能需要额外的磁盘空间来重建表         |
+| 特定用途 | 从一个存储引擎转换到另一个，或重建表         | 优化和释放空间，减少碎片并更新统计信息 |
+| 使用示例 | `ALTER TABLE my_table ENGINE=InnoDB;`        | `OPTIMIZE TABLE my_table;`             |
+
+
+
+#### 备份和恢复
+
+这是一个较为复杂和文件级别的操作。首先备份整个表，然后删除表，再从备份中恢复数据。
+
+1. **备份表**
+
+```sh
+mysqldump -u your_username -p your_database sre_main_score_detail > sre_main_score_detail_backup.sql
+```
+
+2. **删除并重新创建表**
+
+这一步你需要重新设计建表语句
+
+```sql
+DROP TABLE sre_main_score_detail;
+
+-- 重新创建表的建表语句
+CREATE TABLE sre_main_score_detail (
+  -- 按照原参数再创建一次
+);
+```
+
+3. **从备份中恢复表**
+
+```sh
+mysql -u your_username -p your_database < sre_main_score_detail_backup.sql
+```
+
+#### 检查碎片率
+
+你可以通过以下SQL获取表的碎片信息：
+
+```sql
+SELECT 
+  table_name AS 'Table', 
+  ROUND(data_length / 1024 / 1024, 2) AS 'Data (MB)', 
+  ROUND(index_length / 1024 / 1024, 2) AS 'Index (MB)', 
+  ROUND((data_length + index_length) / 1024 / 1024, 2) AS 'Total (MB)', 
+  ROUND(data_free / 1024 / 1024, 2) AS 'Data Free (MB)' 
+FROM 
+  information_schema.tables 
+WHERE 
+  table_schema = 'your_database'
+  AND table_name = 'sre_main_score_detail';
+```
+
+这一结果可以给你一个基本概念，了解你的表在哪些方面存在碎片或不必要的空间。
+
+#### 计划和监控
+
+1. **调度定期优化**： 
+
+根据你的使用模式，考虑定期调度 `OPTIMIZE TABLE` 命令。例如，可以在低峰期，比如晚上或周末执行维护任务。
+
+```sh
+# 使用 crontab 定时任务来创建定期优化
+# 每周末凌晨3点执行优化
+0 3 * * 7 mysql -u your_username -p'your_password' your_database -e 'OPTIMIZE TABLE sre_main_score_detail;'
+```
+
+2. **监控表大小和空间利用率**：
+
+使用监控工具或自定义脚本定期检测表的使用情况，并根据结果进行优化。你可以使用数据库内部工具（如 MySQL Enterprise Monitor），或者外部的监控平台如 Prometheus、Nagios 等。
+
+3. **评估表设计和查询**：
+
+- **拆分或归档过期数据**：考虑将某些数据归档到历史表，以减少主表的大小。
+- **分区表**：分区表将数据分为多个存储区域，根据日期或其它特征进行分割，从而提升查询和管理性能。
+
+通过这些方法，你可以有效地管理和优化数据库中的碎片，使其性能保持在最佳状态。根据你的需求和使用场景可以灵活选择和组合这些方法。希望这些信息对你有帮助！如果有进一步的问题或需要详细的指导，请随时提问！
+
+
+
+## 常用命令
+
+1. 使用 `INFORMATION_SCHEMA` 查询获取信息。
+2. 使用 `SHOW TABLE STATUS` 命令查看表状态。
+3. 使用 MySQL Workbench 获取图形化界面信息。
+4. 使用 `ANALYZE TABLE` 和 `OPTIMIZE TABLE` 命令获取统计信息。
+
+
+
+##  information_schema
+
+`information_schema` 数据库包含与 MySQL 服务器维护的所有其他数据库相关的信息，这包括有关表、列和索引的信息。
+
+可以通过查询 `information_schema` 数据库中的表来获取索引的空间大小。
+
+步骤：
+
+1. 查找表名对应的表目录ID（`table_id`）：
+
+```
+   SELECT TABLE_ID 
+   FROM information_schema.INNODB_SYS_TABLES 
+   WHERE NAME = 'database_name/your_table_name';
+```
+
+1. 使用获取的 `table_id` 在 `INNODB_SYS_INDEXES` 中查询索引信息：
+
+```
+   SELECT index_name, stat_name, stat_value 
+   FROM information_schema.INNODB_SYS_INDEXES 
+   WHERE table_id = (SELECT TABLE_ID 
+                     FROM information_schema.INNODB_SYS_TABLES 
+                     WHERE NAME = 'database_name/your_table_name');
+```
+
+1. 使用MySQL5.7及更高版本可以更直接，用以下SQL获取更详细的索引信息，包括索引的大小:
+
+```
+   SELECT 
+       index_name, 
+       stat_value as size_in_bytes 
+   FROM information_schema.INNODB_INDEX_STATS 
+   WHERE stat_name = 'size' 
+     AND database_name = 'database_name' 
+     AND table_name = 'your_table_name';
+```
+
+示例
+
+假设你的数据库是 `test_db`，表名是 `your_table_name`：
+
+```
+SELECT 
+    index_name, 
+    stat_value as size_in_bytes 
+FROM 
+    information_schema.INNODB_INDEX_STATS 
+WHERE 
+    stat_name = 'size' 
+    AND database_name = 'test_db' 
+    AND table_name = 'your_table_name';
+```
+
+解释
+
+- **index_name**：索引名称。
+- **size_in_bytes**：索引占用的空间大小（字节）。
+
+优点和注意事项
+
+- **方法1**提供了基础索引信息和表的大致空间，适用于快速查看。
+- **方法2**提供了详细精准的索引空间数据，尤其是在InnoDB表中使用效果好。
+
+务必确保拥有足够的权限访问 `information_schema` 数据库，以便能执行上述查询获取索引空间大小信息。
+
+通过这种方法，你可以轻松查看MySQL表中每个索引的具体空间占用，为数据库优化和管理提供有效数据。
+
+
+
 # 一、基础篇
 
 ## 1.1 基础架构：一条SQL查询语句是如何执行的？
@@ -2737,6 +3142,8 @@ commit;
 
 这个语句序列是怎么加锁的呢？加的锁又是什么时候释放呢？答案见下一节
 
+有同学的回答中还说明了读提交隔离级别下，在语句执行完成后，是只有行锁的。而且语句执行完成后，InnoDB就会把不满足条件的行行锁去掉。当然了，c=5这一行的行锁，还是会等到commit的时候才释放的。
+
 ## 2.12 幻读是什么，幻读有什么问题？
 
 为了便于说明问题，这一篇文章，我们就先使用一个小一点儿的表。建表和初始化语句如下（为了便于本期的例子说明，我把上篇文章中用到的表结构做了点儿修改）：
@@ -2778,9 +3185,7 @@ commit;
 2. 在T2时刻，session B把id=0这一行的d值改成了5，因此T3时刻Q2查出来的是id=0和id=5这两行；
 3. 在T4时刻，session C又插入一行（1,1,5），因此T5时刻Q3查出来的是id=0、id=1和id=5的这三行。
 
-其中，Q3读到id=1这一行的现象，被称为“幻读”。也就是说，幻读指的是一个事务在前后两次查询同一个范围的时候，后一次查询看到了前一次查询没有看到的行。
-
-这里，我需要对“幻读”做一个说明：
+其中，Q3读到id=1这一行的现象，被称为“幻读”。也就是说，幻读指的是一个事务在前后两次查询同一个范围的时候，后一次查询看到了前一次查询没有看到的行。这里，我需要对“幻读”做一个说明：
 
 1. 在可重复读隔离级别下，普通的查询是快照读，是不会看到别的事务插入的数据的。因此，幻读在“当前读”下才会出现。
 2. 上面session B的修改结果，被session A之后的select语句用“当前读”看到，不能称为幻读。幻读仅专指“新插入的行”。
@@ -2806,3 +3211,717 @@ session B的第二条语句update t set c=5 where id=0，语义是“我把id=0�
 我们知道，锁的设计是为了保证数据的一致性。而这个一致性，不止是数据库内部数据状态在此刻的一致性，还包含了数据和日志在逻辑上的一致性。为了说明这个问题，我给session A在T1时刻再加一个更新语句，即：update t set d=100 where d=5。
 
 ![1720322030889](images/MySql-45讲/1720322030889.png)
+
+图 3 假设只在id=5这一行加行锁--数据一致性问题
+
+update的加锁语义和select …for update 是一致的，所以这时候加上这条update语句也很合理。session A声明说“要给d=5的语句加上锁”，就是为了要更新数据，新加的这条update语句就是把它认为加上了锁的这一行的d值修改成了100。现在，我们来分析一下图3执行完成后，数据库里会是什么结果。
+
+1. 经过T1时刻，id=5这一行变成 (5,5,100)，当然这个结果最终是在T6时刻正式提交的;
+2. 经过T2时刻，id=0这一行变成(0,5,5);
+3. 经过T4时刻，表里面多了一行(1,5,5);
+4. 其他行跟这个执行序列无关，保持不变。
+
+这样看，这些数据也没啥问题，但是我们再来看看这时候binlog里面的内容。
+
+1. T2时刻，session B事务提交，写入了两条语句；
+2. T4时刻，session C事务提交，写入了两条语句；
+3. T6时刻，session A事务提交，写入了update t set d=100 where d=5 这条语句。
+
+我统一放到一起的话，就是这样的：
+
+```
+update t set d=5 where id=0; /*(0,0,5)*/
+update t set c=5 where id=0; /*(0,5,5)*/
+
+insert into t values(1,1,5); /*(1,1,5)*/
+update t set c=5 where id=1; /*(1,5,5)*/
+
+update t set d=100 where d=5;/*所有d=5的行，d改成100*/
+```
+
+好，你应该看出问题了。这个语句序列，不论是拿到备库去执行，还是以后用binlog来克隆一个库，这三行的结果，都变成了 (0,5,100)、(1,5,100)和(5,5,100)。也就是说，id=0和id=1这两行，发生了数据不一致。这个问题很严重，是不行的。到这里，我们再回顾一下，**这个数据不一致到底是怎么引入的？**
+
+
+
+我们分析一下可以知道，这是我们假设“select * from t where d=5 for update这条语句只给d=5这一行，也就是id=5的这一行加锁”导致的。所以我们认为，上面的设定不合理，要改。那怎么改呢？我们把扫描过程中碰到的行，也都加上写锁，再来看看执行效果。
+
+![34ad6478281709da833856084a1e3447](MySql-45/34ad6478281709da833856084a1e3447.png)
+
+图 4 假设扫描到的行都被加上了行锁
+
+由于session A把所有的行都加了写锁，所以session B在执行第一个update语句的时候就被锁住了。需要等到T6时刻session A提交以后，session B才能继续执行。这样对于id=0这一行，在数据库里的最终结果还是 (0,5,5)。在binlog里面，执行序列是这样的：
+
+```sql
+insert into t values(1,1,5); /*(1,1,5)*/
+update t set c=5 where id=1; /*(1,5,5)*/
+
+update t set d=100 where d=5;/*所有d=5的行，d改成100*/
+
+update t set d=5 where id=0; /*(0,0,5)*/
+update t set c=5 where id=0; /*(0,5,5)*/
+```
+
+可以看到，按照日志顺序执行，id=0这一行的最终结果也是(0,5,5)。所以，id=0这一行的问题解决了。但同时你也可以看到，id=1这一行，在数据库里面的结果是(1,5,5)，而根据binlog的执行结果是(1,5,100)，也就是说幻读的问题还是没有解决。为什么我们已经这么“凶残”地，把所有的记录都上了锁，还是阻止不了id=1这一行的插入和更新呢？原因很简单。在T3时刻，我们给所有行加锁的时候，id=1这一行还不存在，不存在也就加不上锁。
+
+**也就是说，即使把所有的记录都加上锁，还是阻止不了新插入的记录，**这也是为什么“幻读”会被单独拿出来解决的原因。到这里，其实我们刚说明完文章的标题 ：幻读的定义和幻读有什么问题。接下来，我们再看看InnoDB怎么解决幻读的问题。
+
+
+
+### 2.12.3 如何解决幻读？
+
+现在你知道了，产生幻读的原因是，行锁只能锁住行，但是新插入记录这个动作，要更新的是记录之间的“间隙”。因此，为了解决幻读问题，InnoDB只好引入新的锁，也就是间隙锁(Gap Lock)。顾名思义，间隙锁，锁的就是两个值之间的空隙。比如文章开头的表t，初始化插入了6个记录，这就产生了7个间隙。
+
+![e7f7ca0d3dab2f48c588d714ee3ac861](MySql-45/e7f7ca0d3dab2f48c588d714ee3ac861.png)
+
+图 5 表t主键索引上的行锁和间隙锁
+
+这样，当你执行 select * from t where d=5 for update的时候，就不止是给数据库中已有的6个记录加上了行锁，还同时加了7个间隙锁。这样就确保了无法再插入新的记录。也就是说这时候，在一行行扫描的过程中，不仅将给行加上了行锁，还给行两边的空隙，也加上了间隙锁。现在你知道了，数据行是可以加上锁的实体，数据行之间的间隙，也是可以加上锁的实体。但是间隙锁跟我们之前碰到过的锁都不太一样。比如行锁，分成读锁和写锁。下图就是这两种类型行锁的冲突关系。
+
+![c435c765556c0f3735a6eda0779ff151](MySql-45/c435c765556c0f3735a6eda0779ff151.png)
+
+图6 两种行锁间的冲突关系
+
+也就是说，跟行锁有冲突关系的是“另外一个行锁”。但是间隙锁不一样，**跟间隙锁存在冲突关系的，是“往这个间隙中插入一个记录”这个操作。**间隙锁之间都不存在冲突关系。这句话不太好理解，我给你举个例子：
+
+![7c37732d936650f1cda7dbf27daf7498](MySql-45/7c37732d936650f1cda7dbf27daf7498.png)
+
+图7 间隙锁之间不互锁
+
+这里session B并不会被堵住。因为表t里并没有c=7这个记录，因此session A加的是间隙锁(5,10)。而session B也是在这个间隙加的间隙锁。它们有共同的目标，即：保护这个间隙，不允许插入值。但，它们之间是不冲突的。间隙锁和行锁合称`next-key lock`，每个next-key lock是前开后闭区间。也就是说，我们的表t初始化以后，如果用select * from t for update要把整个表所有记录锁起来，就形成了7个next-key lock，分别是 (-∞,0]、(0,5]、(5,10]、(10,15]、(15,20]、(20, 25]、(25, +supremum]。备注：这篇文章中，如果没有特别说明，我们把间隙锁记为开区间，把next-key lock记为前开后闭区间。你可能会问说，这个supremum从哪儿来的呢？这是因为+∞是开区间。实现上，InnoDB给每个索引加了一个不存在的最大值supremum，这样才符合我们前面说的“都是前开后闭区间”。
+
+
+
+**间隙锁和next-key lock的引入，帮我们解决了幻读的问题，但同时也带来了一些“困扰”。**
+
+
+
+在前面的文章中，就有同学提到了这个问题。我把他的问题转述一下，对应到我们这个例子的表来说，业务逻辑这样的：任意锁住一行，如果这一行不存在的话就插入，如果存在这一行就更新它的数据，代码如下：
+
+```sql
+begin;
+select * from t where id=N for update;
+
+/*如果行不存在*/
+insert into t values(N,N,N);
+/*如果行存在*/
+update t set d=N set id=N;
+
+commit;
+```
+
+可能你会说，这个不是insert … on duplicate key update 就能解决吗？但其实在有多个唯一键的时候，这个方法是不能满足这位提问同学的需求的。至于为什么，我会在后面的文章中再展开说明。现在，我们就只讨论这个逻辑。这个同学碰到的现象是，这个逻辑一旦有并发，就会碰到死锁。你一定也觉得奇怪，这个逻辑每次操作前用for update锁起来，已经是最严格的模式了，怎么还会有死锁呢？这里，我用两个session来模拟并发，并假设N=9。
+
+![df37bf0bb9f85ea59f0540e24eb6bcbe](MySql-45/df37bf0bb9f85ea59f0540e24eb6bcbe.png)
+
+图8 间隙锁导致的死锁
+
+你看到了，其实都不需要用到后面的update语句，就已经形成死锁了。我们按语句执行顺序来分析一下：
+
+1. session A 执行select … for update语句，由于id=9这一行并不存在，因此会加上间隙锁(5,10);
+2. session B 执行select … for update语句，同样会加上间隙锁(5,10)，间隙锁之间不会冲突，因此这个语句可以执行成功；
+3. session B 试图插入一行(9,9,9)，被session A的间隙锁挡住了，只好进入等待；
+4. session A试图插入一行(9,9,9)，被session B的间隙锁挡住了。
+
+
+
+至此，两个session进入互相等待状态，形成死锁。当然，InnoDB的死锁检测马上就发现了这对死锁关系，让session A的insert语句报错返回了。你现在知道了，**间隙锁的引入，可能会导致同样的语句锁住更大的范围，这其实是影响了并发度的**。其实，这还只是一个简单的例子，在下一篇文章中我们还会碰到更多、更复杂的例子。
+
+
+
+你可能会说，为了解决幻读的问题，我们引入了这么一大串内容，有没有更简单一点的处理方法呢。我在文章一开始就说过，如果没有特别说明，今天和你分析的问题都是在可重复读隔离级别下的，间隙锁是在可重复读隔离级别下才会生效的。所以，你如果把隔离级别设置为读提交的话，就没有间隙锁了。但同时，你要解决可能出现的数据和日志不一致问题，需要把binlog格式设置为row。这，也是现在不少公司使用的配置组合。
+
+
+
+前面文章的评论区有同学留言说，他们公司就使用的是读提交隔离级别加binlog_format=row的组合。他曾问他们公司的DBA说，你为什么要这么配置。DBA直接答复说，因为大家都这么用呀。所以，这个同学在评论区就问说，这个配置到底合不合理。关于这个问题本身的答案是，如果读提交隔离级别够用，也就是说，业务不需要可重复读的保证，这样考虑到读提交下操作数据的锁范围更小（没有间隙锁），这个选择是合理的。但其实我想说的是，配置是否合理，跟业务场景有关，需要具体问题具体分析。但是，如果DBA认为之所以这么用的原因是“大家都这么用”，那就有问题了，或者说，迟早会出问题。比如说，大家都用读提交，可是逻辑备份的时候，mysqldump为什么要把备份线程设置成可重复读呢？（这个我在前面的文章中已经解释过了，你可以再回顾下第6篇文章[《全局锁和表锁 ：给表加个字段怎么有这么多阻碍？》](https://time.geekbang.org/column/article/69862)的内容）然后，在备份期间，备份线程用的是可重复读，而业务线程用的是读提交。同时存在两种事务隔离级别，会不会有问题？
+
+进一步地，这两个不同的隔离级别现象有什么不一样的，关于我们的业务，“用读提交就够了”这个结论是怎么得到的？如果业务开发和运维团队这些问题都没有弄清楚，那么“没问题”这个结论，本身就是有问题的。
+
+
+
+### 2.12.4 小结
+
+今天我们从上一篇文章的课后问题说起，提到了全表扫描的加锁方式。我们发现即使给所有的行都加上行锁，仍然无法解决幻读问题，因此引入了间隙锁的概念。我碰到过很多对数据库有一定了解的业务开发人员，他们在设计数据表结构和业务SQL语句的时候，对行锁有很准确的认识，但却很少考虑到间隙锁。最后的结果，就是生产库上会经常出现由于间隙锁导致的死锁现象。
+
+
+
+行锁确实比较直观，判断规则也相对简单，间隙锁的引入会影响系统的并发度，也增加了锁分析的复杂度，但也有章可循。下一篇文章，我就会为你讲解InnoDB的加锁规则，帮你理顺这其中的“章法”。作为对下一篇文章的预习，我给你留下一个思考题。
+
+![0d796060073668ca169166a8903fbf3d](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/0d796060073668ca169166a8903fbf3d.png)
+
+图9 事务进入锁等待状态
+
+如果你之前没有了解过本篇文章的相关内容，一定觉得这三个语句简直是风马牛不相及。但实际上，这里session B和session C的insert 语句都会进入锁等待状态。你可以试着分析一下，出现这种情况的原因是什么？
+
+
+
+这里需要说明的是，这其实是我在下一篇文章介绍加锁规则后才能回答的问题，是留给你作为预习的，其中session C被锁住这个分析是有点难度的。如果你没有分析出来，也不要气馁，我会在下一篇文章和你详细说明。你也可以说说，你的线上MySQL配置的是什么隔离级别，为什么会这么配置？你有没有碰到什么场景，是必须使用可重复读隔离级别的呢？
+
+
+
+## 2.13 为什么我只改一行的语句,锁这么多?
+
+在上一篇文章中，我和你介绍了间隙锁和next-key lock的概念，但是并没有说明加锁规则。间隙锁的概念理解起来确实有点儿难，尤其在配合上行锁以后，很容易在判断是否会出现锁等待的问题上犯错。所以今天，我们就先从这个加锁规则开始吧。
+
+
+
+首先说明一下，这些加锁规则我没在别的地方看到过有类似的总结，以前我自己判断的时候都是想着代码里面的实现来脑补的。这次为了总结成不看代码的同学也能理解的规则，是我又重新刷了代码临时总结出来的。所以，**这个规则有以下两条前提说明：**
+
+1. MySQL后面的版本可能会改变加锁策略，所以这个规则只限于截止到现在的最新版本，即5.x系列<=5.7.24，8.0系列 <=8.0.13。
+2. 如果大家在验证中有发现bad case的话，请提出来，我会再补充进这篇文章，使得一起学习本专栏的所有同学都能受益。
+
+因为间隙锁在可重复读隔离级别下才有效，所以本篇文章接下来的描述，若没有特殊说明，默认是可重复读隔离级别。**我总结的加锁规则里面，包含了两个“原则”、两个“优化”和一个“bug”。**
+
+1. 原则1：加锁的基本单位是next-key lock。希望你还记得，next-key lock是前开后闭区间。
+2. 原则2：查找过程中访问到的对象才会加锁。
+3. 优化1：索引上的等值查询，给唯一索引加锁的时候，next-key lock退化为行锁。
+4. 优化2：索引上的等值查询，向右遍历时且最后一个值不满足等值条件的时候，next-key lock退化为间隙锁。
+5. 一个bug：唯一索引上的范围查询会访问到不满足条件的第一个值为止。
+
+我还是以上篇文章的表t为例，和你解释一下这些规则。表t的建表语句和初始化语句如下。
+
+```sql
+CREATE TABLE `t` (
+  `id` int(11) NOT NULL,
+  `c` int(11) DEFAULT NULL,
+  `d` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `c` (`c`)
+) ENGINE=InnoDB;
+
+insert into t values(0,0,0),(5,5,5),
+(10,10,10),(15,15,15),(20,20,20),(25,25,25);
+```
+
+接下来的例子基本都是配合着图片说明的，所以我建议你可以对照着文稿看，有些例子可能会“毁三观”，也建议你读完文章后亲手实践一下。
+
+### 2.13.1 案例一：等值查询间隙锁
+
+第一个例子是关于等值条件操作间隙：
+
+![585dfa8d0dd71171a6fa16bed4ba816c](MySql-45/585dfa8d0dd71171a6fa16bed4ba816c.png)
+
+图1 等值查询的间隙锁
+
+由于表t中没有id=7的记录，所以用我们上面提到的加锁规则判断一下的话：
+
+1. 根据原则1，加锁单位是next-key lock，session A加锁范围就是(5,10]；
+2. 同时根据优化2，这是一个等值查询(id=7)，而id=10不满足查询条件，next-key lock退化成间隙锁，因此最终加锁的范围是(5,10)。
+
+所以，session B要往这个间隙里面插入id=8的记录会被锁住，但是session C修改id=10这行是可以的。
+
+### 2.13.2 案例二：非唯一索引等值锁
+
+第二个例子是关于覆盖索引上的锁：
+
+![465990fe8f6b418ca3f9992bd1bb5465](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/465990fe8f6b418ca3f9992bd1bb5465.png)
+
+图2 只加在非唯一索引上的锁
+
+看到这个例子，你是不是有一种“该锁的不锁，不该锁的乱锁”的感觉？我们来分析一下吧。这里session A要给索引c上c=5的这一行加上读锁。
+
+1. 根据原则1，加锁单位是next-key lock，因此会给(0,5]加上next-key lock。
+2. 要注意c是普通索引，因此仅访问c=5这一条记录是不能马上停下来的，需要向右遍历，查到c=10才放弃。根据原则2，访问到的都要加锁，因此要给(5,10]加next-key lock。
+3. 但是同时这个符合优化2：等值判断，向右遍历，最后一个值不满足c=5这个等值条件，因此退化成间隙锁(5,10)。
+4. 根据原则2 ，**只有访问到的对象才会加锁**，这个查询使用覆盖索引，并不需要访问主键索引，所以主键索引上没有加任何锁，这就是为什么session B的update语句可以执行完成。
+
+但session C要插入一个(7,7,7)的记录，就会被session A的间隙锁(5,10)锁住。需要注意，在这个例子中，lock in share mode只锁覆盖索引，但是如果是for update就不一样了。 执行 for update时，系统会认为你接下来要更新数据，因此会顺便给主键索引上满足条件的行加上行锁。这个例子说明，锁是加在索引上的；同时，它给我们的指导是，如果你要用lock in share mode来给行加读锁避免数据被更新的话，就必须得绕过覆盖索引的优化，在查询字段中加入索引中不存在的字段。比如，将session A的查询语句改成select d from t where c=5 lock in share mode。你可以自己验证一下效果。
+
+### 2.13.3 案例三：主键索引范围锁
+
+第三个例子是关于范围查询的。举例之前，你可以先思考一下这个问题：对于我们这个表t，下面这两条查询语句，加锁范围相同吗？
+
+```
+mysql> select * from t where id=10 for update;
+mysql> select * from t where id>=10 and id<11 for update;
+```
+
+你可能会想，id定义为int类型，这两个语句就是等价的吧？其实，它们并不完全等价。在逻辑上，这两条查语句肯定是等价的，但是它们的加锁规则不太一样。现在，我们就让session A执行第二个查询语句，来看看加锁效果。
+
+![30b839bf941f109b04f1a36c302aea80](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/30b839bf941f109b04f1a36c302aea80.png)
+
+图3 主键索引上范围查询的锁
+
+现在我们就用前面提到的加锁规则，来分析一下session A 会加什么锁呢？
+
+1. 开始执行的时候，要找到第一个id=10的行，因此本该是next-key lock(5,10]。 根据优化1， 主键id上的等值条件，退化成行锁，只加了id=10这一行的行锁。
+2. 范围查找就往后继续找，找到id=15这一行停下来，因此需要加next-key lock(10,15]。
+
+所以，session A这时候锁的范围就是主键索引上，行锁id=10和next-key lock(10,15]。这样，session B和session C的结果你就能理解了。这里你需要注意一点，首次session A定位查找id=10的行的时候，是当做等值查询来判断的，而向右扫描到id=15的时候，用的是范围查询判断。
+
+### 2.13.4 案例四：非唯一索引范围锁
+
+接下来，我们再看两个范围查询加锁的例子，你可以对照着案例三来看。需要注意的是，与案例三不同的是，案例四中查询语句的where部分用的是字段c。![7381475e9e951628c9fc907f5a57697a](MySql-45/7381475e9e951628c9fc907f5a57697a.png)
+
+图4 非唯一索引范围锁
+
+这次session A用字段c来判断，加锁规则跟案例三唯一的不同是：在第一次用c=10定位记录的时候，索引c上加了(5,10]这个next-key lock后，由于索引c是非唯一索引，没有优化规则，也就是说不会蜕变为行锁，因此最终sesion A加的锁是，索引c上的(5,10] 和(10,15] 这两个next-key lock。所以从结果上来看，sesson B要插入（8,8,8)的这个insert语句时就被堵住了。这里需要扫描到c=15才停止扫描，是合理的，因为InnoDB要扫到c=15，才知道不需要继续往后找了。
+
+
+
+### 2.13.5案例五：唯一索引范围锁bug
+
+前面的四个案例，我们已经用到了加锁规则中的两个原则和两个优化，接下来再看一个关于加锁规则中bug的案例。
+
+![b105f8c4633e8d3a84e6422b1b1a316d](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/b105f8c4633e8d3a84e6422b1b1a316d.png)
+
+图5 唯一索引范围锁的bug
+
+session A是一个范围查询，按照原则1的话，应该是索引id上只加(10,15]这个next-key lock，并且因为id是唯一键，所以循环判断到id=15这一行就应该停止了。但是实现上，InnoDB会往前扫描到第一个不满足条件的行为止，也就是id=20。而且由于这是个范围扫描，因此索引id上的(15,20]这个next-key lock也会被锁上。所以你看到了，session B要更新id=20这一行，是会被锁住的。同样地，session C要插入id=16的一行，也会被锁住。照理说，这里锁住id=20这一行的行为，其实是没有必要的。因为扫描到id=15，就可以确定不用往后再找了。但实现上还是这么做了，因此我认为这是个bug。
+
+
+
+我也曾找社区的专家讨论过，官方bug系统上也有提到，但是并未被verified。所以，认为这是bug这个事儿，也只能算我的一家之言，如果你有其他见解的话，也欢迎你提出来。
+
+
+
+### 2.13.6 案例六：非唯一索引上存在"等值"的例子
+
+接下来的例子，是为了更好地说明“间隙”这个概念。这里，我给表t插入一条新记录。
+
+```
+mysql> insert into t values(30,10,30);
+```
+
+新插入的这一行c=10，也就是说现在表里有两个c=10的行。那么，这时候索引c上的间隙是什么状态了呢？你要知道，由于非唯一索引上包含主键的值，所以是不可能存在“相同”的两行的。
+
+![c1fda36c1502606eb5be3908011ba159](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/c1fda36c1502606eb5be3908011ba159.png)
+
+图6 非唯一索引等值的例子
+
+可以看到，虽然有两个c=10，但是它们的主键值id是不同的（分别是10和30），因此这两个c=10的记录之间，也是有间隙的。图中我画出了索引c上的主键id。为了跟间隙锁的开区间形式进行区别，我用(c=10,id=30)这样的形式，来表示索引上的一行。现在，我们来看一下案例六。
+
+
+
+这次我们用delete语句来验证。注意，delete语句加锁的逻辑，其实跟select ... for update 是类似的，也就是我在文章开始总结的两个“原则”、两个“优化”和一个“bug”。
+
+![b55fb0a1cac3500b60e1cf9779d2da78](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/b55fb0a1cac3500b60e1cf9779d2da78.png)
+
+图7 delete 示例
+
+这时，session A在遍历的时候，先访问第一个c=10的记录。同样地，根据原则1，这里加的是(c=5,id=5)到(c=10,id=10)这个next-key lock。然后，session A向右查找，直到碰到(c=15,id=15)这一行，循环才结束。根据优化2，这是一个等值查询，向右查找到了不满足条件的行，所以会退化成(c=10,id=10) 到 (c=15,id=15)的间隙锁。也就是说，这个delete语句在索引c上的加锁范围，就是下图中蓝色区域覆盖的部分。
+
+![bb0ad92483d71f0dcaeeef278f89cb24](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/bb0ad92483d71f0dcaeeef278f89cb24.png)
+
+图8 delete加锁效果示例
+
+这个蓝色区域左右两边都是虚线，表示开区间，即(c=5,id=5)和(c=15,id=15)这两行上都没有锁。
+
+### 2.13.7 案例七：limit 语句加锁
+
+例子6也有一个对照案例，场景如下所示：
+
+![afc3a08ae7a254b3251e41b2a6dae02e](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/afc3a08ae7a254b3251e41b2a6dae02e.png)
+
+图9 limit 语句加锁
+
+这个例子里，session A的delete语句加了 limit 2。你知道表t里c=10的记录其实只有两条，因此加不加limit 2，删除的效果都是一样的，但是加锁的效果却不同。可以看到，session B的insert语句执行通过了，跟案例六的结果不同。
+
+
+
+这是因为，案例七里的delete语句明确加了limit 2的限制，因此在遍历到(c=10, id=30)这一行之后，满足条件的语句已经有两条，循环就结束了。
+
+
+
+因此，索引c上的加锁范围就变成了从（c=5,id=5)到（c=10,id=30)这个前开后闭区间，如下图所示：
+
+![e5408ed94b3d44985073255db63bd0d5](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/e5408ed94b3d44985073255db63bd0d5.png)
+
+图10 带limit 2的加锁效果
+
+可以看到，(c=10,id=30）之后的这个间隙并没有在加锁范围里，因此insert语句插入c=12是可以执行成功的。
+
+
+
+这个例子对我们实践的指导意义就是，**在删除数据的时候尽量加limit**。这样不仅可以控制删除数据的条数，让操作更安全，还可以减小加锁的范围。
+
+
+
+### 2.13.8 案例八：一个死锁的例子
+
+前面的例子中，我们在分析的时候，是按照next-key lock的逻辑来分析的，因为这样分析比较方便。最后我们再看一个案例，目的是说明：next-key lock实际上是间隙锁和行锁加起来的结果。
+
+
+
+你一定会疑惑，这个概念不是一开始就说了吗？不要着急，我们先来看下面这个例子：
+
+![7b911a4c995706e8aa2dd96ff0f36506](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/7b911a4c995706e8aa2dd96ff0f36506.png)
+
+图11 案例八的操作序列
+
+现在，我们按时间顺序来分析一下为什么是这样的结果。
+
+1. session A 启动事务后执行查询语句加lock in share mode，在索引c上加了next-key lock(5,10] 和间隙锁(10,15)
+2. session B 的update语句也要在索引c上加next-key lock(5,10] ，进入锁等待；
+3. 然后session A要再插入(8,8,8)这一行，被session B的间隙锁锁住。由于出现了死锁，InnoDB让session B回滚。
+
+你可能会问，session B的next-key lock不是还没申请成功吗？其实是这样的，session B的“加next-key lock(5,10] ”操作，实际上分成了两步，先是加(5,10)的间隙锁，加锁成功；然后加c=10的行锁，这时候才被锁住的。也就是说，我们在分析加锁规则的时候可以用next-key lock来分析。但是要知道，具体执行的时候，是要分成间隙锁和行锁两段来执行的。
+
+
+
+### 2.13.9 小结
+
+这里我再次说明一下，我们上面的所有案例都是在可重复读隔离级别(repeatable-read)下验证的。同时，可重复读隔离级别遵守两阶段锁协议，所有加锁的资源，都是在事务提交或者回滚的时候才释放的。在最后的案例中，你可以清楚地知道next-key lock实际上是由间隙锁加行锁实现的。如果切换到读提交隔离级别(read-committed)的话，就好理解了，过程中去掉间隙锁的部分，也就是只剩下行锁的部分。
+
+
+
+其实读提交隔离级别在外键场景下还是有间隙锁，相对比较复杂，我们今天先不展开。另外，在读提交隔离级别下还有一个优化，即：语句执行过程中加上的行锁，在语句执行完成后，就要把“不满足条件的行”上的行锁直接释放了，不需要等到事务提交。也就是说，读提交隔离级别下，锁的范围更小，锁的时间更短，这也是不少业务都默认使用读提交隔离级别的原因。不过，我希望你学过今天的课程以后，可以对next-key lock的概念有更清晰的认识，并且会用加锁规则去判断语句的加锁范围。
+
+
+
+在业务需要使用可重复读隔离级别的时候，能够更细致地设计操作数据库的语句，解决幻读问题的同时，最大限度地提升系统并行处理事务的能力。经过这篇文章的介绍，你再看一下上一篇文章最后的思考题，再来尝试分析一次。我把题目重新描述和简化一下：还是我们在文章开头初始化的表t，里面有6条记录，图12的语句序列中，为什么session B的insert操作，会被锁住呢？
+
+![3a7578e104612a188a2d574eaa3bd81e](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/3a7578e104612a188a2d574eaa3bd81e.png)
+
+我们用上一篇的加锁规则来分析一下，看看session A的select语句加了哪些锁：
+
+
+
+1. 由于是order by c desc，第一个要定位的是索引c上“最右边的”c=20的行，所以会加上间隙锁(20,25)和next-key lock (15,20]。
+2. 在索引c上向左遍历，要扫描到c=10才停下来，所以next-key lock会加到(5,10]，这正是阻塞session B的insert语句的原因。
+3. 在扫描过程中，c=20、c=15、c=10这三行都存在值，由于是select *，所以会在主键id上加三个行锁。
+
+
+
+因此，session A 的select语句锁的范围就是：
+
+1. 索引c上 (5, 25)；
+2. 主键索引上id=15、20两个行锁。
+
+
+
+这里，我再啰嗦下，你会发现我在文章中，每次加锁都会说明是加在“哪个索引上”的。因为，锁就是加在索引上的，这是InnoDB的一个基础设定，需要你在分析问题的时候要一直记得。
+
+## 2.14 MySQL有哪些"饮鸩止渴”提高性能的方法？
+
+不知道你在实际运维过程中有没有碰到这样的情景：业务高峰期，生产环境的MySQL压力太大，没法正常响应，需要短期内、临时性地提升一些性能。我以前做业务护航的时候，就偶尔会碰上这种场景。用户的开发负责人说，不管你用什么方案，让业务先跑起来再说。但，如果是无损方案的话，肯定不需要等到这个时候才上场。今天我们就来聊聊这些临时方案，并着重说一说它们可能存在的风险。
+
+### 2.14.1 短连接风暴
+
+正常的短连接模式就是连接到数据库后，执行很少的SQL语句就断开，下次需要的时候再重连。如果使用的是短连接，在业务高峰期的时候，就可能出现连接数突然暴涨的情况。我在第1篇文章《基础架构：一条SQL查询语句是如何执行的？》中说过，MySQL建立连接的过程，成本是很高的。除了正常的网络连接三次握手外，还需要做登录权限判断和获得这个连接的数据读写权限。在数据库压力比较小的时候，这些额外的成本并不明显。
+
+
+
+但是，短连接模型存在一个风险，就是一旦数据库处理得慢一些，连接数就会暴涨。max_connections参数，用来控制一个MySQL实例同时存在的连接数的上限，超过这个值，系统就会拒绝接下来的连接请求，并报错提示“Too many connections”。对于被拒绝连接的请求来说，从业务角度看就是数据库不可用。在机器负载比较高的时候，处理现有请求的时间变长，每个连接保持的时间也更长。这时，再有新建连接的话，就可能会超过max_connections的限制。
+
+
+
+碰到这种情况时，一个比较自然的想法，就是调高max_connections的值。但这样做是有风险的。因为设计max_connections这个参数的目的是想保护MySQL，如果我们把它改得太大，让更多的连接都可以进来，那么系统的负载可能会进一步加大，大量的资源耗费在权限验证等逻辑上，结果可能是适得其反，已经连接的线程拿不到CPU资源去执行业务的SQL请求。那么这种情况下，你还有没有别的建议呢？我这里还有两种方法，但要注意，这些方法都是有损的。
+
+
+
+#### 1. 第一种方法：先处理掉那些占着连接但是不工作的线程
+
+max_connections的计算，不是看谁在running，是只要连着就占用一个计数位置。对于那些不需要保持的连接，我们可以通过kill connection主动踢掉。这个行为跟事先设置wait_timeout的效果是一样的。设置wait_timeout参数表示的是，一个线程空闲wait_timeout这么多秒之后，就会被MySQL直接断开连接。但是需要注意，在show processlist的结果里，踢掉显示为sleep的线程，可能是有损的。我们来看下面这个例子。
+
+![9091ff280592c8c68665771b1516c62a](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/9091ff280592c8c68665771b1516c62a.png)
+
+图1 sleep线程的两种状态
+
+在上面这个例子里，如果断开session A的连接，因为这时候session A还没有提交，所以MySQL只能按照回滚事务来处理；而断开session B的连接，就没什么大影响。所以，如果按照优先级来说，你应该优先断开像session B这样的事务外空闲的连接。但是，怎么判断哪些是事务外空闲的呢？session C在T时刻之后的30秒执行show processlist，看到的结果是这样的。
+
+![ae6a9ceecf8517e47f9ebfc565f0f925](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/ae6a9ceecf8517e47f9ebfc565f0f925.png)
+
+图2 sleep线程的两种状态，show processlist结果
+
+图中id=4和id=5的两个会话都是Sleep 状态。而要看事务具体状态的话，你可以查information_schema库的innodb_trx表。
+
+![ca4b455c8eacbf32b98d1fe9ed9876e8](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/ca4b455c8eacbf32b98d1fe9ed9876e8.png)
+
+图3 从information_schema.innodb_trx查询事务状态
+
+这个结果里，trx_mysql_thread_id=4，表示id=4的线程还处在事务中。因此，如果是连接数过多，你可以优先断开事务外空闲太久的连接；如果这样还不够，再考虑断开事务内空闲太久的连接。从服务端断开连接使用的是kill connection + id的命令， 一个客户端处于sleep状态时，它的连接被服务端主动断开后，这个客户端并不会马上知道。直到客户端在发起下一个请求的时候，才会收到这样的报错“ERROR 2013 (HY000): Lost connection to MySQL server during query”。
+
+
+
+从数据库端主动断开连接可能是有损的，尤其是有的应用端收到这个错误后，不重新连接，而是直接用这个已经不能用的句柄重试查询。这会导致从应用端看上去，“MySQL一直没恢复”。你可能觉得这是一个冷笑话，但实际上我碰到过不下10次。所以，如果你是一个支持业务的DBA，不要假设所有的应用代码都会被正确地处理。即使只是一个断开连接的操作，也要确保通知到业务开发团队。
+
+
+
+#### 2. 第二种方法：减少连接过程的消耗
+
+
+
+有的业务代码会在短时间内先大量申请数据库连接做备用，如果现在数据库确认是被连接行为打挂了，那么一种可能的做法，是让数据库跳过权限验证阶段。跳过权限验证的方法是：重启数据库，并使用–skip-grant-tables参数启动。这样，整个MySQL会跳过所有的权限验证阶段，包括连接过程和语句执行过程在内。
+
+
+
+但是，这种方法特别符合我们标题里说的“饮鸩止渴”，风险极高，是我特别不建议使用的方案。尤其你的库外网可访问的话，就更不能这么做了。在MySQL 8.0版本里，如果你启用–skip-grant-tables参数，MySQL会默认把 --skip-networking参数打开，表示这时候数据库只能被本地的客户端连接。可见，MySQL官方对skip-grant-tables这个参数的安全问题也很重视。
+
+
+
+除了短连接数暴增可能会带来性能问题外，实际上，我们在线上碰到更多的是查询或者更新语句导致的性能问题。其中，查询问题比较典型的有两类，一类是由新出现的慢查询导致的，一类是由QPS（每秒查询数）突增导致的。而关于更新语句导致的性能问题，我会在下一篇文章和你展开说明。
+
+
+
+### 2.14.2 慢查询性能问题
+
+在MySQL中，会引发性能问题的慢查询，大体有以下三种可能：
+
+1. 索引没有设计好；
+2. SQL语句没写好；
+3. MySQL选错了索引。
+
+
+
+接下来，我们就具体分析一下这三种可能，以及对应的解决方案。
+
+#### 1. 导致慢查询的第一种可能是，索引没有设计好
+
+这种场景一般就是通过紧急创建索引来解决。MySQL 5.6版本以后，创建索引都支持Online DDL了，对于那种高峰期数据库已经被这个语句打挂了的情况，最高效的做法就是直接执行alter table 语句。比较理想的是能够在备库先执行。假设你现在的服务是一主一备，主库A、备库B，这个方案的大致流程是这样的：
+
+1. 在备库B上执行 set sql_log_bin=off，也就是不写binlog，然后执行alter table 语句加上索引；
+2. 执行主备切换；
+3. 这时候主库是B，备库是A。在A上执行 set sql_log_bin=off，然后执行alter table 语句加上索引。
+
+
+
+这是一个“古老”的DDL方案。平时在做变更的时候，你应该考虑类似gh-ost这样的方案，更加稳妥。但是在需要紧急处理时，上面这个方案的效率是最高的。
+
+
+
+#### 2. 导致慢查询的第二种可能是，语句没写好
+
+比如，我们犯了在第18篇文章《为什么这些SQL语句逻辑相同，性能却差异巨大？》中提到的那些错误，导致语句没有使用上索引。这时，我们可以通过改写SQL语句来处理。MySQL 5.7提供了query_rewrite功能，可以把输入的一种语句改写成另外一种模式。比如，语句被错误地写成了 select * from t where id + 1 = 10000，你可以通过下面的方式，增加一个语句改写规则。
+
+```sql
+mysql> insert into query_rewrite.rewrite_rules(pattern, replacement, pattern_database) values ("select * from t where id + 1 = ?", "select * from t where id = ? - 1", "db1");
+
+call query_rewrite.flush_rewrite_rules();
+```
+
+这里，call query_rewrite.flush_rewrite_rules()这个存储过程，是让插入的新规则生效，也就是我们说的“查询重写”。你可以用图4中的方法来确认改写规则是否生效。
+
+![47a1002cbc4c05c74841591d20f7388a](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/47a1002cbc4c05c74841591d20f7388a.png)
+
+图4 查询重写效果
+
+#### 3. 导致慢查询的第三种可能-MySQL选错了索引
+
+这时候，应急方案就是给这个语句加上force index。同样地，使用查询重写功能，给原来的语句加上force index，也可以解决这个问题。上面我和你讨论的由慢查询导致性能问题的三种可能情况，实际上出现最多的是前两种，即：索引没设计好和语句没写好。而这两种情况，恰恰是完全可以避免的。比如，通过下面这个过程，我们就可以预先发现问题。
+
+1. 上线前，在测试环境，把慢查询日志（slow log）打开，并且把long_query_time设置成0，确保每个语句都会被记录入慢查询日志
+2. 在测试表里插入模拟线上的数据，做一遍回归测试；
+3. 观察慢查询日志里每类语句的输出，特别留意Rows_examined字段是否与预期一致。（我们在前面文章中已经多次用到过Rows_examined方法了，相信你已经动手尝试过了。如果还有不明白的，欢迎给我留言，我们一起讨论）。
+
+
+
+不要吝啬这段花在上线前的“额外”时间，因为这会帮你省下很多故障复盘的时间。如果新增的SQL语句不多，手动跑一下就可以。而如果是新项目的话，或者是修改了原有项目的 表结构设计，全量回归测试都是必要的。这时候，你需要工具帮你检查所有的SQL语句的返回结果。比如，你可以使用开源工具pt-query-digest(https://www.percona.com/doc/percona-toolkit/3.0/pt-query-digest.html)。
+
+
+
+#### 4. QPS突增问题
+
+有时候由于业务突然出现高峰，或者应用程序bug，导致某个语句的QPS突然暴涨，也可能导致MySQL压力过大，影响服务。我之前碰到过一类情况，是由一个新功能的bug导致的。当然，最理想的情况是让业务把这个功能下掉，服务自然就会恢复。而下掉一个功能，如果从数据库端处理的话，对应于不同的背景，有不同的方法可用。我这里再和你展开说明一下。
+
+
+
+1. 一种是由全新业务的bug导致的。假设你的DB运维是比较规范的，也就是说白名单是一个个加的。这种情况下，如果你能够确定业务方会下掉这个功能，只是时间上没那么快，那么就可以从数据库端直接把白名单去掉。
+2. 如果这个新功能使用的是单独的数据库用户，可以用管理员账号把这个用户删掉，然后断开现有连接。这样，这个新功能的连接不成功，由它引发的QPS就会变成0。
+3. 如果这个新增的功能跟主体功能是部署在一起的，那么我们只能通过处理语句来限制。这时，我们可以使用上面提到的查询重写功能，把压力最大的SQL语句直接重写成"select 1"返回。当然，这个操作的风险很高，需要你特别细致。它可能存在两个副作用：
+   1. 如果别的功能里面也用到了这个SQL语句模板，会有误伤
+   2. 很多业务并不是靠这一个语句就能完成逻辑的，所以如果单独把这一个语句以select 1的结果返回的话，可能会导致后面的业务逻辑一起失败。
+
+
+
+所以，方案3是用于止血的，跟前面提到的去掉权限验证一样，应该是你所有选项里优先级最低的一个方案。同时你会发现，其实方案1和2都要依赖于规范的运维体系：虚拟化、白名单机制、业务账号分离。由此可见，更多的准备，往往意味着更稳定的系统。
+
+### 2.14.3 小结
+
+今天这篇文章，我以业务高峰期的性能问题为背景，和你介绍了一些紧急处理的手段。这些处理手段中，既包括了粗暴地拒绝连接和断开连接，也有通过重写语句来绕过一些坑的方法；既有临时的高危方案，也有未雨绸缪的、相对安全的预案。
+
+
+
+在实际开发中，我们也要尽量避免一些低效的方法，比如避免大量地使用短连接。同时，如果你做业务开发的话，要知道，连接异常断开是常有的事，你的代码里要有正确地重连并重试的机制。DBA虽然可以通过语句重写来暂时处理问题，但是这本身是一个风险高的操作，做好SQL审计可以减少需要这类操作的机会。其实，你可以看得出来，在这篇文章中我提到的解决方法主要集中在server层。在下一篇文章中，我会继续和你讨论一些跟InnoDB有关的处理方法。最后，又到了我们的思考题时间了。今天，我留给你的课后问题是，你是否碰到过，在业务高峰期需要临时救火的场景？你又是怎么处理的呢？
+
+
+
+我在上篇文章最后，想要你分享的是线上“救火”的经验。
+
+@Long 同学，在留言中提到了几个很好的场景。
+
+- 其中第3个问题，“如果一个数据库是被客户端的压力打满导致无法响应的，重启数据库是没用的。”，说明他很好地思考了。 这个问题是因为重启之后，业务请求还会再发。而且由于是重启，buffer pool被清空，可能会导致语句执行得更慢。
+
+- 他提到的第4个问题也很典型。有时候一个表上会出现多个单字段索引（而且往往这是因为运维工程师对索引原理不够清晰做的设计），这样就可能出现优化器选择索引合并算法的现象。但实际上，索引合并算法的效率并不好。而通过将其中的一个索引改成联合索引的方法，是一个很好的应对方案。
+
+还有其他几个同学提到的问题场景，也很好，很值得你一看。
+
+@Max 同学提到一个很好的例子：客户端程序的连接器，连接完成后会做一些诸如show columns的操作，在短连接模式下这个影响就非常大了。 这个提醒我们，在review项目的时候，不止要review我们自己业务的代码，也要review连接器的行为。一般做法就是在测试环境，把general_log打开，用业务行为触发连接，然后通过general log分析连接器的行为。
+
+@Manjusaka 同学的留言中，第二点提得非常好：如果你的数据库请求模式直接对应于客户请求，这往往是一个危险的设计。因为客户行为不可控，可能突然因为你们公司的一个运营推广，压力暴增，这样很容易把数据库打挂。 在设计模型里面设计一层，专门负责管理请求和数据库服务资源，对于比较重要和大流量的业务，是一个好的设计方向。
+
+@Vincent 同学提了一个好问题，用文中提到的DDL方案，会导致binlog里面少了这个DDL语句，后续影响备份恢复的功能。由于需要另一个知识点（主备同步协议），我放在后面的文章中说明。
+
+
+
+## 2.15 MySQL是怎么保证数据不丢的？
+
+今天这篇文章，我会继续和你介绍在业务高峰期临时提升性能的方法。从文章标题“MySQL是怎么保证数据不丢的？”，你就可以看出来，今天我和你介绍的方法，跟数据的可靠性有关。在专栏前面文章和答疑篇中，我都着重介绍了WAL机制（你可以再回顾下第2篇、第9篇、第12篇和第15篇文章中的相关内容），得到的结论是：只要redo log和binlog保证持久化到磁盘，就能确保MySQL异常重启后，数据可以恢复。评论区有同学又继续追问，redo log的写入流程是怎么样的，如何保证redo log真实地写入了磁盘。那么今天，我们就再一起看看MySQL写入binlog和redo log的流程。
+
+
+
+### 2.15.1 binlog的写入机制
+
+其实，binlog的写入逻辑比较简单：事务执行过程中，先把日志写到binlog cache，事务提交的时候，再把binlog cache写到binlog文件中。一个事务的binlog是不能被拆开的，因此不论这个事务多大，也要确保一次性写入。这就涉及到了binlog cache的保存问题。系统给binlog cache分配了一片内存，每个线程一个，参数 binlog_cache_size用于控制单个线程内binlog cache所占内存的大小。如果超过了这个参数规定的大小，就要暂存到磁盘。事务提交的时候，执行器把binlog cache里的完整事务写入到binlog中，并清空binlog cache。状态如图1所示。
+
+![9ed86644d5f39efb0efec595abb92e3e](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/9ed86644d5f39efb0efec595abb92e3e.png)
+
+图1 binlog写盘状态
+
+可以看到，每个线程有自己binlog cache，但是共用同一份binlog文件。
+
+- 图中的write，指的就是指把日志写入到文件系统的page cache，并没有把数据持久化到磁盘，所以速度比较快。
+- 图中的fsync，才是将数据持久化到磁盘的操作。一般情况下，我们认为fsync才占磁盘的IOPS。
+
+write 和fsync的时机，是由参数sync_binlog控制的：
+
+1. sync_binlog=0的时候，表示每次提交事务都只write，不fsync；
+2. sync_binlog=1的时候，表示每次提交事务都会执行fsync；
+3. sync_binlog=N(N>1)的时候，表示每次提交事务都write，但累积N个事务后才fsync。
+
+
+
+因此，在出现IO瓶颈的场景里，将sync_binlog设置成一个比较大的值，可以提升性能。在实际的业务场景中，考虑到丢失日志量的可控性，一般不建议将这个参数设成0，比较常见的是将其设置为100~1000中的某个数值。但是，将sync_binlog设置为N，对应的风险是：如果主机发生异常重启，会丢失最近N个事务的binlog日志。
+
+### 2.15.2 redo log的写入机制
+
+接下来，我们再说说redo log的写入机制。在专栏的第15篇答疑文章中，我给你介绍了redo log buffer。事务在执行过程中，生成的redo log是要先写到redo log buffer的。然后就有同学问了，redo log buffer里面的内容，是不是每次生成后都要直接持久化到磁盘呢？答案是，不需要。如果事务执行期间MySQL发生异常重启，那这部分日志就丢了。由于事务并没有提交，所以这时日志丢了也不会有损失。
+
+
+
+那么，另外一个问题是，事务还没提交的时候，redo log buffer中的部分日志有没有可能被持久化到磁盘呢？答案是，确实会有。这个问题，要从redo log可能存在的三种状态说起。这三种状态，对应的就是图2 中的三个颜色块。
+
+![9d057f61d3962407f413deebc80526d4](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/9d057f61d3962407f413deebc80526d4.png)
+
+图2 MySQL redo log存储状态
+
+这三种状态分别是：
+
+1. 存在redo log buffer中，物理上是在MySQL进程内存中，就是图中的红色部分；
+2. 写到磁盘(write)，但是没有持久化（fsync)，物理上是在文件系统的page cache里面，也就是图中的黄色部分；
+3. 持久化到磁盘，对应的是hard disk，也就是图中的绿色部分。
+
+日志写到redo log buffer是很快的，wirte到page cache也差不多，但是持久化到磁盘的速度就慢多了。为了控制redo log的写入策略，InnoDB提供了innodb_flush_log_at_trx_commit参数，它有三种可能取值：
+
+1. 设置为0的时候，表示每次事务提交时都只是把redo log留在redo log buffer中;
+2. 设置为1的时候，表示每次事务提交时都将redo log直接持久化到磁盘；
+3. 设置为2的时候，表示每次事务提交时都只是把redo log写到page cache。
+
+InnoDB有一个后台线程，每隔1秒，就会把redo log buffer中的日志，调用write写到文件系统的page cache，然后调用fsync持久化到磁盘。注意，事务执行中间过程的redo log也是直接写在redo log buffer中的，这些redo log也会被后台线程一起持久化到磁盘。也就是说，一个没有提交的事务的redo log，也是可能已经持久化到磁盘的。实际上，除了后台线程每秒一次的轮询操作外，还有两种场景会让一个没有提交的事务的redo log写入到磁盘中。
+
+1. **一种是，redo log buffer占用的空间即将达到 innodb_log_buffer_size一半的时候，后台线程会主动写盘。**注意，由于这个事务并没有提交，所以这个写盘动作只是write，而没有调用fsync，也就是只留在了文件系统的page cache。
+2. **另一种是，并行的事务提交的时候，顺带将这个事务的redo log buffer持久化到磁盘。**假设一个事务A执行到一半，已经写了一些redo log到buffer中，这时候有另外一个线程的事务B提交，如果innodb_flush_log_at_trx_commit设置的是1，那么按照这个参数的逻辑，事务B要把redo log buffer里的日志全部持久化到磁盘。这时候，就会带上事务A在redo log buffer里的日志一起持久化到磁盘。
+
+
+
+这里需要说明的是，我们介绍两阶段提交的时候说过，时序上redo log先prepare， 再写binlog，最后再把redo log commit。如果把innodb_flush_log_at_trx_commit设置成1，那么redo log在prepare阶段就要持久化一次，因为有一个崩溃恢复逻辑是要依赖于prepare 的redo log，再加上binlog来恢复的。（如果你印象有点儿模糊了，可以再回顾下第15篇文章中的相关内容）。每秒一次后台轮询刷盘，再加上崩溃恢复这个逻辑，InnoDB就认为redo log在commit的时候就不需要fsync了，只会write到文件系统的page cache中就够了。
+
+
+
+通常我们说MySQL的“双1”配置，指的就是sync_binlog和innodb_flush_log_at_trx_commit都设置成 1。也就是说，一个事务完整提交前，需要等待两次刷盘，一次是redo log（prepare 阶段），一次是binlog。这时候，你可能有一个疑问，这意味着我从MySQL看到的TPS是每秒两万的话，每秒就会写四万次磁盘。但是，我用工具测试出来，磁盘能力也就两万左右，怎么能实现两万的TPS？解释这个问题，就要用到组提交（group commit）机制了。
+
+
+
+这里，我需要先和你介绍日志逻辑序列号（log sequence number，LSN）的概念。LSN是单调递增的，用来对应redo log的一个个写入点。每次写入长度为length的redo log， LSN的值就会加上length。LSN也会写到InnoDB的数据页中，来确保数据页不会被多次执行重复的redo log。关于LSN和redo log、checkpoint的关系，我会在后面的文章中详细展开。如图3所示，是三个并发事务(trx1, trx2, trx3)在prepare 阶段，都写完redo log buffer，持久化到磁盘的过程，对应的LSN分别是50、120 和160。
+
+![933fdc052c6339de2aa3bf3f65b188cc](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/933fdc052c6339de2aa3bf3f65b188cc.png)
+
+图3 redo log 组提交
+
+从图中可以看到，
+
+1. trx1是第一个到达的，会被选为这组的 leader；
+2. 等trx1要开始写盘的时候，这个组里面已经有了三个事务，这时候LSN也变成了160；
+3. trx1去写盘的时候，带的就是LSN=160，因此等trx1返回时，所有LSN小于等于160的redo log，都已经被持久化到磁盘；
+4. 这时候trx2和trx3就可以直接返回了。
+
+
+
+所以，一次组提交里面，组员越多，节约磁盘IOPS的效果越好。但如果只有单线程压测，那就只能老老实实地一个事务对应一次持久化操作了。在并发更新场景下，第一个事务写完redo log buffer以后，接下来这个fsync越晚调用，组员可能越多，节约IOPS的效果就越好。为了让一次fsync带的组员更多，MySQL有一个很有趣的优化：拖时间。在介绍两阶段提交的时候，我曾经给你画了一个图，现在我把它截过来。
+
+![98b3b4ff7b36d6d72e38029b86870551](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/98b3b4ff7b36d6d72e38029b86870551.png)
+
+图4 两阶段提交
+
+图中，我把“写binlog”当成一个动作。但实际上，写binlog是分成两步的：
+
+1. 先把binlog从binlog cache中写到磁盘上的binlog文件；
+2. 调用fsync持久化。
+
+MySQL为了让组提交的效果更好，把redo log做fsync的时间拖到了步骤1之后。也就是说，上面的图变成了这样：
+
+![5ae7d074c34bc5bd55c82781de670c28](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/5ae7d074c34bc5bd55c82781de670c28.png)
+
+图5 两阶段提交细化
+
+这么一来，binlog也可以组提交了。在执行图5中第4步把binlog fsync到磁盘时，如果有多个事务的binlog已经写完了，也是一起持久化的，这样也可以减少IOPS的消耗。
+
+
+
+不过通常情况下第3步执行得会很快，所以binlog的write和fsync间的间隔时间短，导致能集合到一起持久化的binlog比较少，因此binlog的组提交的效果通常不如redo log的效果那么好。如果你想提升binlog组提交的效果，可以通过设置 binlog_group_commit_sync_delay 和 binlog_group_commit_sync_no_delay_count来实现。
+
+1. binlog_group_commit_sync_delay参数，表示延迟多少微秒后才调用fsync;
+2. binlog_group_commit_sync_no_delay_count参数，表示累积多少次以后才调用fsync。
+
+这两个条件是或的关系，也就是说只要有一个满足条件就会调用fsync。所以，当binlog_group_commit_sync_delay设置为0的时候，binlog_group_commit_sync_no_delay_count也无效了。之前有同学在评论区问到，WAL机制是减少磁盘写，可是每次提交事务都要写redo log和binlog，这磁盘读写次数也没变少呀？现在你就能理解了，WAL机制主要得益于两个方面：
+
+1. redo log 和 binlog都是顺序写，磁盘的顺序写比随机写速度要快；
+2. 组提交机制，可以大幅度降低磁盘的IOPS消耗。
+
+分析到这里，我们再来回答这个问题：**如果你的MySQL现在出现了性能瓶颈，而且瓶颈在IO上，可以通过哪些方法来提升性能呢？**针对这个问题，可以考虑以下三种方法：
+
+1. 设置 binlog_group_commit_sync_delay 和 binlog_group_commit_sync_no_delay_count参数，减少binlog的写盘次数。这个方法是基于“额外的故意等待”来实现的，因此可能会增加语句的响应时间，但没有丢失数据的风险。
+2. 将sync_binlog 设置为大于1的值（比较常见是100~1000）。这样做的风险是，主机掉电时会丢binlog日志。
+3. 将innodb_flush_log_at_trx_commit设置为2。这样做的风险是，主机掉电的时候会丢数据。
+
+
+
+我不建议你把innodb_flush_log_at_trx_commit 设置成0。因为把这个参数设置成0，表示redo log只保存在内存中，这样的话MySQL本身异常重启也会丢数据，风险太大。而redo log写到文件系统的page cache的速度也是很快的，所以将这个参数设置成2跟设置成0其实性能差不多，但这样做MySQL异常重启时就不会丢数据了，相比之下风险会更小。
+
+
+
+### 2.15.3 小结
+
+在专栏的第2篇和第15篇文章中，我和你分析了，如果redo log和binlog是完整的，MySQL是如何保证crash-safe的。今天这篇文章，我着重和你介绍的是MySQL是“怎么保证redo log和binlog是完整的”。希望这三篇文章串起来的内容，能够让你对crash-safe这个概念有更清晰的理解。之前的第15篇答疑文章发布之后，有同学继续留言问到了一些跟日志相关的问题，这里为了方便你回顾、学习，我再集中回答一次这些问题。
+
+
+
+**问题1：**执行一个update语句以后，我再去执行hexdump命令直接查看ibd文件内容，为什么没有看到数据有改变呢？
+
+回答：这可能是因为WAL机制的原因。update语句执行完成后，InnoDB只保证写完了redo log、内存，可能还没来得及将数据写到磁盘。
+
+
+
+**问题2：**为什么binlog cache是每个线程自己维护的，而redo log buffer是全局共用的？
+
+回答：MySQL这么设计的主要原因是，binlog是不能“被打断的”。一个事务的binlog必须连续写，因此要整个事务完成后，再一起写到文件里。而redo log并没有这个要求，中间有生成的日志可以写到redo log buffer中。redo log buffer中的内容还能“搭便车”，其他事务提交的时候可以被一起写到磁盘中。
+
+
+
+**问题3：**事务执行期间，还没到提交阶段，如果发生crash的话，redo log肯定丢了，这会不会导致主备不一致呢？
+
+回答：不会。因为这时候binlog 也还在binlog cache里，没发给备库。crash以后redo log和binlog都没有了，从业务角度看这个事务也没有提交，所以数据是一致的。
+
+
+
+**问题4：**如果binlog写完盘以后发生crash，这时候还没给客户端答复就重启了。等客户端再重连进来，发现事务已经提交成功了，这是不是bug？
+
+回答：不是。你可以设想一下更极端的情况，整个事务都提交成功了，redo log commit完成了，备库也收到binlog并执行了。但是主库和客户端网络断开了，导致事务成功的包返回不回去，这时候客户端也会收到“网络断开”的异常。这种也只能算是事务成功的，不能认为是bug。实际上数据库的crash-safe保证的是：
+
+1. 如果客户端收到事务成功的消息，事务就一定持久化了
+2. 如果客户端收到事务失败（比如主键冲突、回滚等）的消息，事务就一定失败了；
+3. 如果客户端收到“执行异常”的消息，应用需要重连后通过查询当前状态来继续后续的逻辑。此时数据库只需要保证内部（数据和日志之间，主库和备库之间）一致就可以了。
+
+
+
+最后，又到了 课后问题时间。今天我留给你的思考题是：你的生产库设置的是“双1”吗？ 如果平时是的话，你有在什么场景下改成过“非双1”吗？你的这个操作又是基于什么决定的？另外，我们都知道这些设置可能有损，如果发生了异常，你的止损方案是什么？
+
+
+
+
+
+
+
+
+
+
+
