@@ -8,7 +8,7 @@
 
 ### 慢查询日志
 
-![1688097110432](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/1688097110432.jpg)
+![1688097110432](MySql-45/1688097110432.jpg)
 
 
 
@@ -70,11 +70,11 @@ DELIMITER ;
 
 ### EXPLAIN结果
 
-![2e279757267f4cff8f916311803cbcb4~tplv-k3u1fbpfcp-jj-mark_3024_0_0_0_q75](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/2e279757267f4cff8f916311803cbcb4~tplv-k3u1fbpfcp-jj-mark_3024_0_0_0_q75.png)
+![2e279757267f4cff8f916311803cbcb4~tplv-k3u1fbpfcp-jj-mark_3024_0_0_0_q75](MySql-45/2e279757267f4cff8f916311803cbcb4~tplv-k3u1fbpfcp-jj-mark_3024_0_0_0_q75.png)
 
 ### SHOW TABLE STATUS
 
-![780228-20190509171435484-970110017](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/780228-20190509171435484-970110017.png)
+![780228-20190509171435484-970110017](MySql-45/780228-20190509171435484-970110017.png)
 
 | 返回列          | 说明                                                         |
 | --------------- | ------------------------------------------------------------ |
@@ -101,7 +101,7 @@ DELIMITER ;
 
 ### ANALYZE TABLE
 
-![Snipaste_2024-07-10_11-58-31](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/Snipaste_2024-07-10_11-58-31.png)
+![Snipaste_2024-07-10_11-58-31](MySql-45/Snipaste_2024-07-10_11-58-31.png)
 
 ### SHOW PROFILES
 
@@ -109,9 +109,9 @@ DELIMITER ;
 >
 > reset query cache; 清空缓存
 
-![Snipaste_2024-07-10_20-24-12](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/Snipaste_2024-07-10_20-24-12.png)
+![Snipaste_2024-07-10_20-24-12](MySql-45/Snipaste_2024-07-10_20-24-12.png)
 
-![Snipaste_2024-07-10_20-27-03](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/Snipaste_2024-07-10_20-27-03.png)
+![Snipaste_2024-07-10_20-27-03](MySql-45/Snipaste_2024-07-10_20-27-03.png)
 
 ```sql
 -- 启用 Profiling
@@ -3175,7 +3175,7 @@ commit;
 
 现在，我们就来分析一下，如果只在id=5这一行加锁，而其他行的不加锁的话，会怎么样。下面先来看一下这个场景（注意：这是我假设的一个场景）：
 
-![1720321173438](images/MySql-45讲/1720321173438.png)
+![1720321173438](MySql-45/1720321173438.png)
 
 图 1 假设只在id=5这一行加行锁
 
@@ -3199,7 +3199,7 @@ commit;
 
 首先是语义上的。session A在T1时刻就声明了，“我要把所有d=5的行锁住，不准别的事务进行读写操作”。而实际上，这个语义被破坏了。如果现在这样看感觉还不明显的话，我再往session B和session C里面分别加一条SQL语句，你再看看会出现什么现象。
 
-![1720321514686](images/MySql-45讲/1720321514686.png)
+![1720321514686](MySql-45/1720321514686.png)
 
 
 图 2 假设只在id=5这一行加行锁--语义被破坏
@@ -3210,7 +3210,7 @@ session B的第二条语句update t set c=5 where id=0，语义是“我把id=0�
 
 我们知道，锁的设计是为了保证数据的一致性。而这个一致性，不止是数据库内部数据状态在此刻的一致性，还包含了数据和日志在逻辑上的一致性。为了说明这个问题，我给session A在T1时刻再加一个更新语句，即：update t set d=100 where d=5。
 
-![1720322030889](images/MySql-45讲/1720322030889.png)
+![1720322030889](MySql-45/1720322030889.png)
 
 图 3 假设只在id=5这一行加行锁--数据一致性问题
 
@@ -3346,7 +3346,7 @@ commit;
 
 行锁确实比较直观，判断规则也相对简单，间隙锁的引入会影响系统的并发度，也增加了锁分析的复杂度，但也有章可循。下一篇文章，我就会为你讲解InnoDB的加锁规则，帮你理顺这其中的“章法”。作为对下一篇文章的预习，我给你留下一个思考题。
 
-![0d796060073668ca169166a8903fbf3d](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/0d796060073668ca169166a8903fbf3d.png)
+![0d796060073668ca169166a8903fbf3d](MySql-45/0d796060073668ca169166a8903fbf3d.png)
 
 图9 事务进入锁等待状态
 
@@ -3413,7 +3413,7 @@ insert into t values(0,0,0),(5,5,5),
 
 第二个例子是关于覆盖索引上的锁：
 
-![465990fe8f6b418ca3f9992bd1bb5465](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/465990fe8f6b418ca3f9992bd1bb5465.png)
+![465990fe8f6b418ca3f9992bd1bb5465](MySql-45/465990fe8f6b418ca3f9992bd1bb5465.png)
 
 图2 只加在非唯一索引上的锁
 
@@ -3437,7 +3437,7 @@ mysql> select * from t where id>=10 and id<11 for update;
 
 你可能会想，id定义为int类型，这两个语句就是等价的吧？其实，它们并不完全等价。在逻辑上，这两条查语句肯定是等价的，但是它们的加锁规则不太一样。现在，我们就让session A执行第二个查询语句，来看看加锁效果。
 
-![30b839bf941f109b04f1a36c302aea80](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/30b839bf941f109b04f1a36c302aea80.png)
+![30b839bf941f109b04f1a36c302aea80](MySql-45/30b839bf941f109b04f1a36c302aea80.png)
 
 图3 主键索引上范围查询的锁
 
@@ -3462,7 +3462,7 @@ mysql> select * from t where id>=10 and id<11 for update;
 
 前面的四个案例，我们已经用到了加锁规则中的两个原则和两个优化，接下来再看一个关于加锁规则中bug的案例。
 
-![b105f8c4633e8d3a84e6422b1b1a316d](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/b105f8c4633e8d3a84e6422b1b1a316d.png)
+![b105f8c4633e8d3a84e6422b1b1a316d](MySql-45/b105f8c4633e8d3a84e6422b1b1a316d.png)
 
 图5 唯一索引范围锁的bug
 
@@ -3484,7 +3484,7 @@ mysql> insert into t values(30,10,30);
 
 新插入的这一行c=10，也就是说现在表里有两个c=10的行。那么，这时候索引c上的间隙是什么状态了呢？你要知道，由于非唯一索引上包含主键的值，所以是不可能存在“相同”的两行的。
 
-![c1fda36c1502606eb5be3908011ba159](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/c1fda36c1502606eb5be3908011ba159.png)
+![c1fda36c1502606eb5be3908011ba159](MySql-45/c1fda36c1502606eb5be3908011ba159.png)
 
 图6 非唯一索引等值的例子
 
@@ -3494,13 +3494,13 @@ mysql> insert into t values(30,10,30);
 
 这次我们用delete语句来验证。注意，delete语句加锁的逻辑，其实跟select ... for update 是类似的，也就是我在文章开始总结的两个“原则”、两个“优化”和一个“bug”。
 
-![b55fb0a1cac3500b60e1cf9779d2da78](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/b55fb0a1cac3500b60e1cf9779d2da78.png)
+![b55fb0a1cac3500b60e1cf9779d2da78](MySql-45/b55fb0a1cac3500b60e1cf9779d2da78.png)
 
 图7 delete 示例
 
 这时，session A在遍历的时候，先访问第一个c=10的记录。同样地，根据原则1，这里加的是(c=5,id=5)到(c=10,id=10)这个next-key lock。然后，session A向右查找，直到碰到(c=15,id=15)这一行，循环才结束。根据优化2，这是一个等值查询，向右查找到了不满足条件的行，所以会退化成(c=10,id=10) 到 (c=15,id=15)的间隙锁。也就是说，这个delete语句在索引c上的加锁范围，就是下图中蓝色区域覆盖的部分。
 
-![bb0ad92483d71f0dcaeeef278f89cb24](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/bb0ad92483d71f0dcaeeef278f89cb24.png)
+![bb0ad92483d71f0dcaeeef278f89cb24](MySql-45/bb0ad92483d71f0dcaeeef278f89cb24.png)
 
 图8 delete加锁效果示例
 
@@ -3510,7 +3510,7 @@ mysql> insert into t values(30,10,30);
 
 例子6也有一个对照案例，场景如下所示：
 
-![afc3a08ae7a254b3251e41b2a6dae02e](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/afc3a08ae7a254b3251e41b2a6dae02e.png)
+![afc3a08ae7a254b3251e41b2a6dae02e](MySql-45/afc3a08ae7a254b3251e41b2a6dae02e.png)
 
 图9 limit 语句加锁
 
@@ -3524,7 +3524,7 @@ mysql> insert into t values(30,10,30);
 
 因此，索引c上的加锁范围就变成了从（c=5,id=5)到（c=10,id=30)这个前开后闭区间，如下图所示：
 
-![e5408ed94b3d44985073255db63bd0d5](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/e5408ed94b3d44985073255db63bd0d5.png)
+![e5408ed94b3d44985073255db63bd0d5](MySql-45/e5408ed94b3d44985073255db63bd0d5.png)
 
 图10 带limit 2的加锁效果
 
@@ -3544,7 +3544,7 @@ mysql> insert into t values(30,10,30);
 
 你一定会疑惑，这个概念不是一开始就说了吗？不要着急，我们先来看下面这个例子：
 
-![7b911a4c995706e8aa2dd96ff0f36506](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/7b911a4c995706e8aa2dd96ff0f36506.png)
+![7b911a4c995706e8aa2dd96ff0f36506](MySql-45/7b911a4c995706e8aa2dd96ff0f36506.png)
 
 图11 案例八的操作序列
 
@@ -3570,7 +3570,7 @@ mysql> insert into t values(30,10,30);
 
 在业务需要使用可重复读隔离级别的时候，能够更细致地设计操作数据库的语句，解决幻读问题的同时，最大限度地提升系统并行处理事务的能力。经过这篇文章的介绍，你再看一下上一篇文章最后的思考题，再来尝试分析一次。我把题目重新描述和简化一下：还是我们在文章开头初始化的表t，里面有6条记录，图12的语句序列中，为什么session B的insert操作，会被锁住呢？
 
-![3a7578e104612a188a2d574eaa3bd81e](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/3a7578e104612a188a2d574eaa3bd81e.png)
+![3a7578e104612a188a2d574eaa3bd81e](MySql-45/3a7578e104612a188a2d574eaa3bd81e.png)
 
 我们用上一篇的加锁规则来分析一下，看看session A的select语句加了哪些锁：
 
@@ -3613,19 +3613,19 @@ mysql> insert into t values(30,10,30);
 
 max_connections的计算，不是看谁在running，是只要连着就占用一个计数位置。对于那些不需要保持的连接，我们可以通过kill connection主动踢掉。这个行为跟事先设置wait_timeout的效果是一样的。设置wait_timeout参数表示的是，一个线程空闲wait_timeout这么多秒之后，就会被MySQL直接断开连接。但是需要注意，在show processlist的结果里，踢掉显示为sleep的线程，可能是有损的。我们来看下面这个例子。
 
-![9091ff280592c8c68665771b1516c62a](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/9091ff280592c8c68665771b1516c62a.png)
+![9091ff280592c8c68665771b1516c62a](MySql-45/9091ff280592c8c68665771b1516c62a.png)
 
 图1 sleep线程的两种状态
 
 在上面这个例子里，如果断开session A的连接，因为这时候session A还没有提交，所以MySQL只能按照回滚事务来处理；而断开session B的连接，就没什么大影响。所以，如果按照优先级来说，你应该优先断开像session B这样的事务外空闲的连接。但是，怎么判断哪些是事务外空闲的呢？session C在T时刻之后的30秒执行show processlist，看到的结果是这样的。
 
-![ae6a9ceecf8517e47f9ebfc565f0f925](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/ae6a9ceecf8517e47f9ebfc565f0f925.png)
+![ae6a9ceecf8517e47f9ebfc565f0f925](MySql-45/ae6a9ceecf8517e47f9ebfc565f0f925.png)
 
 图2 sleep线程的两种状态，show processlist结果
 
 图中id=4和id=5的两个会话都是Sleep 状态。而要看事务具体状态的话，你可以查information_schema库的innodb_trx表。
 
-![ca4b455c8eacbf32b98d1fe9ed9876e8](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/ca4b455c8eacbf32b98d1fe9ed9876e8.png)
+![ca4b455c8eacbf32b98d1fe9ed9876e8](MySql-45/ca4b455c8eacbf32b98d1fe9ed9876e8.png)
 
 图3 从information_schema.innodb_trx查询事务状态
 
@@ -3691,7 +3691,7 @@ call query_rewrite.flush_rewrite_rules();
 
 这里，call query_rewrite.flush_rewrite_rules()这个存储过程，是让插入的新规则生效，也就是我们说的“查询重写”。你可以用图4中的方法来确认改写规则是否生效。
 
-![47a1002cbc4c05c74841591d20f7388a](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/47a1002cbc4c05c74841591d20f7388a.png)
+![47a1002cbc4c05c74841591d20f7388a](MySql-45/47a1002cbc4c05c74841591d20f7388a.png)
 
 图4 查询重写效果
 
@@ -3763,7 +3763,7 @@ call query_rewrite.flush_rewrite_rules();
 
 其实，binlog的写入逻辑比较简单：事务执行过程中，先把日志写到binlog cache，事务提交的时候，再把binlog cache写到binlog文件中。一个事务的binlog是不能被拆开的，因此不论这个事务多大，也要确保一次性写入。这就涉及到了binlog cache的保存问题。系统给binlog cache分配了一片内存，每个线程一个，参数 binlog_cache_size用于控制单个线程内binlog cache所占内存的大小。如果超过了这个参数规定的大小，就要暂存到磁盘。事务提交的时候，执行器把binlog cache里的完整事务写入到binlog中，并清空binlog cache。状态如图1所示。
 
-![9ed86644d5f39efb0efec595abb92e3e](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/9ed86644d5f39efb0efec595abb92e3e.png)
+![9ed86644d5f39efb0efec595abb92e3e](MySql-45/9ed86644d5f39efb0efec595abb92e3e.png)
 
 图1 binlog写盘状态
 
@@ -3790,7 +3790,7 @@ write 和fsync的时机，是由参数sync_binlog控制的：
 
 那么，另外一个问题是，事务还没提交的时候，redo log buffer中的部分日志有没有可能被持久化到磁盘呢？答案是，确实会有。这个问题，要从redo log可能存在的三种状态说起。这三种状态，对应的就是图2 中的三个颜色块。
 
-![9d057f61d3962407f413deebc80526d4](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/9d057f61d3962407f413deebc80526d4.png)
+![9d057f61d3962407f413deebc80526d4](MySql-45/9d057f61d3962407f413deebc80526d4.png)
 
 图2 MySQL redo log存储状态
 
@@ -3823,7 +3823,7 @@ InnoDB有一个后台线程，每隔1秒，就会把redo log buffer中的日志�
 
 这里，我需要先和你介绍日志逻辑序列号（log sequence number，LSN）的概念。LSN是单调递增的，用来对应redo log的一个个写入点。每次写入长度为length的redo log， LSN的值就会加上length。LSN也会写到InnoDB的数据页中，来确保数据页不会被多次执行重复的redo log。关于LSN和redo log、checkpoint的关系，我会在后面的文章中详细展开。如图3所示，是三个并发事务(trx1, trx2, trx3)在prepare 阶段，都写完redo log buffer，持久化到磁盘的过程，对应的LSN分别是50、120 和160。
 
-![933fdc052c6339de2aa3bf3f65b188cc](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/933fdc052c6339de2aa3bf3f65b188cc.png)
+![933fdc052c6339de2aa3bf3f65b188cc](MySql-45/933fdc052c6339de2aa3bf3f65b188cc.png)
 
 图3 redo log 组提交
 
@@ -3838,7 +3838,7 @@ InnoDB有一个后台线程，每隔1秒，就会把redo log buffer中的日志�
 
 所以，一次组提交里面，组员越多，节约磁盘IOPS的效果越好。但如果只有单线程压测，那就只能老老实实地一个事务对应一次持久化操作了。在并发更新场景下，第一个事务写完redo log buffer以后，接下来这个fsync越晚调用，组员可能越多，节约IOPS的效果就越好。为了让一次fsync带的组员更多，MySQL有一个很有趣的优化：拖时间。在介绍两阶段提交的时候，我曾经给你画了一个图，现在我把它截过来。
 
-![98b3b4ff7b36d6d72e38029b86870551](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/98b3b4ff7b36d6d72e38029b86870551.png)
+![98b3b4ff7b36d6d72e38029b86870551](MySql-45/98b3b4ff7b36d6d72e38029b86870551.png)
 
 图4 两阶段提交
 
@@ -3849,7 +3849,7 @@ InnoDB有一个后台线程，每隔1秒，就会把redo log buffer中的日志�
 
 MySQL为了让组提交的效果更好，把redo log做fsync的时间拖到了步骤1之后。也就是说，上面的图变成了这样：
 
-![5ae7d074c34bc5bd55c82781de670c28](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/5ae7d074c34bc5bd55c82781de670c28.png)
+![5ae7d074c34bc5bd55c82781de670c28](MySql-45/5ae7d074c34bc5bd55c82781de670c28.png)
 
 图5 两阶段提交细化
 
@@ -3917,11 +3917,227 @@ MySQL为了让组提交的效果更好，把redo log做fsync的时间拖到了�
 
 
 
+1. 业务高峰期。一般如果有预知的高峰期，DBA会有预案，把主库设置成“非双1”。
+2. 备库延迟，为了让备库尽快赶上主库。@永恒记忆和@Second Sight提到了这个场景。
+3. 用备份恢复主库的副本，应用binlog的过程，这个跟上一种场景类似。
+4. 批量导入数据的时候。
 
 
 
+一般情况下，把生产库改成“非双1”配置，是设置innodb_flush_logs_at_trx_commit=2、sync_binlog=1000。
+
+## 2.16 MySQL是怎么保证主备一致的？
+
+在前面的文章中，我不止一次地和你提到了binlog，大家知道binlog可以用来归档，也可以用来做主备同步，但它的内容是什么样的呢？为什么备库执行了binlog就可以跟主库保持一致了呢？今天我就正式地和你介绍一下它。毫不夸张地说，MySQL能够成为现下最流行的开源数据库，binlog功不可没。
 
 
 
+在最开始，MySQL是以容易学习和方便的高可用架构，被开发人员青睐的。而它的几乎所有的高可用架构，都直接依赖于binlog。虽然这些高可用架构已经呈现出越来越复杂的趋势，但都是从最基本的一主一备演化过来的。今天这篇文章我主要为你介绍主备的基本原理。理解了背后的设计原理，你也可以从业务开发的角度，来借鉴这些设计思想。
 
+### 2.16.1 MySQL主备的基本原理
+
+如图1所示就是基本的主备切换流程。
+
+![fd75a2b37ae6ca709b7f16fe060c2c10](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/fd75a2b37ae6ca709b7f16fe060c2c10.png)
+
+图 1 MySQL主备切换流程
+
+在状态1中，客户端的读写都直接访问节点A，而节点B是A的备库，只是将A的更新都同步过来，到本地执行。这样可以保持节点B和A的数据是相同的。当需要切换的时候，就切成状态2。这时候客户端读写访问的都是节点B，而节点A是B的备库。在状态1中，虽然节点B没有被直接访问，但是我依然建议你把节点B（也就是备库）设置成只读（readonly）模式。这样做，有以下几个考虑：
+
+1. 有时候一些运营类的查询语句会被放到备库上去查，设置为只读可以防止误操作；
+2. 防止切换逻辑有bug，比如切换过程中出现双写，造成主备不一致；
+3. 可以用readonly状态，来判断节点的角色。
+
+你可能会问，我把备库设置成只读了，还怎么跟主库保持同步更新呢？这个问题，你不用担心。因为readonly设置对超级(super)权限用户是无效的，而用于同步更新的线程，就拥有超级权限。接下来，我们再看看**节点A到B这条线的内部流程是什么样的**。图2中画出的就是一个update语句在节点A执行，然后同步到节点B的完整流程图。![a66c154c1bc51e071dd2cc8c1d6ca6a3](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/a66c154c1bc51e071dd2cc8c1d6ca6a3.png)
+
+图2 主备流程图
+
+图2中，包含了我在上一篇文章中讲到的binlog和redo log的写入机制相关的内容，可以看到：主库接收到客户端的更新请求后，执行内部事务的更新逻辑，同时写binlog。
+
+
+
+备库B跟主库A之间维持了一个长连接。主库A内部有一个线程，专门用于服务备库B的这个长连接。一个事务日志同步的完整过程是这样的：
+
+1. 在备库B上通过change master命令，设置主库A的IP、端口、用户名、密码，以及要从哪个位置开始请求binlog，这个位置包含文件名和日志偏移量。
+2. 在备库B上执行start slave命令，这时候备库会启动两个线程，就是图中的io_thread和sql_thread。其中io_thread负责与主库建立连接。
+3. 主库A校验完用户名、密码后，开始按照备库B传过来的位置，从本地读取binlog，发给B。
+4. 备库B拿到binlog后，写到本地文件，称为中转日志（relay log）。
+5. sql_thread读取中转日志，解析出日志里的命令，并执行。
+
+这里需要说明，后来由于多线程复制方案的引入，sql_thread演化成为了多个线程，跟我们今天要介绍的原理没有直接关系，暂且不展开。分析完了这个长连接的逻辑，我们再来看一个问题：binlog里面到底是什么内容，为什么备库拿过去可以直接执行。
+
+
+
+### 2.16.2 binlog的三种格式对比
+
+我在第15篇答疑文章中，和你提到过binlog有两种格式，一种是statement，一种是row。可能你在其他资料上还会看到有第三种格式，叫作mixed，其实它就是前两种格式的混合。为了便于描述binlog的这三种格式间的区别，我创建了一个表，并初始化几行数据。
+
+
+
+```sql
+mysql> CREATE TABLE `t` (
+  `id` int(11) NOT NULL,
+  `a` int(11) DEFAULT NULL,
+  `t_modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `a` (`a`),
+  KEY `t_modified`(`t_modified`)
+) ENGINE=InnoDB;
+
+insert into t values(1,1,'2018-11-13');
+insert into t values(2,2,'2018-11-12');
+insert into t values(3,3,'2018-11-11');
+insert into t values(4,4,'2018-11-10');
+insert into t values(5,5,'2018-11-09');
+```
+
+如果要在表中删除一行数据的话，我们来看看这个delete语句的binlog是怎么记录的。注意，下面这个语句包含注释，如果你用MySQL客户端来做这个实验的话，要记得加-c参数，否则客户端会自动去掉注释。
+
+```
+mysql> delete from t /*comment*/  where a>=4 and t_modified<='2018-11-10' limit 1;
+```
+
+当binlog_format=statement时，binlog里面记录的就是SQL语句的原文。你可以用命令看binlog中的内容。
+
+```
+mysql> show binlog events in 'master.000001';
+```
+
+![b9818f73cd7d38a96ddcb75350b52931](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/b9818f73cd7d38a96ddcb75350b52931.png)
+
+图3 statement格式binlog 示例
+
+现在，我们来看一下图3的输出结果。
+
+- 第一行SET @@SESSION.GTID_NEXT='ANONYMOUS’你可以先忽略，后面文章我们会在介绍主备切换的时候再提到；
+- 第二行是一个BEGIN，跟第四行的commit对应，表示中间是一个事务；
+- 第三行就是真实执行的语句了。可以看到，在真实执行的delete命令之前，还有一个“use ‘test’”命令。这条命令不是我们主动执行的，而是MySQL根据当前要操作的表所在的数据库，自行添加的。这样做可以保证日志传到备库去执行的时候，不论当前的工作线程在哪个库里，都能够正确地更新到test库的表t。 use 'test’命令之后的delete 语句，就是我们输入的SQL原文了。可以看到，binlog“忠实”地记录了SQL命令，甚至连注释也一并记录了。
+- 最后一行是一个COMMIT。你可以看到里面写着xid=61。你还记得这个XID是做什么用的吗？如果记忆模糊了，可以再回顾一下第15篇文章中的相关内容。
+
+为了说明statement 和 row格式的区别，我们来看一下这条delete命令的执行效果图：![96c2be9c0fcbff66883118526b26652b](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/96c2be9c0fcbff66883118526b26652b.png)
+
+图4 delete执行warnings
+
+可以看到，运行这条delete命令产生了一个warning，原因是当前binlog设置的是statement格式，并且语句中有limit，所以这个命令可能是unsafe的。为什么这么说呢？这是因为delete 带limit，很可能会出现主备数据不一致的情况。比如上面这个例子：
+
+1. 如果delete语句使用的是索引a，那么会根据索引a找到第一个满足条件的行，也就是说删除的是a=4这一行；
+2. 但如果使用的是索引t_modified，那么删除的就是 t_modified='2018-11-09’也就是a=5这一行。
+
+由于statement格式下，记录到binlog里的是语句原文，因此可能会出现这样一种情况：在主库执行这条SQL语句的时候，用的是索引a；而在备库执行这条SQL语句的时候，却使用了索引t_modified。因此，MySQL认为这样写是有风险的。那么，如果我把binlog的格式改为binlog_format=‘row’， 是不是就没有这个问题了呢？我们先来看看这时候binog中的内容吧。![d67a38db154afff610ae3bb64e266826](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/d67a38db154afff610ae3bb64e266826.png)
+
+图5 row格式binlog 示例
+
+可以看到，与statement格式的binlog相比，前后的BEGIN和COMMIT是一样的。但是，row格式的binlog里没有了SQL语句的原文，而是替换成了两个event：Table_map和Delete_rows
+
+1. Table_map event，用于说明接下来要操作的表是test库的表t;
+2. Delete_rows event，用于定义删除的行为。
+
+其实，我们通过图5是看不到详细信息的，还需要借助mysqlbinlog工具，用下面这个命令解析和查看binlog中的内容。因为图5中的信息显示，这个事务的binlog是从8900这个位置开始的，所以可以用start-position参数来指定从这个位置的日志开始解析。
+
+```sql
+mysqlbinlog  -vv data/master.000001 --start-position=8900;
+```
+
+![c342cf480d23b05d30a294b114cebfc2](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/c342cf480d23b05d30a294b114cebfc2.png)
+
+图6 row格式binlog 示例的详细信息
+
+从这个图中，我们可以看到以下几个信息：
+
+- server id 1，表示这个事务是在server_id=1的这个库上执行的。
+- 每个event都有CRC32的值，这是因为我把参数binlog_checksum设置成了CRC32。
+- Table_map event跟在图5中看到的相同，显示了接下来要打开的表，map到数字226。现在我们这条SQL语句只操作了一张表，如果要操作多张表呢？每个表都有一个对应的Table_map event、都会map到一个单独的数字，用于区分对不同表的操作。
+- 我们在mysqlbinlog的命令中，使用了-vv参数是为了把内容都解析出来，所以从结果里面可以看到各个字段的值（比如，@1=4、 @2=4这些值）。
+- binlog_row_image的默认配置是FULL，因此Delete_event里面，包含了删掉的行的所有字段的值。如果把binlog_row_image设置为MINIMAL，则只会记录必要的信息，在这个例子里，就是只会记录id=4这个信息。
+- 最后的Xid event，用于表示事务被正确地提交了。
+
+你可以看到，当binlog_format使用row格式的时候，binlog里面记录了真实删除行的主键id，这样binlog传到备库去的时候，就肯定会删除id=4的行，不会有主备删除不同行的问题。
+
+
+
+### 2.16.3 为什么会有mixed格式的binlog？
+
+基于上面的信息，我们来讨论一个问题：**为什么会有mixed这种binlog格式的存在场景？**推论过程是这样的：
+
+- 因为有些statement格式的binlog可能会导致主备不一致，所以要使用row格式。
+- 但row格式的缺点是，很占空间。比如你用一个delete语句删掉10万行数据，用statement的话就是一个SQL语句被记录到binlog中，占用几十个字节的空间。但如果用row格式的binlog，就要把这10万条记录都写到binlog中。这样做，不仅会占用更大的空间，同时写binlog也要耗费IO资源，影响执行速度。
+- 所以，MySQL就取了个折中方案，也就是有了mixed格式的binlog。mixed格式的意思是，MySQL自己会判断这条SQL语句是否可能引起主备不一致，如果有可能，就用row格式，否则就用statement格式。
+
+也就是说，mixed格式可以利用statment格式的优点，同时又避免了数据不一致的风险。因此，如果你的线上MySQL设置的binlog格式是statement的话，那基本上就可以认为这是一个不合理的设置。你至少应该把binlog的格式设置为mixed。比如我们这个例子，设置为mixed后，就会记录为row格式；而如果执行的语句去掉limit 1，就会记录为statement格式。当然我要说的是，现在越来越多的场景要求把MySQL的binlog格式设置成row。这么做的理由有很多，我来给你举一个可以直接看出来的好处：**恢复数据**。
+
+
+
+接下来，我们就分别从delete、insert和update这三种SQL语句的角度，来看看数据恢复的问题。通过图6你可以看出来，即使我执行的是delete语句，row格式的binlog也会把被删掉的行的整行信息保存起来。所以，如果你在执行完一条delete语句以后，发现删错数据了，可以直接把binlog中记录的delete语句转成insert，把被错删的数据插入回去就可以恢复了。如果你是执行错了insert语句呢？那就更直接了。row格式下，insert语句的binlog里会记录所有的字段信息，这些信息可以用来精确定位刚刚被插入的那一行。这时，你直接把insert语句转成delete语句，删除掉这被误插入的一行数据就可以了。如果执行的是update语句的话，binlog里面会记录修改前整行的数据和修改后的整行数据。所以，如果你误执行了update语句的话，只需要把这个event前后的两行信息对调一下，再去数据库里面执行，就能恢复这个更新操作了。
+
+
+
+其实，由delete、insert或者update语句导致的数据操作错误，需要恢复到操作之前状态的情况，也时有发生。MariaDB的[Flashback](https://mariadb.com/kb/en/library/flashback/)工具就是基于上面介绍的原理来回滚数据的。虽然mixed格式的binlog现在已经用得不多了，但这里我还是要再借用一下mixed格式来说明一个问题，来看一下这条SQL语句：
+
+```
+mysql> insert into t values(10,10, now());
+```
+
+如果我们把binlog格式设置为mixed，你觉得MySQL会把它记录为row格式还是statement格式呢？先不要着急说结果，我们一起来看一下这条语句执行的效果。
+
+![0150301698979255a6f27711c35e9eef](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/0150301698979255a6f27711c35e9eef.png)
+
+图7 mixed格式和now()
+
+可以看到，MySQL用的居然是statement格式。你一定会奇怪，如果这个binlog过了1分钟才传给备库的话，那主备的数据不就不一致了吗？接下来，我们再用mysqlbinlog工具来看看：
+
+![1ad3a4c4b9a71955edba5195757dd041](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/1ad3a4c4b9a71955edba5195757dd041.png)
+
+图8 TIMESTAMP 命令
+
+从图中的结果可以看到，原来binlog在记录event的时候，多记了一条命令：SET TIMESTAMP=1546103491。它用 SET TIMESTAMP命令约定了接下来的now()函数的返回时间。
+
+
+
+因此，不论这个binlog是1分钟之后被备库执行，还是3天后用来恢复这个库的备份，这个insert语句插入的行，值都是固定的。也就是说，通过这条SET TIMESTAMP命令，MySQL就确保了主备数据的一致性。我之前看过有人在重放binlog数据的时候，是这么做的：用mysqlbinlog解析出日志，然后把里面的statement语句直接拷贝出来执行。你现在知道了，这个方法是有风险的。因为有些语句的执行结果是依赖于上下文命令的，直接执行的结果很可能是错误的。所以，用binlog来恢复数据的标准做法是，用 mysqlbinlog工具解析出来，然后把解析结果整个发给MySQL执行。类似下面的命令：
+
+```sql
+mysqlbinlog master.000001  --start-position=2738 --stop-position=2973 | mysql -h127.0.0.1 -P13000 -u$user -p$pwd;
+```
+
+这个命令的意思是，将 master.000001 文件里面从第2738字节到第2973字节中间这段内容解析出来，放到MySQL去执行。
+
+### 2.16.4 循环复制问题
+
+通过上面对MySQL中binlog基本内容的理解，你现在可以知道，binlog的特性确保了在备库执行相同的binlog，可以得到与主库相同的状态。因此，我们可以认为正常情况下主备的数据是一致的。也就是说，图1中A、B两个节点的内容是一致的。其实，图1中我画的是M-S结构，但实际生产上使用比较多的是双M结构，也就是图9所示的主备切换流程。
+
+![20ad4e163115198dc6cf372d5116c956](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/数据库/MySql-45/20ad4e163115198dc6cf372d5116c956.png)
+
+图 9 MySQL主备切换流程--双M结构
+
+对比图9和图1，你可以发现，双M结构和M-S结构，其实区别只是多了一条线，即：节点A和B之间总是互为主备关系。这样在切换的时候就不用再修改主备关系。但是，双M结构还有一个问题需要解决。
+
+
+
+业务逻辑在节点A上更新了一条语句，然后再把生成的binlog 发给节点B，节点B执行完这条更新语句后也会生成binlog。（我建议你把参数log_slave_updates设置为on，表示备库执行relay log后生成binlog）。那么，如果节点A同时是节点B的备库，相当于又把节点B新生成的binlog拿过来执行了一次，然后节点A和B间，会不断地循环执行这个更新语句，也就是循环复制了。这个要怎么解决呢？从上面的图6中可以看到，MySQL在binlog中记录了这个命令第一次执行时所在实例的server id。因此，我们可以用下面的逻辑，来解决两个节点间的循环复制的问题：
+
+1. 规定两个库的server id必须不同，如果相同，则它们之间不能设定为主备关系；
+2. 一个备库接到binlog并在重放的过程中，生成与原binlog的server id相同的新的binlog；
+3. 每个库在收到从自己的主库发过来的日志后，先判断server id，如果跟自己的相同，表示这个日志是自己生成的，就直接丢弃这个日志。
+
+
+
+按照这个逻辑，如果我们设置了双M结构，日志的执行流就会变成这样：
+
+1. 从节点A更新的事务，binlog里面记的都是A的server id；
+2. 传到节点B执行一次以后，节点B生成的binlog 的server id也是A的server id；
+3. 再传回给节点A，A判断到这个server id与自己的相同，就不会再处理这个日志。所以，死循环在这里就断掉了。
+
+
+
+### 2.16.5 小结
+
+今天这篇文章，我给你介绍了MySQL binlog的格式和一些基本机制，是后面我要介绍的读写分离等系列文章的背景知识，希望你可以认真消化理解。binlog在MySQL的各种高可用方案上扮演了重要角色。今天介绍的可以说是所有MySQL高可用方案的基础。在这之上演化出了诸如多节点、半同步、MySQL group replication等相对复杂的方案。
+
+
+
+我也跟你介绍了MySQL不同格式binlog的优缺点，和设计者的思考。希望你在做系统开发时候，也能借鉴这些设计思想。最后，我给你留下一个思考题吧。说到循环复制问题的时候，我们说MySQL通过判断server id的方式，断掉死循环。但是，这个机制其实并不完备，在某些场景下，还是有可能出现死循环。
+
+
+
+你能构造出一个这样的场景吗？又应该怎么解决呢？你可以把你的设计和分析写在评论区，我会在下一篇文章跟你讨论这个问题。感谢你的收听，也欢迎你把这篇文章分享给更多的朋友一起阅读。
 
