@@ -62,11 +62,11 @@ boolean isEmpty = stack.isEmpty(); // 检查栈是否为空
   Deque<Integer> deque = new LinkedList<>();
   deque.addFirst(1);
   deque.offerFirst(2);
-
+  
   Deque<Integer> deque = new LinkedList<>();
   deque.addLast(3);
   deque.offerLast(4);
-
+  
   int frontElement = deque.removeFirst(); // 从队头移除并返回元素
   int rearElement = deque.removeLast(); // 从队尾移除并返回元素
   int frontElement = deque.getFirst(); // 查看队头元素但不移除
@@ -78,33 +78,33 @@ boolean isEmpty = stack.isEmpty(); // 检查栈是否为空
 
 - ```java
   import java.util.PriorityQueue;
-
+  
   public class PriorityQueueExample {
       public static void main(String[] args) {
           // 创建一个优先队列，按自然顺序排序
           PriorityQueue<Integer> minHeap = new PriorityQueue<>();
-
+  
           // 添加元素到队列
           minHeap.offer(10);
           minHeap.offer(5);
           minHeap.offer(8);
           minHeap.offer(1);
-
+  
           // 输出队列中的元素（按照升序排列）
           System.out.println("升序排列的元素：");
           while (!minHeap.isEmpty()) {
               System.out.println(minHeap.poll());
           }
-
+  
           // 创建一个使用比较器来确定优先级的优先队列（降序排列）
           PriorityQueue<Integer> maxHeap = new PriorityQueue<>((a, b) -> b - a);
-
+  
           // 添加元素到队列
           maxHeap.offer(10);
           maxHeap.offer(5);
           maxHeap.offer(8);
           maxHeap.offer(1);
-
+  
           // 输出队列中的元素（按照降序排列）
           System.out.println("降序排列的元素：");
           while (!maxHeap.isEmpty()) {
@@ -112,7 +112,7 @@ boolean isEmpty = stack.isEmpty(); // 检查栈是否为空
           }
       }
   }
-
+  
   ```
 
 ---
@@ -489,7 +489,7 @@ class Main {
    for (int i = 0; i < numbers.length; i++) {
        System.out.println(numbers[i]);
    }
-
+   
    for (String name : names) {
        System.out.println(name);
    }
@@ -592,7 +592,7 @@ class Main {
   list.add(1);
   list.add(2);
   list.add(3);
-
+  
   Collections.reverse(list);
   ```
 
@@ -637,33 +637,33 @@ Arrays.sort(s, new Comparator <student>(){
 - ```java
   String str = "123";
   int num = Integer.parseInt(str);
-
+  
   String str = "3.14";
   double num = Double.parseDouble(str);
-
+  
   int num = 123;
   String str = Integer.toString(num);
   String str2 = String.valueOf(num);
-
+  
   double num = 3.14;
   String str = Double.toString(num);
-
+  
   String str = "Hello";
   char[] charArray = str.toCharArray();
-
+  
   char[] charArray = {'H', 'e', 'l', 'l', 'o'};
   String str = new String(charArray);
-
+  
   String str = "true";
   boolean bool = Boolean.parseBoolean(str);
-
+  
   boolean bool = true;
   String str = Boolean.toString(bool);
-
+  
   StringBuilder stringBuilder = new StringBuilder("Hello, ");
   stringBuilder.append("world!");
   String result = stringBuilder.toString();
-
+  
   ```
 
 ## 2.4 二分查找
@@ -1661,3 +1661,102 @@ for(int i = x; i <=N; i += lowbit (i)) {
      return 0;
   }
   ```
+
+
+
+
+
+## 4.11 BitSet
+
+`BitSet` 是 Java 中一个非常实用的类，专门用于处理一组位（boolean 值）。它在集合操作和位操作方面提供了高效的支持。以下是 `BitSet` 的一些主要特性、方法以及用法示例。
+
+**主要特性**
+
+1. **动态大小**：`BitSet` 可以根据需要扩展，当你设置一个超出当前大小的位时，它会自动调整大小。
+2. **高效存储**：通过位操作，`BitSet` 节省了内存，可以高效地存储大量的布尔值。
+3. **集合运算**：支持与其他 `BitSet` 实例进行位运算（如与、或、异或、取反等），非常适合用于集合操作。
+
+**常用方法**
+
+- `set(int bitIndex)`：设置指定索引的位为 `true`。
+- `set(int bitIndex, boolean value)`：根据指定值设置索引的位。
+- `clear(int bitIndex)`：将指定索引的位设置为 `false`。
+- `flip(int bitIndex)`：反转指定索引的位。
+- `get(int bitIndex)`：返回指定索引的位值。
+- `length()`：返回 `BitSet` 中当前最高的位索引 + 1。
+- `cardinality()`：返回设置为 `true` 的位的数量。
+- `and(BitSet set)`：与另一个 `BitSet` 做与操作。
+- `or(BitSet set)`：与另一个 `BitSet` 做或操作。
+- `xor(BitSet set)`：与另一个 `BitSet` 做异或操作。
+
+**示例代码**
+
+下面是一个示例，演示如何使用 `BitSet` 进行基本操作和集合运算：
+
+```java
+import java.util.BitSet;
+
+public class BitSetExample {
+    public static void main(String[] args) {
+        // 创建 BitSet 实例
+        BitSet bitSet1 = new BitSet();
+        BitSet bitSet2 = new BitSet();
+
+        // 设置一些位
+        bitSet1.set(0);   // 设置第 0 位为 true
+        bitSet1.set(2);   // 设置第 2 位为 true
+        bitSet1.set(4);   // 设置第 4 位为 true
+
+        bitSet2.set(1);   // 设置第 1 位为 true
+        bitSet2.set(2);   // 设置第 2 位为 true
+        bitSet2.set(3);   // 设置第 3 位为 true
+
+        // 显示 BitSet 内容
+        System.out.println("BitSet1: " + bitSet1);
+        System.out.println("BitSet2: " + bitSet2);
+
+        // 与运算
+        BitSet andResult = (BitSet) bitSet1.clone();
+        andResult.and(bitSet2);
+        System.out.println("AND Result: " + andResult);
+
+        // 或运算
+        BitSet orResult = (BitSet) bitSet1.clone();
+        orResult.or(bitSet2);
+        System.out.println("OR Result: " + orResult);
+
+        // 异或运算
+        BitSet xorResult = (BitSet) bitSet1.clone();
+        xorResult.xor(bitSet2);
+        System.out.println("XOR Result: " + xorResult);
+
+        // 反转某个位
+        bitSet1.flip(2); // 反转第 2 位
+        System.out.println("After flip BitSet1: " + bitSet1);
+
+        // 获取设置为 true 的位数
+        System.out.println("Cardinality of BitSet1: " + bitSet1.cardinality());
+    }
+}
+```
+
+**输出示例**
+
+```
+BitSet1: {0, 2, 4}
+BitSet2: {1, 2, 3}
+AND Result: {2}
+OR Result: {0, 1, 2, 3, 4}
+XOR Result: {0, 1, 3, 4}
+After flip BitSet1: {0, 4}
+Cardinality of BitSet1: 2
+```
+
+**应用场景**
+
+- **状态管理**：表示一组状态，如用户权限（可以用位表示是否勾选了某些权限）。
+- **集合操作**：如交并补运算等。
+- **压缩存储**：在处理大型布尔数组时节省空间。
+- **特征表示**：在机器学习中用来表示特征的存在与否。
+
+以上是 Java 中 `BitSet` 的使用介绍，具有很高的灵活性和功能性，适用于多种场景。
