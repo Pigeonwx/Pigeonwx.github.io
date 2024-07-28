@@ -2193,11 +2193,259 @@ AQS的核心方法包括：
 - `acquire`：尝试获取资源，如果获取不到，将当前线程排队等待。
 - `release`：释放资源，唤醒等待队列中的线程。
 
-AQS的内部实现主要基于一个双向链表，用于管理等待线程。当一个线程请求资源时，如果资源不可用，它会被封装为一个节点并加入到等待队列的队尾。当资源可用时，它会被唤醒。
+AQS的内部实现主要基于一个双向链表，用于管理等待线程。当一个线程请求资源时，如果资源不可用，它会被封装为一个节点并加入到等待队列的队尾。当资源可用时，它会被唤醒。AQS支持自定义同步器，即通过继承AQS并实现`tryAcquire`和`tryRelease`等方法来定义新的同步原语。这使得AQS非常灵活，可以满足各种同步需求。总的来说，AQS是实现同步器的一个强大工具，它提供了一种通用的框架，简化了同步机制的实现，提高了并发性能，同时也是Java并发包中各种同步工具的基础。
 
-AQS支持自定义同步器，即通过继承AQS并实现`tryAcquire`和`tryRelease`等方法来定义新的同步原语。这使得AQS非常灵活，可以满足各种同步需求。
+### 6.1.1 AQS 原理
 
-总的来说，AQS是实现同步器的一个强大工具，它提供了一种通用的框架，简化了同步机制的实现，提高了并发性能，同时也是Java并发包中各种同步工具的基础。
+AQS支持独占锁（exclusive）和共享锁（share）两种模式
+
+- 独占锁：只能被一个线程获取到（Reentrantlock）
+- 共享锁：可以被多个线程同时获取（CountDownLatch，ReadWriteLock）
+
+无论是独占锁还是共享锁，本质上都是对AQS内部的一个变量state的获取。state是一个原子的int变量，用来表示锁状态、资源数等。
+
+![QIKsHg](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/QIKsHg.png)
+
+**AQS内部实现了两个队列，一个同步队列，一个条件队列**
+
+![QIMk8I](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/QIMk8I.png)
+
+1. **同步队列（Sync Queue）**：
+   - **用途**：主要用于实现AQS的核心同步机制。当一个线程获取同步状态（如锁）失败时，会被加入到同步队列中。
+   - **结构**：同步队列是一个FIFO的双向链表结构。每一个节点都包含一个正在等待获取锁或同步状态的线程。
+   - **唤醒机制**：当持有锁的线程释放锁时，会唤醒同步队列中的下一个节点（通常是头节点）的线程，这个被唤醒的线程将继续尝试获取锁。
+   - **特点**：该队列主要用于管理那些因竞争资源失败而进入等待状态的线程，这些线程正等待重新尝试获取资源的机会。
+2. **条件等待队列（Wait Queue）**：
+   - **用途**：主要用于支持Condition（条件对象）。Condition允许线程等待特定条件成为真，然后唤醒等待队列中的线程。这通常用于实现复杂的同步控制。
+   - **结构**：等待队列也是一个FIFO的链表结构，但与同步队列不同，它一般与具体的Condition实例相关联。
+   - **唤醒机制**：当特定条件变为真时，调用`signal`或`signalAll`方法唤醒等待队列中的一个或所有线程。这些线程被移动回同步队列，以重新尝试获取锁。
+   - **特点**：该队列一般用于线程挂起和条件变量机制，配合使用Condition进行更加细粒度的线程控制。
+
+
+
+### 6.1.2 AQS基本结构和方法
+
+**AQS的基本属性和方法**
+
+```java
+//头节点
+private transient volatile Node head;
+
+//尾节点
+private transient volatile Node tail;
+
+//共享变量，使用volatile修饰保证线程可见性，用于记录了加锁次数
+private volatile int state;
+```
+
+- 锁实现通常采用内部的双向链表来管理竞争锁的线程。头节点通常是一个哨兵节点，用来快速找到等待获取锁的下一个线程。尾节点用于快速添加新的等待线程。
+- `state` 是锁的一个关键字段，它用 `volatile` 修饰保证线程间的可见性。这个变量一般用于记录锁的状态，比如锁是否持有以及持有的次数。在 `ReentrantLock`中，`state`用来记录锁的重入次数。`volatile` 确保了当一个线程修改 `state` 时，其他线程能够立即看到这个变化。
+- 头节点（head）和尾节点（tail）通常是一些数据结构（例如队列、链表）的内部管理数据。当这些数据结构被序列化时，实际上我们并不需要保存这些管理数据，我们只关心真正存储的数据。那么，避免序列化这些字段可以提高序列化和反序列化操作的性能。一旦对象被反序列化，头节点和尾节点会根据实际存储的数据重新计算和设置。
+
+---
+
+**同步队列和条件队列都是由一个个Node组成的**
+
+```java
+static final class Node {
+  /** 节点为共享模式下等待 */
+  static final Node SHARED = new Node();
+
+  /** 节点为独占模式下等待 */
+  static final Node EXCLUSIVE = null;
+
+  /** 当前节点由于超时或中断被取消 */
+  static final int CANCELLED =  1;
+
+  /** 表示当前节点的前节点被阻塞 */
+  static final int SIGNAL    = -1;
+
+  /** 当前节点在等待condition */
+  static final int CONDITION = -2;
+
+  /** 状态需要向后传播 */
+  static final int PROPAGATE = -3;
+
+  volatile int waitStatus;
+
+  volatile Node prev;
+
+  volatile Node next;
+
+  volatile Thread thread;
+
+  Node nextWaiter;
+}
+```
+
+
+
+---
+
+**重要方法的源码解析**
+
+```java
+//独占模式下获取资源
+public final void acquire(int arg) {
+  if (!tryAcquire(arg) && acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+    selfInterrupt();
+}
+```
+
+- `acquire(int arg)`首先调用`tryAcquire(arg)`尝试直接获取资源具体实现由子类负责。
+- 如果直接获取到资源，直接return
+- 如果没有直接获取到资源，将当前线程加入等待队列的尾部，并标记为独占模式，使线程在等待队列中自旋等待获取资源，直到获取资源成功才返回，如果线程在等待的过程中被中断过，就返回true，否则返回false
+  - 返回false就不需要判断中断了，直接return
+  - 返回true执行`selfInterrupt()`方法，而这个方法就是简单的中断当前线程`Thread.currentThread().interrupt();`其作用就是补上在自旋时没有响应的中断
+
+可以看出在整个方法中，最重要的就是`acquireQueued(addWaiter(Node.EXCLUSIVE), arg)`
+
+首先看`Node addWaiter(Node mode)`，这个方法的作用就是添加一个等待者，添加等待者就是将该节点加入等待队列
+
+```java
+private Node addWaiter(Node mode) {
+  Node node = new Node(Thread.currentThread(), mode);
+  Node pred = tail;
+  //尝试快速入队
+  if (pred != null) { //队列已经初始化
+    node.prev = pred;
+    if (compareAndSetTail(pred, node)) {
+      pred.next = node;
+      return node; //快速入队成功后，就直接返回了
+    }
+  }
+  //快速入队失败，也就是说队列都还每初始化
+  enq(node);
+  return node;
+}
+
+//执行入队
+private Node enq(final Node node) {
+  for (;;) {
+    Node t = tail;
+    // 如果没有队尾即还没初始化
+    if (t == null) { 
+      //如果队列为空，用一个空节点充当队列头
+      if (compareAndSetHead(new Node()))
+        //尾部指针也指向队列头
+        tail = head;
+    } else {
+      //队列已经初始化，入队
+      node.prev = t;
+      if (compareAndSetTail(t, node)) {
+        t.next = node;
+        //打断循环
+        return t;
+      }
+    }
+  }
+}
+```
+
+然后看`acquireQueued(final Node node, int arg)`，等待出队
+
+```java
+final boolean acquireQueued(final Node node, int arg) {
+  boolean failed = true;
+  try {
+    boolean interrupted = false;
+    for (;;) {
+      //拿到node的上一个节点
+      final Node p = node.predecessor();
+      //前置节点为head，说明可以尝试获取资源。排队成功后，尝试拿锁
+      if (p == head && tryAcquire(arg)) {
+        //获取成功，更新head节点
+        setHead(node);
+        p.next = null; // help GC
+        failed = false;
+        return interrupted;
+      }
+      //尝试拿锁失败后，根据条件进行park
+      if (shouldParkAfterFailedAcquire(p, node) && parkAndCheckInterrupt())
+        interrupted = true;
+    }
+  } finally {
+    if (failed)
+      cancelAcquire(node);
+  }
+}
+//获取资源失败后，检测并更新等待状态
+private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
+  int ws = pred.waitStatus;
+  if (ws == Node.SIGNAL)
+    return true;
+  if (ws > 0) {
+    do {
+      //如果前节点取消了，那就往前找到一个等待状态的接替你，并排在它的后面
+      node.prev = pred = pred.prev;
+    } while (pred.waitStatus > 0);
+    pred.next = node;
+  } else {
+    compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
+  }
+  return false;
+}
+//阻塞当前线程，返回中断状态
+private final boolean parkAndCheckInterrupt() {
+  LockSupport.park(this);
+  return Thread.interrupted();
+}
+```
+
+### 6.1.3 tryAcquire公平与非公平
+
+具体的`boolean tryAcquire(int acquires)`实现有所不同
+
+```java
+// 公平锁的实现
+protected final boolean tryAcquire(int acquires) {
+  final Thread current = Thread.currentThread();
+  int c = getState();
+  if (c == 0) {
+    if (!hasQueuedPredecessors() &&
+        compareAndSetState(0, acquires)) {
+      setExclusiveOwnerThread(current);
+      return true;
+    }
+  }
+  else if (current == getExclusiveOwnerThread()) {
+    int nextc = c + acquires;
+    if (nextc < 0)
+      throw new Error("Maximum lock count exceeded");
+    setState(nextc);
+    return true;
+  }
+  return false;
+}
+
+// 非公平锁的实现
+final boolean nonfairTryAcquire(int acquires) {
+  final Thread current = Thread.currentThread();
+  int c = getState();
+  if (c == 0) {
+    if (compareAndSetState(0, acquires)) {
+      setExclusiveOwnerThread(current);
+      return true;
+    }
+  }
+  else if (current == getExclusiveOwnerThread()) {
+    int nextc = c + acquires;
+    if (nextc < 0) // overflow
+      throw new Error("Maximum lock count exceeded");
+    setState(nextc);
+    return true;
+  }
+  return false;
+}
+```
+
+- 这段代码中的`hasQueuedPredecessors()`方法用来检测当前线程是否有排在它之前的其他等待线程。如果有，当前线程将不会尝试获取锁，从而确保先请求锁的线程能够先获取锁。
+- **公平锁**：严格按照先来先服务的顺序，避免任何线程的饥饿现象。但是可能会增加上下文切换的开销，从而降低吞吐量。
+- **非公平锁**：不按照顺序，任何时刻请求锁的线程都可以尝试获取锁，可能导致饥饿现象，但总体吞吐量可能更高。
+
+
+
+
 
 ## 6.2 ReentrantLock 锁
 
@@ -2405,7 +2653,7 @@ public class ForkJoinExample extends RecursiveTask<Integer> {
 
 
 
-## 原子操作类
+## 6.8 原子操作类
 
 在高并发编程中，确保线程安全和高效是非常重要的。JDK 提供了一系列原子类型操作类，用于无锁（锁自由，Lock-Free）的方式保证操作的原子性。这些类使用了 CAS（Compare-And-Swap）算法，以避免线程阻塞，从而提高系统的并发性能。
 
