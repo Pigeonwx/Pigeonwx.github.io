@@ -2580,7 +2580,7 @@ JVM在JDK1.6中引入了分级锁机制来优化Synchronized，当一个线程�
       public synchronized void method1() {
           // code
       }
-
+  
       // 修饰静态方法
       public  synchronized static void method2() {
           // code
@@ -4445,16 +4445,16 @@ static class Student {
    * ```
      // 加载并初始化类
      public static Class<?> forName(String className) throws ClassNotFoundException;
-
+     
      // 使用指定的类加载器加载类，并确定是否初始化
      public static Class<?> forName(String name, boolean initialize, ClassLoader loader) throws ClassNotFoundException;
-
+     
      ```
    * `ClassLoader.loadClass` 主要方法：
    * ```
      // 仅加载类，不会初始化
      public Class<?> loadClass(String name) throws ClassNotFoundException;
-
+     
      ```
 
 ## 4.3 如何优化垃圾回收机制？
@@ -8151,7 +8151,7 @@ InnoDB Buffer Pool（简称IBP）是InnoDB存储引擎的一个缓冲池，与My
   * ```plaintext
     SHOW GLOBAL STATUS LIKE 'Com_select';//读取数量
     SHOW GLOBAL STATUS WHERE Variable_name IN ('Com_insert', 'Com_update', 'Com_replace', 'Com_delete');//写入数量
-
+    
     ```
 * innodb\_log\_file\_size
 
@@ -8256,3 +8256,633 @@ InnoDB存储引擎是基于集合索引实现的数据存储，也就是除了�
 ### 6.8.5 总结
 
 以上InnoDB的实现和运行原理到这里就介绍完了。回顾模块六，前三讲我主要介绍了数据库操作的性能优化，包括SQL语句、事务以及索引的优化，接下来我又讲到了数据库表优化，包括表设计、分表分库的实现等等，最后我还介绍了一些数据库参数的调优。总的来讲，作为开发工程师，我们应该掌握数据库几个大的知识点，然后再深入到数据库内部实现的细节，这样才能避免经常写出一些具有性能问题的SQL，培养调优数据库性能的能力。
+
+
+
+# 七、实战演练场
+
+## 7.1 如何设计更优的分布式锁
+
+
+
+从这一讲开始，我们就正式进入最后一个模块的学习了，综合性实战的内容来自我亲身经历过的一些案例，其中用到的知识点会相对综合，现在是时候跟我一起调动下前面所学了！去年双十一，我们的游戏商城也搞了一波活动，那时候我就发现在数据库操作日志中，出现最多的一个异常就是Interrupted Exception了，几乎所有的异常都是来自一个校验订单幂等性的SQL。
+
+
+
+因为校验订单幂等性是提交订单业务中第一个操作数据库的，所以幂等性校验也就承受了比较大的请求量，再加上我们还是基于一个数据库表来实现幂等性校验的，所以出现了一些请求事务超时，事务被中断的情况。其实基于数据库实现的幂等性校验就是一种分布式锁的实现。那什么是分布式锁呢，它又是用来解决哪些问题的呢？在JVM中，在多线程并发的情况下，我们可以使用同步锁或Lock锁，保证在同一时间内，只能有一个线程修改共享变量或执行代码块。但现在我们的服务基本都是基于分布式集群来实现部署的，对于一些共享资源，例如我们之前讨论过的库存，在分布式环境下使用Java锁的方式就失去作用了。
+
+
+
+这时，我们就需要实现分布式锁来保证共享资源的原子性。除此之外，分布式锁也经常用来避免分布式中的不同节点执行重复性的工作，例如一个定时发短信的任务，在分布式集群中，我们只需要保证一个服务节点发送短信即可，一定要避免多个节点重复发送短信给同一个用户。因为数据库实现一个分布式锁比较简单易懂，直接基于数据库实现就行了，不需要再引入第三方中间件，所以这是很多分布式业务实现分布式锁的首选。但是数据库实现的分布式锁在一定程度上，存在性能瓶颈。 接下来我们一起了解下如何使用数据库实现分布式锁，其性能瓶颈到底在哪，有没有其它实现方式可以优化分布式锁。
+
+
+
+### 7.1.1 数据库实现分布式锁
+
+首先，我们应该创建一个锁表，通过创建和查询数据来保证一个数据的原子性：
+
+```
+CREATE TABLE `order`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `order_no` int(11) DEFAULT NULL,
+  `pay_money` decimal(10, 2) DEFAULT NULL,
+  `status` int(4) DEFAULT NULL,
+  `create_date` datetime(0) DEFAULT NULL,
+  `delete_flag` int(4) DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_status`(`status`) USING BTREE,
+  INDEX `idx_order`(`order_no`) USING BTREE
+) ENGINE = InnoDB
+```
+
+其次，如果是校验订单的幂等性，就要先查询该记录是否存在数据库中，查询的时候要防止幻读，如果不存在，就插入到数据库，否则，放弃操作。
+
+```
+select id from `order` where `order_no`= 'xxxx' for update
+```
+
+最后注意下，除了查询时防止幻读，我们还需要保证查询和插入是在同一个事务中，因此我们需要申明事务，具体的实现代码如下：
+
+```
+	@Transactional
+	public int addOrderRecord(Order order) {
+		if(orderDao.selectOrderRecord(order)==null){
+               int result = orderDao.addOrderRecord(order);
+              if(result>0){
+                      return 1;
+              }
+         }
+		return 0;
+	}
+```
+
+到这，我们订单幂等性校验的分布式锁就实现了。我想你应该能发现为什么这种方式会存在性能瓶颈了。我们在[第34讲](https://time.geekbang.org/column/article/116369)中讲过，在RR事务级别，select的for update操作是基于间隙锁gap lock实现的，这是一种悲观锁的实现方式，所以存在阻塞问题。因此在高并发情况下，当有大量的请求进来时，大部分的请求都会进行排队等待。为了保证数据库的稳定性，事务的超时时间往往又设置得很小，所以就会出现大量事务被中断的情况。
+
+
+
+除了阻塞等待之外，因为订单没有删除操作，所以这张锁表的数据将会逐渐累积，我们需要设置另外一个线程，隔一段时间就去删除该表中的过期订单，这就增加了业务的复杂度。除了这种幂等性校验的分布式锁，有一些单纯基于数据库实现的分布式锁代码块或对象，是需要在锁释放时，删除或修改数据的。如果在获取锁之后，锁一直没有获得释放，即数据没有被删除或修改，这将会引发死锁问题。
+
+
+
+### 7.1.2 Zookeeper实现分布式锁
+
+除了数据库实现分布式锁的方式以外，我们还可以基于Zookeeper实现。Zookeeper是一种提供“分布式服务协调“的中心化服务，正是Zookeeper的以下两个特性，分布式应用程序才可以基于它实现分布式锁功能。
+
+
+
+**顺序临时节点：**Zookeeper提供一个多层级的节点命名空间（节点称为Znode），每个节点都用一个以斜杠（/）分隔的路径来表示，而且每个节点都有父节点（根节点除外），非常类似于文件系统。
+
+
+
+节点类型可以分为持久节点（PERSISTENT ）、临时节点（EPHEMERAL），每个节点还能被标记为有序性（SEQUENTIAL），一旦节点被标记为有序性，那么整个节点就具有顺序自增的特点。一般我们可以组合这几类节点来创建我们所需要的节点，例如，创建一个持久节点作为父节点，在父节点下面创建临时节点，并标记该临时节点为有序性。
+
+
+
+**Watch机制：**Zookeeper还提供了另外一个重要的特性，Watcher（事件监听器）。ZooKeeper允许用户在指定节点上注册一些Watcher，并且在一些特定事件触发的时候，ZooKeeper服务端会将事件通知给用户。
+
+
+
+我们熟悉了Zookeeper的这两个特性之后，就可以看看Zookeeper是如何实现分布式锁的了。首先，我们需要建立一个父节点，节点类型为持久节点（PERSISTENT） ，每当需要访问共享资源时，就会在父节点下建立相应的顺序子节点，节点类型为临时节点（EPHEMERAL），且标记为有序性（SEQUENTIAL），并且以临时节点名称+父节点名称+顺序号组成特定的名字。在建立子节点后，对父节点下面的所有以临时节点名称name开头的子节点进行排序，判断刚刚建立的子节点顺序号是否是最小的节点，如果是最小节点，则获得锁。如果不是最小节点，则阻塞等待锁，并且获得该节点的上一顺序节点，为其注册监听事件，等待节点对应的操作获得锁。当调用完共享资源后，删除该节点，关闭zk，进而可以触发监听事件，释放该锁。
+
+![1c2df592672c78fd5d006cd23eb11f28](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/1c2df592672c78fd5d006cd23eb11f28.jpg)
+
+
+
+以上实现的分布式锁是严格按照顺序访问的并发锁。一般我们还可以直接引用Curator框架来实现Zookeeper分布式锁，代码如下：
+
+```
+InterProcessMutex lock = new InterProcessMutex(client, lockPath);
+if ( lock.acquire(maxWait, waitUnit) ) 
+{
+    try 
+    {
+        // do some work inside of the critical section here
+    }
+    finally
+    {
+        lock.release();
+    }
+}
+```
+
+Zookeeper实现的分布式锁，例如相对数据库实现，有很多优点。Zookeeper是集群实现，可以避免单点问题，且能保证每次操作都可以有效地释放锁，这是因为一旦应用服务挂掉了，临时节点会因为session连接断开而自动删除掉。由于频繁地创建和删除结点，加上大量的Watch事件，对Zookeeper集群来说，压力非常大。且从性能上来说，其与接下来我要讲的Redis实现的分布式锁相比，还是存在一定的差距。
+
+
+
+### 7.1.3 Redis实现分布式锁
+
+相对于前两种实现方式，基于Redis实现的分布式锁是最为复杂的，但性能是最佳的。大部分开发人员利用Redis实现分布式锁的方式，都是使用SETNX+EXPIRE组合来实现，在Redis 2.6.12版本之前，具体实现代码如下：
+
+```
+public static boolean tryGetDistributedLock(Jedis jedis, String lockKey, String requestId, int expireTime) {
+
+    Long result = jedis.setnx(lockKey, requestId);//设置锁
+    if (result == 1) {//获取锁成功
+        // 若在这里程序突然崩溃，则无法设置过期时间，将发生死锁
+        jedis.expire(lockKey, expireTime);//通过过期时间删除锁
+        return true;
+    }
+    return false;
+}
+```
+
+这种方式实现的分布式锁，是通过setnx()方法设置锁，如果lockKey存在，则返回失败，否则返回成功。设置成功之后，为了能在完成同步代码之后成功释放锁，方法中还需要使用expire()方法给lockKey值设置一个过期时间，确认key值删除，避免出现锁无法释放，导致下一个线程无法获取到锁，即死锁问题。如果程序在设置过期时间之前、设置锁之后出现崩溃，此时如果lockKey没有设置过期时间，将会出现死锁问题。
+
+
+
+在 Redis 2.6.12版本后SETNX增加了过期时间参数：
+
+```
+    private static final String LOCK_SUCCESS = "OK";
+    private static final String SET_IF_NOT_EXIST = "NX";
+    private static final String SET_WITH_EXPIRE_TIME = "PX";
+
+    /**
+     * 尝试获取分布式锁
+     * @param jedis Redis客户端
+     * @param lockKey 锁
+     * @param requestId 请求标识
+     * @param expireTime 超期时间
+     * @return 是否获取成功
+     */
+    public static boolean tryGetDistributedLock(Jedis jedis, String lockKey, String requestId, int expireTime) {
+
+        String result = jedis.set(lockKey, requestId, SET_IF_NOT_EXIST, SET_WITH_EXPIRE_TIME, expireTime);
+
+        if (LOCK_SUCCESS.equals(result)) {
+            return true;
+        }
+        return false;
+
+    }
+```
+
+我们也可以通过Lua脚本来实现锁的设置和过期时间的原子性，再通过jedis.eval()方法运行该脚本：
+
+```
+    // 加锁脚本
+    private static final String SCRIPT_LOCK = "if redis.call('setnx', KEYS[1], ARGV[1]) == 1 then redis.call('pexpire', KEYS[1], ARGV[2]) return 1 else return 0 end";
+    // 解锁脚本
+    private static final String SCRIPT_UNLOCK = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+```
+
+虽然SETNX方法保证了设置锁和过期时间的原子性，但如果我们设置的过期时间比较短，而执行业务时间比较长，就会存在锁代码块失效的问题。我们需要将过期时间设置得足够长，来保证以上问题不会出现。这个方案是目前最优的分布式锁方案，但如果是在Redis集群环境下，依然存在问题。由于Redis集群数据同步到各个节点时是异步的，如果在Master节点获取到锁后，在没有同步到其它节点时，Master节点崩溃了，此时新的Master节点依然可以获取锁，所以多个应用服务可以同时获取到锁。
+
+
+
+### 7.1.4 Redlock算法
+
+Redisson由Redis官方推出，它是一个在Redis的基础上实现的Java驻内存数据网格（In-Memory Data Grid）。它不仅提供了一系列的分布式的Java常用对象，还提供了许多分布式服务。Redisson是基于netty通信框架实现的，所以支持非阻塞通信，性能相对于我们熟悉的Jedis会好一些。
+
+
+
+Redisson中实现了Redis分布式锁，且支持单点模式和集群模式。在集群模式下，Redisson使用了Redlock算法，避免在Master节点崩溃切换到另外一个Master时，多个应用同时获得锁。我们可以通过一个应用服务获取分布式锁的流程，了解下Redlock算法的实现：
+
+
+
+在不同的节点上使用单个实例获取锁的方式去获得锁，且每次获取锁都有超时时间，如果请求超时，则认为该节点不可用。当应用服务成功获取锁的Redis节点超过半数（N/2+1，N为节点数)时，并且获取锁消耗的实际时间不超过锁的过期时间，则获取锁成功。一旦获取锁成功，就会重新计算释放锁的时间，该时间是由原来释放锁的时间减去获取锁所消耗的时间；而如果获取锁失败，客户端依然会释放获取锁成功的节点。
+
+
+
+具体的代码实现如下：
+
+1.首先引入jar包：
+
+```
+<dependency>
+      <groupId>org.redisson</groupId>
+      <artifactId>redisson</artifactId>
+      <version>3.8.2</version>
+</dependency>
+```
+
+2.实现Redisson的配置文件：
+
+```
+@Bean
+public RedissonClient redissonClient() {
+    Config config = new Config();
+    config.useClusterServers()
+            .setScanInterval(2000) // 集群状态扫描间隔时间，单位是毫秒
+            .addNodeAddress("redis://127.0.0.1:7000).setPassword("1")
+            .addNodeAddress("redis://127.0.0.1:7001").setPassword("1")
+            .addNodeAddress("redis://127.0.0.1:7002")
+            .setPassword("1");
+    return Redisson.create(config);
+}
+```
+
+3.获取锁操作：
+
+```
+long waitTimeout = 10;
+long leaseTime = 1;
+RLock lock1 = redissonClient1.getLock("lock1");
+RLock lock2 = redissonClient2.getLock("lock2");
+RLock lock3 = redissonClient3.getLock("lock3");
+
+RedissonRedLock redLock = new RedissonRedLock(lock1, lock2, lock3);
+// 同时加锁：lock1 lock2 lock3
+// 红锁在大部分节点上加锁成功就算成功，且设置总超时时间以及单个节点超时时间
+redLock.trylock(waitTimeout,leaseTime,TimeUnit.SECONDS);
+...
+redLock.unlock();
+```
+
+### 7.1.5 总结
+
+实现分布式锁的方式有很多，有最简单的数据库实现，还有Zookeeper多节点实现和缓存实现。我们可以分别对这三种实现方式进行性能压测，可以发现在同样的服务器配置下，Redis的性能是最好的，Zookeeper次之，数据库最差。从实现方式和可靠性来说，Zookeeper的实现方式简单，且基于分布式集群，可以避免单点问题，具有比较高的可靠性。因此，在对业务性能要求不是特别高的场景中，我建议使用Zookeeper实现的分布式锁。
+
+
+
+思考题
+
+我们知道Redis分布式锁在集群环境下会出现不同应用服务同时获得锁的可能，而Redisson中的Redlock算法很好地解决了这个问题。那Redisson实现的分布式锁是不是就一定不会出现同时获得锁的可能呢？
+
+
+
+## 7.2 电商系统的分布式事务调优
+
+今天的分享也是从案例开始。我们团队曾经遇到过一个非常严重的线上事故，在一次DBA完成单台数据库线上补丁后，系统偶尔会出现异常报警，我们的开发工程师很快就定位到了数据库异常问题。
+
+
+
+具体情况是这样的，当玩家购买道具之后，扣除通宝时出现了异常。这种异常在正常情况下发生之后，应该是整个购买操作都需要撤销，然而这次异常的严重性就是在于玩家购买道具成功后，没有扣除通宝。究其原因是由于购买的道具更新的是游戏数据库，而通宝是在用户账户中心数据库，在一次购买道具时，存在同时操作两个数据库的情况，属于一种分布式事务。而我们的工程师在完成玩家获得道具和扣除余额的操作时，没有做到事务的一致性，即在扣除通宝失败时，应该回滚已经购买的游戏道具。
+
+
+
+**从这个案例中，我想你应该意识到了分布式事务的重要性。**如今，大部分公司的服务基本都实现了微服务化，首先是业务需求，为了解耦业务；其次是为了减少业务与业务之间的相互影响。电商系统亦是如此，大部分公司的电商系统都是分为了不同服务模块，例如商品模块、订单模块、库存模块等等。事实上，分解服务是一把双刃剑，可以带来一些开发、性能以及运维上的优势，但同时也会增加业务开发的逻辑复杂度。其中最为突出的就是分布式事务了。通常，存在分布式事务的服务架构部署有以下两种：同服务不同数据库，不同服务不同数据库。我们以商城为例，用图示说明下这两种部署：
+
+![111f44892deb9919a1310d636a538f5a](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/111f44892deb9919a1310d636a538f5a.jpg)
+
+![48d448543aeac5eba4b9edd24e1bcf6c](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/48d448543aeac5eba4b9edd24e1bcf6c.jpg)
+
+
+
+通常，我们都是基于第二种架构部署实现的，那我们应该如何实现在这种服务架构下，有关订单提交业务的分布式事务呢？
+
+
+
+### 7.2.1 分布式事务解决方案
+
+我们讲过，在单个数据库的情况下，数据事务操作具有ACID四个特性，但如果在一个事务中操作多个数据库，则无法使用数据库事务来保证一致性。也就是说，当两个数据库操作数据时，可能存在一个数据库操作成功，而另一个数据库操作失败的情况，我们无法通过单个数据库事务来回滚两个数据操作。
+
+
+
+而分布式事务就是为了解决在同一个事务下，不同节点的数据库操作数据不一致的问题。在一个事务操作请求多个服务或多个数据库节点时，要么所有请求成功，要么所有请求都失败回滚回去。通常，分布式事务的实现有多种方式，例如XA协议实现的二阶提交（2PC）、三阶提交(3PC)，以及TCC补偿性事务。在了解2PC和3PC之前，我们有必要先来了解下XA协议。XA协议是由X/Open组织提出的一个分布式事务处理规范，目前MySQL中只有InnoDB存储引擎支持XA协议。
+
+
+
+### 7.2.2  XA规范
+
+在XA规范之前，存在着一个DTP模型，该模型规范了分布式事务的模型设计。DTP规范中主要包含了AP、RM、TM三个部分，其中AP是应用程序，是事务发起和结束的地方；RM是资源管理器，主要负责管理每个数据库的连接数据源；TM是事务管理器，负责事务的全局管理，包括事务的生命周期管理和资源的分配协调等。
+
+![dcbb483b62b1e0a51d03c7edfcf89767](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/dcbb483b62b1e0a51d03c7edfcf89767.jpg)
+
+XA则规范了TM与RM之间的通信接口，在TM与多个RM之间形成一个双向通信桥梁，从而在多个数据库资源下保证ACID四个特性。这里强调一下，JTA是基于XA规范实现的一套Java事务编程接口，是一种两阶段提交事务。我们可以通过[源码](https://github.com/nickliuchao/jta)简单了解下JTA实现的多数据源事务提交。
+
+
+
+### 7.2.3 XA规范实现的分布式事务属于二阶提交事务，顾名思义就是通过两个阶段来实现事务的提交。
+
+
+
+
+
+在第一阶段，应用程序向事务管理器（TM）发起事务请求，而事务管理器则会分别向参与的各个资源管理器（RM）发送事务预处理请求（Prepare），此时这些资源管理器会打开本地数据库事务，然后开始执行数据库事务，但执行完成后并不会立刻提交事务，而是向事务管理器返回已就绪（Ready）或未就绪（Not Ready）状态。如果各个参与节点都返回状态了，就会进入第二阶段。
+
+![2a1cf8f45675acac6fe07c172a36ec95](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/2a1cf8f45675acac6fe07c172a36ec95.jpg)
+
+到了第二阶段，如果资源管理器返回的都是就绪状态，事务管理器则会向各个资源管理器发送提交（Commit）通知，资源管理器则会完成本地数据库的事务提交，最终返回提交结果给事务管理器。
+
+![59734e1a229ceee9df4295d0901ce2d5](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/59734e1a229ceee9df4295d0901ce2d5.jpg)
+
+在第二阶段中，如果任意资源管理器返回了未就绪状态，此时事务管理器会向所有资源管理器发送事务回滚（Rollback）通知，此时各个资源管理器就会回滚本地数据库事务，释放资源，并返回结果通知。
+
+![8791dfe19fce916f77b6c5740bc32e2f](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/8791dfe19fce916f77b6c5740bc32e2f.jpg)
+
+但事实上，二阶事务提交也存在一些缺陷。
+
+
+
+- 第一，在整个流程中，我们会发现各个资源管理器节点存在阻塞，只有当所有的节点都准备完成之后，事务管理器才会发出进行全局事务提交的通知，这个过程如果很长，则会有很多节点长时间占用资源，从而影响整个节点的性能。一旦资源管理器挂了，就会出现一直阻塞等待的情况。类似问题，我们可以通过设置事务超时时间来解决。
+- 第二，仍然存在数据不一致的可能性，例如，在最后通知提交全局事务时，由于网络故障，部分节点有可能收不到通知，由于这部分节点没有提交事务，就会导致数据不一致的情况出现。
+
+
+
+**而三阶事务（3PC）的出现就是为了减少此类问题的发生。**3PC把2PC的准备阶段分为了准备阶段和预处理阶段，在第一阶段只是询问各个资源节点是否可以执行事务，而在第二阶段，所有的节点反馈可以执行事务，才开始执行事务操作，最后在第三阶段执行提交或回滚操作。并且在事务管理器和资源管理器中都引入了超时机制，如果在第三阶段，资源节点一直无法收到来自资源管理器的提交或回滚请求，它就会在超时之后，继续提交事务。
+
+
+
+所以3PC可以通过超时机制，避免管理器挂掉所造成的长时间阻塞问题，但其实这样还是无法解决在最后提交全局事务时，由于网络故障无法通知到一些节点的问题，特别是回滚通知，这样会导致事务等待超时从而默认提交。
+
+
+
+### 7.2.4 事务补偿机制（TCC）
+
+以上这种基于XA规范实现的事务提交，由于阻塞等性能问题，有着比较明显的低性能、低吞吐的特性。所以在抢购活动中使用该事务，很难满足系统的并发性能。除了性能问题，JTA只能解决同一服务下操作多数据源的分布式事务问题，换到微服务架构下，可能存在同一个事务操作，分别在不同服务上连接数据源，提交数据库操作。
+
+
+
+而TCC正是为了解决以上问题而出现的一种分布式事务解决方案。TCC采用最终一致性的方式实现了一种柔性分布式事务，与XA规范实现的二阶事务不同的是，TCC的实现是基于服务层实现的一种二阶事务提交。TCC分为三个阶段，即Try、Confirm、Cancel三个阶段。
+
+![23f68980870465ba6c00c0f2619fcfa9](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/23f68980870465ba6c00c0f2619fcfa9.jpg)
+
+- Try阶段：主要尝试执行业务，执行各个服务中的Try方法，主要包括预留操作；
+- Confirm阶段：确认Try中的各个方法执行成功，然后通过TM调用各个服务的Confirm方法，这个阶段是提交阶段；
+- Cancel阶段：当在Try阶段发现其中一个Try方法失败，例如预留资源失败、代码异常等，则会触发TM调用各个服务的Cancel方法，对全局事务进行回滚，取消执行业务。
+
+以上执行只是保证Try阶段执行时成功或失败的提交和回滚操作，你肯定会想到，如果在Confirm和Cancel阶段出现异常情况，那TCC该如何处理呢？此时TCC会不停地重试调用失败的Confirm或Cancel方法，直到成功为止。但TCC补偿性事务也有比较明显的缺点，那就是对业务的侵入性非常大。
+
+
+
+首先，我们需要在业务设计的时候考虑预留资源；然后，我们需要编写大量业务性代码，例如Try、Confirm、Cancel方法；最后，我们还需要为每个方法考虑幂等性。这种事务的实现和维护成本非常高，但综合来看，这种实现是目前大家最常用的分布式事务解决方案。
+
+
+
+### 7.2.5 业务无侵入方案——Seata(Fescar)
+
+Seata是阿里去年开源的一套分布式事务解决方案，开源一年多已经有一万多star了，可见受欢迎程度非常之高。Seata的基础建模和DTP模型类似，只不过前者是将事务管理器分得更细了，抽出一个事务协调器（Transaction Coordinator 简称TC），主要维护全局事务的运行状态，负责协调并驱动全局事务的提交或回滚。而TM则负责开启一个全局事务，并最终发起全局提交或全局回滚的决议。如下图所示：
+
+![6ac3de014819c54fe6904c938240b183](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/6ac3de014819c54fe6904c938240b183.jpg)
+
+按照[Github](https://github.com/seata/seata)中的说明介绍，整个事务流程为：
+
+- TM 向 TC 申请开启一个全局事务，全局事务创建成功并生成一个全局唯一的 XID；
+- XID 在微服务调用链路的上下文中传播；
+- RM 向 TC 注册分支事务，将其纳入 XID 对应全局事务的管辖；
+- TM 向 TC 发起针对 XID 的全局提交或回滚决议；
+- TC 调度 XID 下管辖的全部分支事务完成提交或回滚请求。
+
+Seata与其它分布式最大的区别在于，它在第一提交阶段就已经将各个事务操作commit了。Seata认为在一个正常的业务下，各个服务提交事务的大概率是成功的，这种事务提交操作可以节约两个阶段持有锁的时间，从而提高整体的执行效率。那如果在第一阶段就已经提交了事务，那我们还谈何回滚呢？
+
+
+
+**Seata将RM提升到了服务层，通过JDBC数据源代理解析SQL，把业务数据在更新前后的数据镜像组织成回滚日志，利用本地事务的 ACID 特性，将业务数据的更新和回滚日志的写入在同一个本地事务中提交。如果TC决议要全局回滚，会通知RM进行回滚操作，通过XID找到对应的回滚日志记录，通过回滚记录生成反向更新SQL，进行更新回滚操作。** 
+
+以上我们可以保证一个事务的原子性和一致性，但隔离性如何保证呢？Seata设计通过事务协调器维护的全局写排它锁，来保证事务间的写隔离，而读写隔离级别则默认为未提交读的隔离级别。
+
+
+
+### 7.2.6 JTA使用例子
+
+Java Transaction API（JTA）提供了一种允许Java应用程序在分布式环境中管理事务的标准接口。通过JTA，开发者可以确保一系列操作要么全部成功，要么全部失败。这在处理涉及数据库、消息队列或其他资源的分布式事务时尤其有用。
+
+下面是一个示例，演示如何在Java中使用JTA管理一个涉及订单处理的事务。假设我们有两个数据库操作：一个用于插入订单记录，另一个用于更新库存记录。我们希望确保这两个操作要么都成功要么都失败。
+
+- 依赖
+
+首先，确保项目中包含了所需的JTA依赖。例如，可以通过Maven引入`javax.transaction`:
+
+```xml
+<dependency>
+    <groupId>javax.transaction</groupId>
+    <artifactId>javax.transaction-api</artifactId>
+    <version>1.3</version>
+</dependency>
+```
+
+- 示例代码
+
+以下是一个使用JTA管理事务的示例代码：
+
+```java
+import javax.naming.InitialContext;
+import javax.transaction.UserTransaction;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class OrderService {
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/mydatabase";
+    private static final String DB_USER = "root";
+    private static final String DB_PASSWORD = "password";
+
+    public static void main(String[] args) {
+        UserTransaction userTransaction = null;
+        Connection connection1 = null;
+        Connection connection2 = null;
+
+        try {
+            // 获取UserTransaction
+            InitialContext ctx = new InitialContext();
+            userTransaction = (UserTransaction) ctx.lookup("java:comp/UserTransaction");
+
+            // 启动事务
+            userTransaction.begin();
+
+            // 获取数据库连接
+            connection1 = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+            connection2 = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+
+            // 执行订单插入操作
+            String insertOrderSql = "INSERT INTO orders (order_id, product_id, quantity) VALUES (?, ?, ?)";
+            try (PreparedStatement insertOrderStmt = connection1.prepareStatement(insertOrderSql)) {
+                insertOrderStmt.setInt(1, 1);
+                insertOrderStmt.setInt(2, 101);
+                insertOrderStmt.setInt(3, 2);
+                insertOrderStmt.executeUpdate();
+            }
+
+            // 执行库存更新操作
+            String updateStockSql = "UPDATE stock SET quantity = quantity - ? WHERE product_id = ?";
+            try (PreparedStatement updateStockStmt = connection2.prepareStatement(updateStockSql)) {
+                updateStockStmt.setInt(1, 2);
+                updateStockStmt.setInt(2, 101);
+                updateStockStmt.executeUpdate();
+            }
+
+            // 提交事务
+            userTransaction.commit();
+            System.out.println("Order and stock updates committed successfully!");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            try {
+                if (userTransaction != null) {
+                    // 回滚事务
+                    userTransaction.rollback();
+                    System.out.println("Transaction rolled back due to error.");
+                }
+            } catch (Exception rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
+        } finally {
+            try {
+                if (connection1 != null) {
+                    connection1.close();
+                }
+                if (connection2 != null) {
+                    connection2.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
+
+说获取`UserTransaction`**：使用`InitialContext`查找JTA的`UserTransaction`对象。
+
+2. **开始事务**：调用`userTransaction.begin()`开始一个新的事务。
+3. **数据库操作**：执行订单插入和库存更新的SQL操作。
+4. **提交事务**：在所有操作成功后，调用`userTransaction.commit()`提交事务。
+5. **回滚事务**：如果出现异常，调用`userTransaction.rollback()`回滚事务，确保部分完成的操作不会生效。
+6. **关闭资源**：最终确保数据库连接关闭，以释放资源。
+
+请注意，上述示例是假设在应用服务器中运行，该应用服务器支持JTA。如果在单独的Java SE环境中运行，可能需要使用其他方式配置JTA实现。
+
+### 7.3.7 TCC使用例子
+
+TCC（Try-Confirm-Cancel）是分布式系统中常用的事务机制之一，在Java中实现TCC通常涉及多个服务的协调。下面是一个简单的例子，展示了如何使用TCC模式进行事务管理。
+
+假设我们有两个微服务，一个用于订单服务（Order Service），另一个用于库存服务（Inventory Service）。目标是在下订单时，保证订单的创建与库存的扣减是一个原子操作。
+
+#### 1. Order Service
+
+**OrderService.java**
+
+```
+public class OrderService {
+
+    private InventoryService inventoryService;
+
+    public OrderService(InventoryService inventoryService) {
+        this.inventoryService = inventoryService;
+    }
+
+    // Try step: Reserve inventory for the order
+    public boolean tryCreateOrder(Order order) {
+        boolean inventoryReserved = inventoryService.reserveInventory(order.getProductId(), order.getQuantity());
+        if (inventoryReserved) {
+            // Save order in 'pending' state
+            saveOrder(order, "PENDING");
+            return true;
+        }
+        return false;
+    }
+
+    // Confirm step: Confirm the order and inventory reservation
+    public void confirmCreateOrder(Order order) {
+        // Update order status to 'CONFIRMED'
+        updateOrderStatus(order.getOrderId(), "CONFIRMED");
+        inventoryService.confirmInventory(order.getProductId(), order.getQuantity());
+    }
+
+    // Cancel step: Rollback the order and inventory reservation
+    public void cancelCreateOrder(Order order) {
+        // Update order status to 'CANCELLED'
+        updateOrderStatus(order.getOrderId(), "CANCELLED");
+        inventoryService.releaseInventory(order.getProductId(), order.getQuantity());
+    }
+
+    private void saveOrder(Order order, String status) {
+        // Implementation for saving order
+    }
+
+    private void updateOrderStatus(String orderId, String status) {
+        // Implementation for updating order status
+    }
+}
+```
+
+#### 2. Inventory Service
+
+**InventoryService.java**
+
+```
+public class InventoryService {
+
+    // Try step: Reserve inventory
+    public boolean reserveInventory(String productId, int quantity) {
+        // Check inventory and mark as reserved
+        // Return true if successful
+    }
+
+    // Confirm step: Reduce inventory
+    public void confirmInventory(String productId, int quantity) {
+        // Reduce the quantity from inventory
+    }
+
+    // Cancel step: Release the reserved inventory
+    public void releaseInventory(String productId, int quantity) {
+        // Add the reserved quantity back to inventory
+    }
+}
+```
+
+#### 3. Main Logic
+
+**Main.java**
+
+```
+public class Main {
+    public static void main(String[] args) {
+        InventoryService inventoryService = new InventoryService();
+        OrderService orderService = new OrderService(inventoryService);
+
+        Order order = new Order("orderId1", "productId1", 3);
+
+        boolean trySuccess = orderService.tryCreateOrder(order);
+        if (trySuccess) {
+            // Business logic might happen here
+
+            // Assuming business logic succeeded
+            boolean businessLogicSuccess = true;
+
+            if (businessLogicSuccess) {
+                orderService.confirmCreateOrder(order);
+            } else {
+                orderService.cancelCreateOrder(order);
+            }
+        } else {
+            System.out.println("Failed to reserve inventory.");
+        }
+    }
+}
+
+class Order {
+    private String orderId;
+    private String productId;
+    private int quantity;
+
+    // Constructor, getters, and setters
+    public Order(String orderId, String productId, int quantity) {
+        this.orderId = orderId;
+        this.productId = productId;
+        this.quantity = quantity;
+    }
+
+    public String getOrderId() {
+        return orderId;
+    }
+
+    public String getProductId() {
+        return productId;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+}
+```
+
+这个简单的示例展示了如何在Java中使用TCC模式处理分布式事务。关键在于三个步骤：Try、Confirm 和 Cancel。`tryCreateOrder`方法试图保留库存并创建一个处于“等待”状态的订单。根据业务逻辑的成功与否，我们选择调用 `confirmCreateOrder` 或 `cancelCreateOrder` 方法来确认或取消事务。
+
+### 7.2.6 总结
+
+在同服务多数据源操作不同数据库的情况下，我们可以使用基于XA规范实现的分布式事务，在Spring中有成熟的JTA框架实现了XA规范的二阶事务提交。事实上，二阶事务除了性能方面存在严重的阻塞问题之外，还有可能导致数据不一致，我们应该慎重考虑使用这种二阶事务提交。
+
+
+
+在跨服务的分布式事务下，我们可以考虑基于TCC实现的分布式事务，常用的中间件有TCC-Transaction。TCC也是基于二阶事务提交原理实现的，但TCC的二阶事务提交是提到了服务层实现。TCC方式虽然提高了分布式事务的整体性能，但也给业务层带来了非常大的工作量，对应用服务的侵入性非常强，但这是大多数公司目前所采用的分布式事务解决方案。
+
+
+
+Seata是一种高效的分布式事务解决方案，设计初衷就是解决分布式带来的性能问题以及侵入性问题。但目前Seata的稳定性有待验证，例如，在TC通知RM开始提交事务后，TC与RM的连接断开了，或者RM与数据库的连接断开了，都不能保证事务的一致性。
+
+
+
+Seata在第一阶段已经提交了事务，那如果在第二阶段发生了异常要回滚到Before快照前，别的线程若是更新了数据，且业务走完了，那么恢复的这个快照不就是脏数据了吗？但事实上，Seata是不会出现这种情况的，你知道它是怎么做到的吗？

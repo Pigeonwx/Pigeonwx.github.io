@@ -196,7 +196,7 @@
 
 - ```xml
                                        Person.xml 
-                                
+                                                                
   <mapper namespace="Person"> 
         <select id="getPerson" resultType="examples.domain.Person"> 
   	SELECT PER_ID as id, 
@@ -1539,6 +1539,14 @@ Spring 事务的传播机制说的是，当多个事务同时存在的时候—�
 ![spring-a6e2a8dc-9771-4d8b-9d91-76ddee98af1a](./JavaFramework/spring-a6e2a8dc-9771-4d8b-9d91-76ddee98af1a.png)
 
 Spring 默认的事务传播行为是 PROPAFATION_REQUIRED，它适合绝大多数情况，如果多个 ServiceX#methodX()都工作在事务环境下（均被 Spring 事务增强），且程序中存在调用链 `Service1#method1()->Service2#method2()->Service3#method3()`，那么这 3 个服务类的三个方法通过 Spring 的事务传播机制都工作在同一个事务中。
+
+- `Propagation.REQUIRED`：如果当前存在事务，则加入该事务；如果当前没有事务，则新建一个事务。这也是默认的传播行为。
+- `Propagation.REQUIRES_NEW`：总是新建一个事务，如果当前存在事务，则将当前事务挂起。
+- `Propagation.MANDATORY`：必须在一个现有事务中运行，如果当前没有事务，则抛出异常。
+- `Propagation.SUPPORTS`：如果当前存在事务，则加入该事务；如果当前没有事务，则以非事务方式运行。
+- `Propagation.NOT_SUPPORTED`：总是以非事务方式运行，如果当前存在事务，则将当前事务挂起。
+- `Propagation.NEVER`：总是以非事务方式运行，如果当前存在事务，则抛出异常。
+- `Propagation.NESTED`：如果当前存在事务，则在嵌套事务中执行；如果当前没有事务，则新建一个事务。
 
 ### 2.7.4 声明式事务实现原理
 
