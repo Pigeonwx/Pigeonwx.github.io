@@ -2054,9 +2054,9 @@ public class Singleton implements Serializable {
 
 例如，开头我提到的我们部门在选择微服务框架时，选择了Dubbo。当时的选择标准就是RPC通信可以支持抢购类的高并发，在这个业务场景中，请求的特点是瞬时高峰、请求量大和传入、传出参数数据包较小。而Dubbo中的Dubbo协议就很好地支持了这个请求。以下是基于Dubbo:2.6.4版本进行的简单的性能测试。分别测试Dubbo+Protobuf序列化以及Http+Json序列化的通信性能（这里主要模拟单一TCP长连接+Protobuf序列化和短连接的Http+Json序列化的性能对比）。为了验证在数据量不同的情况下二者的性能表现，我分别准备了小对象和大对象的性能压测，通过这样的方式我们也可以间接地了解下二者在RPC通信方面的水平。
 
-![1718788109005](images/Java-performance-tuning/1718788109005.png)
+![1718788109005](./Java-performance-tuning/1718788109005.png)
 
-![1718788197240](images/Java-performance-tuning/1718788197240.png)
+![1718788197240](./Java-performance-tuning/1718788197240.png)
 
 这个测试是我之前的积累，基于测试环境比较复杂，这里我就直接给出结果了，如果你感兴趣的话，可以留言和我讨论。通过以上测试结果可以发现：无论从响应时间还是吞吐量上来看，单一TCP长连接+Protobuf序列化实现的RPC通信框架都有着非常明显的优势。
 
@@ -2081,7 +2081,7 @@ public class Singleton implements Serializable {
 
 RMI远程代理对象是RMI中最核心的组件，除了对象本身所在的虚拟机，其它虚拟机也可以调用此对象的方法。而且这些虚拟机可以不在同一个主机上，通过远程代理对象，远程应用可以用网络协议与服务进行通信。我们可以通过一张图来详细地了解下整个RMI的通信过程：
 
-![1718788598196](images/Java-performance-tuning/1718788598196.png)
+![1718788598196](./Java-performance-tuning/1718788598196.png)
 
 #### RMI在高并发场景下的性能瓶颈
 
@@ -2105,7 +2105,7 @@ SpringCloud的RPC通信和RMI通信的性能瓶颈就非常相似。SpringCloud�
 
 要实现不同机器间的网络通信，我们先要了解计算机系统网络通信的基本原理。网络通信是两台设备之间实现数据流交换的过程，是基于网络传输协议和传输数据的编解码来实现的。其中网络传输协议有TCP、UDP协议，这两个协议都是基于Socket编程接口之上，为某类应用场景而扩展出的传输协议。通过以下两张图，我们可以大概了解到基于TCP和UDP协议实现的Socket网络通信是怎样的一个流程。
 
-![1718788998862](images/Java-performance-tuning/1718788998862.png)
+![1718788998862](./Java-performance-tuning/1718788998862.png)
 
 基于TCP协议实现的Socket通信是有连接的，而传输数据是要通过三次握手来实现数据传输的可靠性，且传输数据是没有边界的，采用的是字节流模式。基于UDP协议实现的Socket通信，客户端不需要建立连接，只需要创建一个套接字发送数据报给服务端，这样就不能保证数据报一定会达到服务端，所以在传输数据方面，基于UDP协议实现的Socket通信具有不可靠性。UDP发送的数据采用的是数据报模式，每个UDP的数据报都有一个长度，该长度将与数据一起发送到服务端。
 
@@ -2136,9 +2136,9 @@ SpringCloud的RPC通信和RMI通信的性能瓶颈就非常相似。SpringCloud�
 
 接下来就是实现报文，我们需要设计一套报文，用于描述具体的校验、操作、传输数据等内容。为了提高传输的效率，我们可以根据自己的业务和架构来考虑设计，尽量实现报体小、满足功能、易解析等特性。我们可以参考下面的数据格式：
 
-![1718795173606](images/Java-performance-tuning/1718795173606.png)
+![1718795173606](./Java-performance-tuning/1718795173606.png)
 
-![1718795198393](images/Java-performance-tuning/1718795198393.png)
+![1718795198393](./Java-performance-tuning/1718795198393.png)
 
 #### 5.编码、解码
 
@@ -2148,12 +2148,12 @@ SpringCloud的RPC通信和RMI通信的性能瓶颈就非常相似。SpringCloud�
 
 如果RPC是基于TCP短连接实现的，我们可以通过修改Linux TCP配置项来优化网络通信。开始TCP配置项的优化之前，我们先来了解下建立TCP连接的三次握手和关闭TCP连接的四次握手，这样有助后面内容的理解。
 
-* 三次握手 ![1718795548503](images/Java-performance-tuning/1718795548503.png)
-* 四次握手![1718795585983](images/Java-performance-tuning/1718795585983.png)
+* 三次握手 ![1718795548503](./Java-performance-tuning/1718795548503.png)
+* 四次握手![1718795585983](./Java-performance-tuning/1718795585983.png)
 
 我们可以通过sysctl -a | grep net.xxx命令运行查看Linux系统默认的的TCP参数设置，如果需要修改某项配置，可以通过编辑 vim/etc/sysctl.conf，加入需要修改的配置项， 并通过sysctl -p命令运行生效修改后的配置项设置。通常我们会通过修改以下几个配置项来提高网络吞吐量和降低延时。
 
-![1718795740753](images/Java-performance-tuning/1718795740753.png)
+![1718795740753](./Java-performance-tuning/1718795740753.png)
 
 以上就是我们从不同层次对RPC优化的详解，除了最后的Linux系统中TCP的配置项设置调优，其它的调优更多是从代码编程优化的角度出发，最终实现了一套RPC通信框架的优化路径。弄懂了这些，你就可以根据自己的业务场景去做技术选型了，还能很好地解决过程中出现的一些性能问题。
 
@@ -2185,9 +2185,9 @@ SpringCloud的RPC通信和RMI通信的性能瓶颈就非常相似。SpringCloud�
 
 Tomcat中经常被提到的一个调优就是修改线程的I/O模型。Tomcat 8.5版本之前，默认情况下使用的是BIO线程模型，如果在高负载、高并发的场景下，可以通过设置NIO线程模型，来提高系统的网络通信性能。我们可以通过一个性能对比测试来看看在高负载或高并发的情况下，BIO和NIO通信性能（这里用页面请求模拟多I/O读写操作的请求）：
 
-![1718802683011](images/Java-performance-tuning/1718802683011.png)
+![1718802683011](./Java-performance-tuning/1718802683011.png)
 
-![1718802718029](images/Java-performance-tuning/1718802718029.png)
+![1718802718029](./Java-performance-tuning/1718802718029.png)
 
 测试结果：Tomcat在I/O读写操作比较多的情况下，使用NIO线程模型有明显的优势。Tomcat中看似一个简单的配置，其中却包含了大量的优化升级知识点。下面我们就从底层的网络I/O模型优化出发，再到内存拷贝优化和线程模型优化，深入分析下Tomcat、Netty等通信框架是如何通过优化I/O来提高系统性能的。
 
@@ -2197,7 +2197,7 @@ Tomcat中经常被提到的一个调优就是修改线程的I/O模型。Tomcat 8
 
 在《Unix网络编程》中，套接字通信可以分为流式套接字（TCP）和数据报套接字（UDP）。其中TCP连接是我们最常用的，一起来了解下TCP服务端的工作流程（由于TCP的数据传输比较复杂，存在拆包和装包的可能，这里我只假设一次最简单的TCP数据传输）：
 
-![1718874352667](images/Java-performance-tuning/1718874352667.png)
+![1718874352667](./Java-performance-tuning/1718874352667.png)
 
 * 首先，应用程序通过系统调用socket创建一个套接字，它是系统分配给应用程序的一个文件描述符；
 * 其次，应用程序会通过系统调用bind，绑定地址和端口号，给套接字命名一个名称；
@@ -2210,15 +2210,15 @@ Tomcat中经常被提到的一个调优就是修改线程的I/O模型。Tomcat 8
 
 在整个socket通信工作流程中，socket的默认状态是阻塞的。也就是说，当发出一个不能立即完成的套接字调用时，其进程将被阻塞，被系统挂起，进入睡眠状态，一直等待相应的操作响应。从上图中，我们可以发现，可能存在的阻塞主要包括以下三种。
 
-- connect阻塞：当客户端发起TCP连接请求，通过系统调用connect函数，TCP连接的建立需要完成三次握手过程，客户端需要等待服务端发送回来的ACK以及SYN信号，同样服务端也需要阻塞等待客户端确认连接的ACK信号，这就意味着TCP的每个connect都会阻塞等待，直到确认连接。![1718876273060](images/Java-performance-tuning/1718876273060.png)
-- accept阻塞：一个阻塞的socket通信的服务端接收外来连接，会调用accept函数，如果没有新的连接到达，调用进程将被挂起，进入阻塞状态。![1718876340975](images/Java-performance-tuning/1718876340975.png)
-- read、write阻塞：当一个socket连接创建成功之后，服务端用fork函数创建一个子进程， 调用read函数等待客户端的数据写入，如果没有数据写入，调用子进程将被挂起，进入阻塞状态。![1718876372766](images/Java-performance-tuning/1718876372766.png)
+- connect阻塞：当客户端发起TCP连接请求，通过系统调用connect函数，TCP连接的建立需要完成三次握手过程，客户端需要等待服务端发送回来的ACK以及SYN信号，同样服务端也需要阻塞等待客户端确认连接的ACK信号，这就意味着TCP的每个connect都会阻塞等待，直到确认连接。![1718876273060](./Java-performance-tuning/1718876273060.png)
+- accept阻塞：一个阻塞的socket通信的服务端接收外来连接，会调用accept函数，如果没有新的连接到达，调用进程将被挂起，进入阻塞状态。![1718876340975](./Java-performance-tuning/1718876340975.png)
+- read、write阻塞：当一个socket连接创建成功之后，服务端用fork函数创建一个子进程， 调用read函数等待客户端的数据写入，如果没有数据写入，调用子进程将被挂起，进入阻塞状态。![1718876372766](./Java-performance-tuning/1718876372766.png)
 
 #### 2.非阻塞式I/O
 
 使用fcntl可以把以上三种操作都设置为非阻塞操作。如果没有数据返回，就会直接返回一个EWOULDBLOCK或EAGAIN错误，此时进程就不会一直被阻塞。
 
-当我们把以上操作设置为了非阻塞状态，我们需要设置一个线程对该操作进行轮询检查，这也是最传统的非阻塞I/O模型。![1718876505943](images/Java-performance-tuning/1718876505943.png)
+当我们把以上操作设置为了非阻塞状态，我们需要设置一个线程对该操作进行轮询检查，这也是最传统的非阻塞I/O模型。![1718876505943](./Java-performance-tuning/1718876505943.png)
 
 #### 3. I/O复用
 
@@ -2226,7 +2226,7 @@ Tomcat中经常被提到的一个调优就是修改线程的I/O模型。Tomcat 8
 
 - select()函数：它的用途是，在超时时间内，监听用户感兴趣的文件描述符上的可读可写和异常事件的发生。Linux 操作系统的内核将所有外部设备都看做一个文件来操作，对一个文件的读写操作会调用内核提供的系统命令，返回一个文件描述符（fd）。
   - 查看以上代码，select() 函数监视的文件描述符分3类，分别是writefds（写文件描述符）、readfds（读文件描述符）以及exceptfds（异常事件文件描述符）。调用后select() 函数会阻塞，直到有描述符就绪或者超时，函数返回。当select函数返回后，可以通过函数FD\_ISSET遍历fdset，来找到就绪的描述符。fd\_set可以理解为一个集合，这个集合中存放的是文件描述符，可通过以下四个宏进行设置：
-  - ![1718876899955](images/Java-performance-tuning/1718876899955.png)
+  - ![1718876899955](./Java-performance-tuning/1718876899955.png)
 
 ```
 int select(int maxfdp1,fd_set *readset,fd_set *writeset,fd_set *exceptset,const struct timeval *timeout)
@@ -2242,10 +2242,10 @@ void FD_ZERO(fd_set *fdset);           //清空集合
 - poll()函数：在每次调用select()函数之前，系统需要把一个fd从用户态拷贝到内核态，这样就给系统带来了一定的性能开销。再有单个进程监视的fd数量默认是1024，我们可以通过修改宏定义甚至重新编译内核的方式打破这一限制。但由于fd\_set是基于数组实现的，在新增和删除fd时，数量过大会导致效率降低。
   - poll() 的机制与 select() 类似，二者在本质上差别不大。poll() 管理多个描述符也是通过轮询，根据描述符的状态进行处理，但 poll() 没有最大文件描述符数量的限制。
   - poll() 和 select() 存在一个相同的缺点，那就是包含大量文件描述符的数组被整体复制到用户态和内核的地址空间之间，而无论这些文件描述符是否就绪，他们的开销都会随着文件描述符数量的增加而线性增大。
-  - ![1718877100152](images/Java-performance-tuning/1718877100152.png)
+  - ![1718877100152](./Java-performance-tuning/1718877100152.png)
 - **epoll()函数：**select/poll是顺序扫描fd是否就绪，而且支持的fd数量不宜过大，因此它的使用受到了一些制约。Linux在2.6内核版本中提供了一个epoll调用，epoll使用事件驱动的方式代替轮询扫描fd。epoll事先通过epoll\_ctl()来注册一个文件描述符，将文件描述符存放到内核的一个事件表中，这个事件表是基于红黑树实现的，所以在大量I/O请求的场景下，插入和删除的性能比select/poll的数组fd\_set要好，因此epoll的性能更胜一筹，而且不会受到fd数量的限制。
   - 通过下面代码，我们可以看到：epoll\_ctl()函数中的epfd是由 epoll\_create()函数生成的一个epoll专用文件描述符。op代表操作事件类型，fd表示关联文件描述符，event表示指定监听的事件类型。一旦某个文件描述符就绪时，内核会采用类似callback的回调机制，迅速激活这个文件描述符，当进程调用epoll\_wait()时便得到通知，之后进程将完成相关I/O操作。
-  - ![1718877390141](images/Java-performance-tuning/1718877390141.png)
+  - ![1718877390141](./Java-performance-tuning/1718877390141.png)
 
 ```
 int epoll_ctl(int epfd, int op, int fd, struct epoll_event event)
@@ -2257,7 +2257,7 @@ int epoll_wait(int epfd, struct epoll_event events,int maxevents,int timeout)
 
 #### 4.信号驱动式I/O
 
-信号驱动式I/O类似观察者模式，内核就是一个观察者，信号回调则是通知。用户进程发起一个I/O请求操作，会通过系统调用sigaction函数，给对应的套接字注册一个信号回调，此时不阻塞用户进程，进程会继续工作。当内核数据就绪时，内核就为该进程生成一个SIGIO信号，通过信号回调通知进程进行相关I/O操作。![1718877792531](images/Java-performance-tuning/1718877792531.png)
+信号驱动式I/O类似观察者模式，内核就是一个观察者，信号回调则是通知。用户进程发起一个I/O请求操作，会通过系统调用sigaction函数，给对应的套接字注册一个信号回调，此时不阻塞用户进程，进程会继续工作。当内核数据就绪时，内核就为该进程生成一个SIGIO信号，通过信号回调通知进程进行相关I/O操作。![1718877792531](./Java-performance-tuning/1718877792531.png)
 
 信号驱动式I/O相比于前三种I/O模式，实现了在等待数据就绪时，进程不被阻塞，主循环可以继续工作，所以性能更佳。而由于TCP来说，信号驱动式I/O几乎没有被使用，这是因为SIGIO信号是一种Unix信号，信号没有附加信息，如果一个信号源有多种产生信号的原因，信号接收者就无法确定究竟发生了什么。而 TCP socket生产的信号事件有七种之多，这样应用程序收到 SIGIO，根本无从区分处理。
 
@@ -2269,15 +2269,15 @@ int epoll_wait(int epfd, struct epoll_event events,int maxevents,int timeout)
 
 当用户进程发起一个I/O请求操作，系统会告知内核启动某个操作，并让内核在整个操作完成后通知进程。这个操作包括等待数据就绪和数据从内核复制到用户空间。由于程序的代码复杂度高，调试难度大，且支持异步I/O的操作系统比较少见（目前Linux暂不支持，而Windows已经实现了异步I/O），所以在实际生产环境中很少用到异步I/O模型。
 
-![1718975345862](images/Java-performance-tuning/1718975345862.png)
+![1718975345862](./Java-performance-tuning/1718975345862.png)
 
 在08讲中，我讲到了NIO使用I/O复用器Selector实现非阻塞I/O，Selector就是使用了这五种类型中的I/O复用模型。Java中的Selector其实就是select/poll/epoll的外包类。我们在上面的TCP通信流程中讲到，Socket通信中的conect、accept、read以及write为阻塞操作，在Selector中分别对应SelectionKey的四个监听事件OP\_ACCEPT、OP\_CONNECT、OP\_READ以及OP\_WRITE。
 
-![1718975425294](images/Java-performance-tuning/1718975425294.png)
+![1718975425294](./Java-performance-tuning/1718975425294.png)
 
 在NIO服务端通信编程中，首先会创建一个Channel，用于监听客户端连接；接着，创建多路复用器Selector，并将Channel注册到Selector，程序会通过Selector来轮询注册在其上的Channel，当发现一个或多个Channel处于就绪状态时，返回就绪的监听事件，最后程序匹配到监听事件，进行相关的I/O操作。
 
-![1718975612714](images/Java-performance-tuning/1718975612714.png)
+![1718975612714](./Java-performance-tuning/1718975612714.png)
 
 在创建Selector时，程序会根据操作系统版本选择使用哪种I/O复用函数。在JDK1.5版本中，如果程序运行在Linux操作系统，且内核版本在2.6以上，NIO中会选择epoll来替代传统的select/poll，这也极大地提升了NIO通信的性能。由于信号驱动式I/O对TCP通信的不支持，以及异步I/O在Linux操作系统内核中的应用还不大成熟，大部分框架都还是基于I/O复用模型实现的网络通信。
 
@@ -2314,19 +2314,19 @@ Java 的直接缓冲区（Direct Buffer）是一种存储在堆外内存中的�
 
 最开始NIO是基于单线程实现的，所有的I/O操作都是在一个NIO线程上完成。由于NIO是非阻塞I/O，理论上一个线程可以完成所有的I/O操作。但NIO其实还不算真正地实现了非阻塞I/O操作，因为读写I/O操作时用户进程还是处于阻塞状态，这种方式在高负载、高并发的场景下会存在性能瓶颈，一个NIO线程如果同时处理上万连接的I/O操作，系统是无法支撑这种量级的请求的。
 
-![1718976078218](images/Java-performance-tuning/1718976078218.png)
+![1718976078218](./Java-performance-tuning/1718976078218.png)
 
 #### 2.多线程Reactor线程模型
 
 为了解决这种单线程的NIO在高负载、高并发场景下的性能瓶颈，后来使用了线程池。在Tomcat和Netty中都使用了一个Acceptor线程来监听连接请求事件，当连接成功之后，会将建立的连接注册到多路复用器中，一旦监听到事件，将交给Worker线程池来负责处理。大多数情况下，这种线程模型可以满足性能要求，但如果连接的客户端再上一个量级，一个Acceptor线程可能会存在性能瓶颈。
 
-![1718976197400](images/Java-performance-tuning/1718976197400.png)
+![1718976197400](./Java-performance-tuning/1718976197400.png)
 
 #### 3.主从Reactor线程模型
 
 现在主流通信框架中的NIO通信框架都是基于主从Reactor线程模型来实现的。在这个模型中，Acceptor不再是一个单独的NIO线程，而是一个线程池。Acceptor接收到客户端的TCP连接请求，建立连接之后，后续的I/O操作将交给Worker I/O线程。
 
-![1718976231604](images/Java-performance-tuning/1718976231604.png)
+![1718976231604](./Java-performance-tuning/1718976231604.png)
 
 #### 4.基于线程模型的Tomcat参数调优
 
@@ -2341,7 +2341,7 @@ Tomcat中，BIO、NIO是基于主从Reactor线程模型实现的。在BIO中，T
 - **Poller线程**：维护一个 `Selector` 对象，它会监视多个注册的通道，并在其中任意一个通道准备好 I/O 操作时通知 Poller。
 - **Worker线程**：实际执行 I/O 操作（读、写）的业务逻辑处理。
 
-![1718976494312](images/Java-performance-tuning/1718976494312.png)
+![1718976494312](./Java-performance-tuning/1718976494312.png)
 
 你可以通过以下几个参数来设置Acceptor线程池和Worker线程池的配置项。
 
@@ -3932,7 +3932,7 @@ JVM自动内存分配管理机制的好处很多，但实则是把双刃剑。�
 
 我们先通过一张JVM内存模型图，来熟悉下其具体设计。在Java中，JVM内存模型主要分为堆、程序计数器、方法区、虚拟机栈和本地方法栈。
 
-![1719123556082](images/Java-performance-tuning/1719123556082.png)
+![1719123556082](./Java-performance-tuning/1719123556082.png)
 
 JVM的5个分区具体是怎么实现的呢？我们一一分析。
 
@@ -3942,7 +3942,7 @@ JVM的5个分区具体是怎么实现的呢？我们一一分析。
 
 在Java6版本中，永久代在非堆内存区；到了Java7版本，永久代的静态变量和运行时常量池被合并到了堆中；而到了Java8，永久代被元空间取代了。 结构如下图所示：
 
-![1719123725667](images/Java-performance-tuning/1719123725667.png)
+![1719123725667](./Java-performance-tuning/1719123725667.png)
 
 #### 2. 程序计数器（Program Counter Register）
 
@@ -4049,19 +4049,19 @@ class Student{
 
 3.class文件加载、验证、准备以及解析，其中准备阶段会为类的静态变量分配内存，初始化为系统的初始值（这部分我在第21讲还会详细介绍）。
 
-![1719125002643](images/Java-performance-tuning/1719125002643.png)
+![1719125002643](./Java-performance-tuning/1719125002643.png)
 
 4.完成上一个步骤后，将会进行最后一个初始化阶段。在这个阶段中，JVM首先会执行构造器<clinit>方法，编译器会在.java 文件被编译成.class 文件时，收集所有类的初始化代码，包括静态变量赋值语句、静态代码块、静态方法，收集在一起成为 \<clinit>() 方法。
 
-![1719125182254](images/Java-performance-tuning/1719125182254.png)
+![1719125182254](./Java-performance-tuning/1719125182254.png)
 
 5.执行方法。启动main线程，执行main方法，开始执行第一行代码。此时堆内存中会创建一个student对象，对象引用student就存放在栈中。
 
-![1719125234712](images/Java-performance-tuning/1719125234712.png)
+![1719125234712](./Java-performance-tuning/1719125234712.png)
 
 6.此时再次创建一个JVMCase对象，调用sayHello非静态方法，sayHello方法属于对象JVMCase，此时sayHello方法入栈，并通过栈中的student引用调用堆中的Student对象；之后，调用静态方法print，print静态方法属于JVMCase类，是从静态方法中获取，之后放入到栈中，也是通过student引用调用堆中的student对象。
 
-![1719125327548](images/Java-performance-tuning/1719125327548.png)
+![1719125327548](./Java-performance-tuning/1719125327548.png)
 
 了解完实际代码在JVM中分配的内存空间以及运行原理，相信你会更加清楚内存模型中各个区域的职责分工。
 
@@ -4087,11 +4087,11 @@ class Student{
 
 在这之前，我们先了解下Java从编译到运行的整个过程，为后面的学习打下基础。请看下图：
 
-![1719285770418](images/Java-performance-tuning/1719285770418.png)
+![1719285770418](./Java-performance-tuning/1719285770418.png)
 
 #### 类编译
 
-在编写好代码之后，我们需要将 .java文件编译成 .class文件，才能在虚拟机上正常运行代码。文件的编译通常是由JDK中自带的Javac工具完成，一个简单的 .java文件，我们可以通过javac命令来生成 .class文件。下面我们通过javap（ [第12讲](https://time.geekbang.org/column/article/101244)讲过如何使用javap反编译命令行）反编译来看看一个class文件结构中主要包含了哪些信息：![1719285791997](images/Java-performance-tuning/1719285791997.png)
+在编写好代码之后，我们需要将 .java文件编译成 .class文件，才能在虚拟机上正常运行代码。文件的编译通常是由JDK中自带的Javac工具完成，一个简单的 .java文件，我们可以通过javac命令来生成 .class文件。下面我们通过javap（ [第12讲](https://time.geekbang.org/column/article/101244)讲过如何使用javap反编译命令行）反编译来看看一个class文件结构中主要包含了哪些信息：![1719285791997](./Java-performance-tuning/1719285791997.png)
 
 看似一个简单的命令执行，前期编译的过程其实是非常复杂的，包括词法分析、填充符号表、注解处理、语义分析以及生成class文件，这个过程我们不用过多关注。只要从上图中知道，编译后的字节码文件主要包括常量池和方法表集合这两部分就可以了。常量池主要记录的是类文件中出现的字面量以及符号引用。字面常量包括字符串常量（例如String str=“abc”，其中"abc"就是常量），声明为final的属性以及一些基本类型（例如，范围在-127-128之间的整型）的属性。符号引用包括类和接口的全限定名、类引用、方法引用以及成员变量引用（例如String str=“abc”，其中str就是成员变量引用）等。方法表集合中主要包含一些方法的字节码、方法访问权限（public、protect、prviate等）、方法名索引（与常量池中的方法引用对应）、描述符索引、JVM执行指令以及属性集合等。
 
@@ -4225,7 +4225,7 @@ Java7引入了分层编译，这种方式综合了C1的启动性能优势和C2�
 
 通过 java -version 命令行可以直接查看到当前系统使用的编译模式。如下图所示：
 
-![1719286127767](images/Java-performance-tuning/1719286127767.png)
+![1719286127767](./Java-performance-tuning/1719286127767.png)
 
 #### 热点探测
 
@@ -4295,7 +4295,7 @@ JVM会自动识别热点方法，并对它们使用方法内联进行优化。�
 
 我们可以看到运行结果中，显示了方法内联的日志：
 
-![1719286237639](images/Java-performance-tuning/1719286237639.png)
+![1719286237639](./Java-performance-tuning/1719286237639.png)
 
 热点方法的优化可以有效提高系统性能，一般我们可以通过以下几种方式来提高方法内联：
 
@@ -4356,11 +4356,11 @@ static class Student {
 
 然而，运行结果却没有达到我们想要的优化效果，也许你怀疑是JDK版本的问题，然而我分别在1.6\~1.8版本都测试过了，效果还是一样的：（-server -Xmx1000m -Xms1000m -XX:-DoEscapeAnalysis -XX:+PrintGC）
 
-![1719286266499](images/Java-performance-tuning/1719286266499.png)
+![1719286266499](./Java-performance-tuning/1719286266499.png)
 
 （-server -Xmx1000m -Xms1000m -XX:+DoEscapeAnalysis -XX:+PrintGC）
 
-![1719286290969](images/Java-performance-tuning/1719286290969.png)
+![1719286290969](./Java-performance-tuning/1719286290969.png)
 
 这其实是因为HotSpot虚拟机目前的实现导致栈上分配实现比较复杂，可以说，在HotSpot中暂时没有实现这项优化。随着即时编译器的发展与逃逸分析技术的逐渐成熟，相信不久的将来HotSpot也会实现这项优化功能。
 
@@ -4482,7 +4482,7 @@ JVM的内存区域中，程序计数器、虚拟机栈和本地方法栈这3个�
 
 以上两种算法都是通过引用来判断对象是否可以被回收。在 JDK 1.2 之后，Java 对引用的概念进行了扩充，将引用分为了以下四种：
 
-![1719629083887](images/Java-performance-tuning/1719629083887.png)
+![1719629083887](./Java-performance-tuning/1719629083887.png)
 
 #### 3. 如何回收这些对象？
 
@@ -4497,15 +4497,15 @@ JVM的内存区域中，程序计数器、虚拟机栈和本地方法栈这3个�
 
 JVM提供了不同的回收算法来实现这一套回收机制，通常垃圾收集器的回收算法可以分为以下几种：
 
-![1719629607932](images/Java-performance-tuning/1719629607932.png)
+![1719629607932](./Java-performance-tuning/1719629607932.png)
 
 如果说收集算法是内存回收的方法论，那么垃圾收集器就是内存回收的具体实现，JDK1.7 update14 之后Hotspot虚拟机所有的回收器整理如下（以下为服务端垃圾收集器）：
 
-![1719629727608](images/Java-performance-tuning/1719629727608.png)
+![1719629727608](./Java-performance-tuning/1719629727608.png)
 
 其实在JVM规范中并没有明确GC的运作方式，各个厂商可以采用不同的方式实现垃圾收集器。我们可以通过JVM工具查询当前JVM使用的垃圾收集器类型，首先通过ps命令查询出进程ID，再通过jmap -heap ID查询出JVM的配置信息，其中就包括垃圾收集器的设置类型。
 
-![1719630345483](images/Java-performance-tuning/1719630345483.png)
+![1719630345483](./Java-performance-tuning/1719630345483.png)
 
 ### 4.3.3 GC性能衡量指标
 
@@ -4536,25 +4536,25 @@ JVM提供了不同的回收算法来实现这一套回收机制，通常垃圾�
 
 打印后的日志为：
 
-![1719631292825](images/Java-performance-tuning/1719631292825.png)
+![1719631292825](./Java-performance-tuning/1719631292825.png)
 
 上图是运行很短时间的GC日志，如果是长时间的GC日志，我们很难通过文本形式去查看整体的GC性能。此时，我们可以通过[GCViewer](https://sourceforge.net/projects/gcviewer/)工具打开日志文件，图形化界面查看整体的GC性能，如下图所示：
 
-![1719631336512](images/Java-performance-tuning/1719631336512.png)
+![1719631336512](./Java-performance-tuning/1719631336512.png)
 
-![1719631378972](images/Java-performance-tuning/1719631378972.png)
+![1719631378972](./Java-performance-tuning/1719631378972.png)
 
 通过工具，我们可以看到吞吐量、停顿时间以及GC的频率，从而可以非常直观地了解到GC的性能情况。这里我再推荐一个比较好用的GC日志分析工具，[GCeasy](https://www.gceasy.io/index.jsp)是一款非常直观的GC日志分析工具，我们可以将日志文件压缩之后，上传到GCeasy官网即可看到非常清楚的GC日志分析结果：
 
-![1719631448671](images/Java-performance-tuning/1719631448671.png)
+![1719631448671](./Java-performance-tuning/1719631448671.png)
 
-![1719631460938](images/Java-performance-tuning/1719631460938.png)
+![1719631460938](./Java-performance-tuning/1719631460938.png)
 
-![1719631517406](images/Java-performance-tuning/1719631517406.png)
+![1719631517406](./Java-performance-tuning/1719631517406.png)
 
-![1719631600308](images/Java-performance-tuning/1719631600308.png)
+![1719631600308](./Java-performance-tuning/1719631600308.png)
 
-![1719631620529](images/Java-performance-tuning/1719631620529.png)
+![1719631620529](./Java-performance-tuning/1719631620529.png)
 
 ### 4.3.5 GC调优策略
 
@@ -4642,9 +4642,9 @@ java -XX:+PrintFlagsFinal -version | grep HeapSize
 jmap -heap 17284
 ```
 
-![1720142750814](images/Java-performance-tuning/1720142750814.png)
+![1720142750814](./Java-performance-tuning/1720142750814.png)
 
-![1720142778583](images/Java-performance-tuning/1720142778583.png)
+![1720142778583](./Java-performance-tuning/1720142778583.png)
 
 通过命令，我们可以获得在这台机器上启动的JVM默认最大堆内存为1953MB，初始化大小为124MB。在JDK1.7中，默认情况下年轻代和老年代的比例是1:2，我们可以通过–XX:NewRatio重置该配置项。年轻代中的Eden和To Survivor、From Survivor的比例是8:1:1，我们可以通过-XX:SurvivorRatio重置该配置项。在JDK1.7中如果开启了-XX:+UseAdaptiveSizePolicy配置项，JVM将会动态调整Java堆中各个区域的大小以及进入老年代的年龄，–XX:NewRatio和-XX:SurvivorRatio将会失效，而JDK1.8是默认开启-XX:+UseAdaptiveSizePolicy配置项的。
 
@@ -4670,7 +4670,7 @@ jmap -heap 17284
 
 分别对应用服务进行压力测试，以下是请求接口的吞吐量和响应时间在不同并发用户数下的变化情况：
 
-![1720143097575](images/Java-performance-tuning/1720143097575.png)
+![1720143097575](./Java-performance-tuning/1720143097575.png)
 
 可以看到，当并发数量到了一定值时，吞吐量就上不去了，响应时间也迅速增加。那么，在JVM内部运行又是怎样的呢？
 
@@ -4690,7 +4690,7 @@ jmap -heap 17284
 
 收集到GC日志后，我们就可以使用[第22讲](https://time.geekbang.org/column/article/107396)中介绍过的GCViewer工具打开它，进而查看到具体的GC日志如下：
 
-![1720143295434](images/Java-performance-tuning/1720143295434.png)
+![1720143295434](./Java-performance-tuning/1720143295434.png)
 
 主页面显示FullGC发生了13次，右下角显示年轻代和老年代的内存使用率几乎达到了100%。而FullGC会导致stop-the-world的发生，从而严重影响到应用服务的性能。此时，我们需要调整堆内存的大小来减少FullGC的发生。
 
@@ -4718,11 +4718,11 @@ java -jar -Xms4g -Xmx4g heapTest-0.0.1-SNAPSHOT.jar
 
 调大堆内存之后，我们再来测试下性能情况，发现吞吐量提高了40%左右，响应时间也降低了将近50%。
 
-![1720143708416](images/Java-performance-tuning/1720143708416.png)
+![1720143708416](./Java-performance-tuning/1720143708416.png)
 
 再查看GC日志，发现FullGC频率降低了，老年代的使用率只有16%了。
 
-![1720143772702](images/Java-performance-tuning/1720143772702.png)
+![1720143772702](./Java-performance-tuning/1720143772702.png)
 
 调整年轻代减少MinorGC：通过调整堆内存大小，我们已经提升了整体的吞吐量，降低了响应时间。那还有优化空间吗？我们还可以将年轻代设置得大一些，从而减少一些MinorGC（[第22讲](https://time.geekbang.org/column/article/107396)有通过降低Minor GC频率来提高系统性能的详解）。
 
@@ -4732,19 +4732,19 @@ java -jar -Xms4g -Xmx4g -Xmn3g heapTest-0.0.1-SNAPSHOT.jar
 
 再进行AB压测，发现吞吐量上去了
 
-![1720144344226](images/Java-performance-tuning/1720144344226.png)
+![1720144344226](./Java-performance-tuning/1720144344226.png)
 
 再查看GC日志，发现MinorGC也明显降低了，GC花费的总时间也减少了。
 
-![1720144467510](images/Java-performance-tuning/1720144467510.png)
+![1720144467510](./Java-performance-tuning/1720144467510.png)
 
 设置Eden、Survivor区比例：在JVM中，如果开启 AdaptiveSizePolicy，则每次 GC 后都会重新计算 Eden、From Survivor和 To Survivor区的大小，计算依据是 GC 过程中统计的 GC 时间、吞吐量、内存占用量。这个时候SurvivorRatio默认设置的比例会失效。
 
 在JDK1.8中，默认是开启AdaptiveSizePolicy的，我们可以通过-XX:-UseAdaptiveSizePolicy关闭该项配置，或显示运行-XX:SurvivorRatio=8将Eden、Survivor的比例设置为8:2。大部分新对象都是在Eden区创建的，我们可以固定Eden区的占用比例，来调优JVM的内存分配性能。再进行AB性能测试，我们可以看到吞吐量提升了，响应时间降低了。
 
-![1720144540899](images/Java-performance-tuning/1720144540899.png)
+![1720144540899](./Java-performance-tuning/1720144540899.png)
 
-![1720144573143](images/Java-performance-tuning/1720144573143.png)
+![1720144573143](./Java-performance-tuning/1720144573143.png)
 
 ### 4.4.5 总结
 
@@ -4764,11 +4764,11 @@ JVM内存调优通常和GC调优是互补的，基于以上调优，我们可以
 
 top命令是我们在Linux下最常用的命令之一，它可以实时显示正在执行进程的CPU使用率、内存使用率以及系统负载等信息。其中上半部分显示的是系统的统计信息，下半部分显示的是进程的使用率统计信息。
 
-![1720145381385](images/Java-performance-tuning/1720145381385.png)
+![1720145381385](./Java-performance-tuning/1720145381385.png)
 
 除了简单的top之外，我们还可以通过top -Hp pid查看具体线程使用系统资源情况：
 
-![1720145491119](images/Java-performance-tuning/1720145491119.png)
+![1720145491119](./Java-performance-tuning/1720145491119.png)
 
 #### Linux命令行工具之vmstat命令
 
@@ -4795,7 +4795,7 @@ vmstat是一款指定采样周期和次数的功能性监测工具，我们可�
 
 pidstat是Sysstat中的一个组件，也是一款功能强大的性能监测工具，我们可以通过命令：yum install sysstat安装该监控组件。之前的top和vmstat两个命令都是监测进程的内存、CPU以及I/O使用情况，而pidstat命令则是深入到线程级别。通过pidstat -help命令，我们可以查看到有以下几个常用的参数来监测线程的性能：
 
-![1720145673980](images/Java-performance-tuning/1720145673980.png)
+![1720145673980](./Java-performance-tuning/1720145673980.png)
 
 常用参数：
 
@@ -4808,7 +4808,7 @@ pidstat是Sysstat中的一个组件，也是一款功能强大的性能监测工
 
 我们可以通过相关命令（例如ps或jps）查询到相关进程ID，再运行以下命令来监测该进程的内存使用情况：
 
-![1720145902753](images/Java-performance-tuning/1720145902753.png)
+![1720145902753](./Java-performance-tuning/1720145902753.png)
 
 其中pidstat的参数-p用于指定进程ID，-r表示监控内存的使用情况，1表示每秒的意思，3则表示采样次数。其中显示的几个关键指标的含义是：
 
@@ -4819,7 +4819,7 @@ pidstat是Sysstat中的一个组件，也是一款功能强大的性能监测工
 
 如果我们需要继续查看该进程下的线程内存使用率，则在后面添加-t指令即可：
 
-![1720146477859](images/Java-performance-tuning/1720146477859.png)
+![1720146477859](./Java-performance-tuning/1720146477859.png)
 
 我们知道，Java是基于JVM上运行的，大部分内存都是在JVM的用户内存中创建的，所以除了通过以上Linux命令来监控整个服务器内存的使用情况之外，我们更需要知道JVM中的内存使用情况。JDK中就自带了很多命令工具可以监测到JVM的内存分配以及使用情况。
 
@@ -4827,11 +4827,11 @@ pidstat是Sysstat中的一个组件，也是一款功能强大的性能监测工
 
 jstat可以监测Java应用程序的实时运行情况，包括堆内存信息以及垃圾回收信息。我们可以运行jstat -help查看一些关键参数信息：
 
-![1720146798612](images/Java-performance-tuning/1720146798612.png)
+![1720146798612](./Java-performance-tuning/1720146798612.png)
 
 再通过jstat -option查看jstat有哪些操作：
 
-![1720146822730](images/Java-performance-tuning/1720146822730.png)
+![1720146822730](./Java-performance-tuning/1720146822730.png)
 
 * -class：显示ClassLoad的相关信息；
 * -compiler：显示JIT编译的相关信息；
@@ -4848,7 +4848,7 @@ jstat可以监测Java应用程序的实时运行情况，包括堆内存信息�
 
 它的功能比较多，在这里我例举一个常用功能，如何使用jstat查看堆内存的使用情况。我们可以用jstat -gc pid查看：
 
-![1720147068185](images/Java-performance-tuning/1720147068185.png)
+![1720147068185](./Java-performance-tuning/1720147068185.png)
 
 * S0C：年轻代中To Survivor的容量（单位KB）；
 * S1C：年轻代中From Survivor的容量（单位KB）；
@@ -4870,7 +4870,7 @@ jstat可以监测Java应用程序的实时运行情况，包括堆内存信息�
 
 这个工具在模块三的[答疑课堂](https://time.geekbang.org/column/article/105234)中介绍过，它是一种线程堆栈分析工具，最常用的功能就是使用 jstack pid 命令查看线程的堆栈信息，通常会结合top -Hp pid 或 pidstat -p pid -t一起查看具体线程的状态，也经常用来排查一些死锁的异常。
 
-![1720147286323](images/Java-performance-tuning/1720147286323.png)
+![1720147286323](./Java-performance-tuning/1720147286323.png)
 
 每个线程堆栈的信息中，都可以查看到线程ID、线程的状态（wait、sleep、running 等状态）以及是否持有锁等。
 
@@ -4878,19 +4878,19 @@ jstat可以监测Java应用程序的实时运行情况，包括堆内存信息�
 
 在[第23讲](https://time.geekbang.org/column/article/108139)中我们使用过jmap查看堆内存初始化配置信息以及堆内存的使用情况。那么除了这个功能，我们其实还可以使用jmap输出堆内存中的对象信息，包括产生了哪些对象，对象数量多少等。我们可以用jmap来查看堆内存初始化配置信息以及堆内存的使用情况：
 
-![1720147532867](images/Java-performance-tuning/1720147532867.png)
+![1720147532867](./Java-performance-tuning/1720147532867.png)
 
 我们可以使用jmap -histo[:live] pid查看堆内存中的对象数目、大小统计直方图，如果带上live则只统计活对象：
 
-![1720147585799](images/Java-performance-tuning/1720147585799.png)
+![1720147585799](./Java-performance-tuning/1720147585799.png)
 
 我们可以通过jmap命令把堆内存的使用情况dump到文件中：
 
-![1720147656999](images/Java-performance-tuning/1720147656999.png)
+![1720147656999](./Java-performance-tuning/1720147656999.png)
 
 我们可以将文件下载下来，使用 [MAT](http://www.eclipse.org/mat/)工具打开文件进行分析：
 
-![1720147749907](images/Java-performance-tuning/1720147749907.png)
+![1720147749907](./Java-performance-tuning/1720147749907.png)
 
 下面我们用一个实战案例来综合使用下刚刚介绍的几种工具，具体操作一下如何分析一个内存泄漏问题。
 
@@ -4919,39 +4919,39 @@ java -jar -Xms1000m -Xmx4000m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/
 
 首先，请求test0链接10000次，这个时候我们请求test0的接口报异常了。
 
-![1720147916573](images/Java-performance-tuning/1720147916573.png)
+![1720147916573](./Java-performance-tuning/1720147916573.png)
 
 通过日志，我们很好分辨这是一个内存溢出异常。我们首先通过Linux系统命令查看进程在整个系统中内存的使用率是多少，最简单就是top命令了。
 
-![1720148013915](images/Java-performance-tuning/1720148013915.png)
+![1720148013915](./Java-performance-tuning/1720148013915.png)
 
 从top命令查看进程的内存使用情况，可以发现在机器只有8G内存且只分配了4G内存给Java进程的情况下，Java进程内存使用率已经达到了55%，再通过top -Hp pid查看具体线程占用系统资源情况。
 
-![1720150183662](images/Java-performance-tuning/1720150183662.png)
+![1720150183662](./Java-performance-tuning/1720150183662.png)
 
 再通过jstack pid查看具体线程的堆栈信息，可以发现该线程一直处于 TIMED\_WAITING 状态，此时CPU使用率和负载并没有出现异常，我们可以排除死锁或I/O阻塞的异常问题了。
 
-![1720150572186](images/Java-performance-tuning/1720150572186.png)
+![1720150572186](./Java-performance-tuning/1720150572186.png)
 
 我们再通过jmap查看堆内存的使用情况，可以发现，老年代的使用率几乎快占满了，而且内存一直得不到释放：
 
-![1720150681145](images/Java-performance-tuning/1720150681145.png)
+![1720150681145](./Java-performance-tuning/1720150681145.png)
 
 通过以上堆内存的情况，我们基本可以判断系统发生了内存泄漏。下面我们就需要找到具体是什么对象一直无法回收，什么原因导致了内存泄漏。我们需要查看具体的堆内存对象，看看是哪个对象占用了堆内存，可以通过jmap查看存活对象的数量：
 
-![1720150735529](images/Java-performance-tuning/1720150735529.png)
+![1720150735529](./Java-performance-tuning/1720150735529.png)
 
 Byte对象占用内存明显异常，说明代码中Byte对象存在内存泄漏，我们在启动时，已经设置了dump文件，通过MAT打开dump的内存日志文件，我们可以发现MAT已经提示了byte内存异常：
 
-![1720150773885](images/Java-performance-tuning/1720150773885.png)
+![1720150773885](./Java-performance-tuning/1720150773885.png)
 
 再点击进入到Histogram页面，可以查看到对象数量排序，我们可以看到Byte[]数组排在了第一位，选中对象后右击选择with incomming reference功能，可以查看到具体哪个对象引用了这个对象。
 
-![1720150880459](images/Java-performance-tuning/1720150880459.png)
+![1720150880459](./Java-performance-tuning/1720150880459.png)
 
 在这里我们就可以很明显地查看到是ThreadLocal这块的代码出现了问题。
 
-![1720150906122](images/Java-performance-tuning/1720150906122.png)
+![1720150906122](./Java-performance-tuning/1720150906122.png)
 
 ### 4.5.3 总结
 
@@ -5087,10 +5087,10 @@ jstat -gc <pid> 1000  # 每秒钟刷新一次 GC 数据
 - 1.7及前的都还好说,毕竟大部分开发都拜读过 < 深入理解 jvm>。回归整体，记得有点模糊了，如果有错误还请老师指正。首先 cms 在 1.9 已经被标记为废弃，主要原因在于标记清除下的悬浮内存，导致内存空间碎片化,进而导致fullGC的发生。不过其并行执行垃圾回收的性能还是值得认可的，至少 1.9 后主推的G1在常规情况下也是不如它的效率好的。接下来，说下G1,拼G1的堆内存结构比较特殊,虽然也有年代划分,但从物理角度上却不一样。G1 将整块内存分配成若干个同等大小的reg。新生代(两个sub 区加 ed区)和老年代各自由不同数量的reg组成。垃圾回收的算法应该算是标记整理。所以其规避了cms内存碎片化的问题,大大降低了fullGC 的频率。所以它虽然常态性能略输于 cms 但却没有 cms 特殊情况下的极端性能问题,总体更稳定。值得一提的是G1中各代的内存区域里reg间不一定是连续的,所以对于cpu缓存加载机制并不是特别友好,而且大对象占据超过一个 reg时还带来内存浪费的问题。所以总的来说1.8 可以用 G1 但得考虑场景，首先这个内存空间要大,保证每个 reg 尽量大,以减少内存浪费,保守估计8g以上用g1。实际公司很少会去升级jdk版本,大部分都是1.8, 好在oracle一些1.91011 12 的特性都有以补丁的方式落到1.8。所以1.8还是比较安全实用的,虽然我们公司还是 1.7，推不动哈。
 
   - 非常赞，Region这块，Jxin同学讲解得很到位。这里我再总结下CMS和G1的一些知识点。  CMS垃圾收集器是基于标记清除算法实现的，目前主要用于老年代垃圾回收。CMS收集器的GC周期主要由7个阶段组成，其中有两个阶段会发生stop-the-world，其它阶段都是并发执行的。
-  - ![1720243662918](images/Java-performance-tuning/1720243662918.png)
+  - ![1720243662918](./Java-performance-tuning/1720243662918.png)
   - G1垃圾收集器是基于标记整理算法实现的，是一个分代垃圾收集器，既负责年轻代，也负责老年代的垃圾回收。跟之前各个分代使用连续的虚拟内存地址不一样，G1使用了一种 Region 方式对堆内存进行了划分，同样也分年轻代、老年代，但每一代使用的是N个不连续的Region内存块，每个Region占用一块连续的虚拟内存地址。在G1中，还有一种叫 Humongous 区域，用于存储特别大的对象。G1内部做了一个优化，一旦发现没有引用指向巨型对象，则可直接在年轻代的YoungGC中被回收掉。
-  - ![1720243956879](images/Java-performance-tuning/1720243956879.png)
-  - G1分为Young GC、Mix GC以及Full GC。G1 Young GC主要是在Eden区进行，当Eden区空间不足时，则会触发一次Young GC。将Eden区数据移到Survivor空间时，如果Survivor空间不足，则会直接晋升到老年代。此时Survivor的数据也会晋升到老年代。Young GC的执行是并行的，期间会发生STW。当堆空间的占用率达到一定阈值后会触发G1 Mix GC（阈值由命令参数-XX:InitiatingHeapOccupancyPercent设定，默认值45），Mix GC主要包括了四个阶段，其中只有并发标记阶段不会发生STW，其它阶段均会发生STW。![1720244178642](images/Java-performance-tuning/1720244178642.png)
+  - ![1720243956879](./Java-performance-tuning/1720243956879.png)
+  - G1分为Young GC、Mix GC以及Full GC。G1 Young GC主要是在Eden区进行，当Eden区空间不足时，则会触发一次Young GC。将Eden区数据移到Survivor空间时，如果Survivor空间不足，则会直接晋升到老年代。此时Survivor的数据也会晋升到老年代。Young GC的执行是并行的，期间会发生STW。当堆空间的占用率达到一定阈值后会触发G1 Mix GC（阈值由命令参数-XX:InitiatingHeapOccupancyPercent设定，默认值45），Mix GC主要包括了四个阶段，其中只有并发标记阶段不会发生STW，其它阶段均会发生STW。![1720244178642](./Java-performance-tuning/1720244178642.png)
   - G1和CMS主要的区别在于：
     - CMS主要集中在老年代的回收，而G1集中在分代回收，包括了年轻代的Young GC以及老年代的Mix GC；
     - G1使用了Region方式对堆内存进行了划分，且基于标记整理算法实现，整体减少了垃圾碎片的产生；
@@ -5114,8 +5114,8 @@ jstat -gc <pid> 1000  # 每秒钟刷新一次 GC 数据
     - 当调用System.gc()也会安排一次Full GC。
 - 老师看完有两个疑问,第一怎么查看 minor gc回收之后eden区存活对象 的多少,第二jmap-heap pid在图中只能看年轻代parallel gc看不到老年代的是什么垃圾回收器。对于提问cms垃圾回收器还是分老年代和年轻代回收分多个阶段有和程序并行的阶 段也有 stop the world 阶段 回收一整块老年代时间比较久,而gc把年轻代和老年代也有划分,不过拆成一个 region了,对region的回收成本低,而且会判断那些region回收的对象更多,而且cms要经过多次full gc才可能把不用的内存归还给操作系统，而g1只需要一次full gc就可以
 
-  - 接下来解答 ninghtmare 的提问。我们可以通过 jstat -gc pid interval 查看每次GC之后，具体每一个分区的内存使用率变化情况。我们可以通过JVM的设置参数，来查看垃圾收集器的具体设置参数，使用的方式有很多，例如 jcmd pid VM.flags 就可以查看到相关的设置参数。![1720245039660](images/Java-performance-tuning/1720245039660.png)
-  - 这里附上第22讲中，我总结的各个设置参数对应的垃圾收集器图表。![1720245101382](images/Java-performance-tuning/1720245101382.png)
+  - 接下来解答 ninghtmare 的提问。我们可以通过 jstat -gc pid interval 查看每次GC之后，具体每一个分区的内存使用率变化情况。我们可以通过JVM的设置参数，来查看垃圾收集器的具体设置参数，使用的方式有很多，例如 jcmd pid VM.flags 就可以查看到相关的设置参数。![1720245039660](./Java-performance-tuning/1720245039660.png)
+  - 这里附上第22讲中，我总结的各个设置参数对应的垃圾收集器图表。![1720245101382](./Java-performance-tuning/1720245101382.png)
   - 当第一次创建对象的时候eden空间不足会进行一次minor gc把存活的对象放到from s区。如果这个时候from s 放不下。会发生一次担保进入老年代吗？当一次创建对象的时候eden空间不足进入 from s 区。当第二次创建对象的时候 eden 空间又不足了，这个时候 会把, eden和第一次存在from s区的对象进行gc存活的放在to s区,to s 区空间不足，进行担保放入老年代？这样的理解对吗。
 
     - 对的。前提是老年代有足够接受这些对象的空间，才会进行分配担保。如果老年代剩余空间小于每次Minor GC晋升到老年代的平均值，则会发起一次 Full GC。
@@ -7313,7 +7313,7 @@ MySQL认为如果对一张表使用大量行锁，会导致事务执行效率下
 
 假设现在我们使用EXPLAIN命令查看当前SQL是否使用了索引，先通过SQL EXPLAIN导出相应的执行计划如下：
 
-![1719645304162](images/Java-performance-tuning/1719645304162.png)
+![1719645304162](./Java-performance-tuning/1719645304162.png)
 
 下面对图示中的每一个字段进行一个说明，从中你也能收获到很多零散的知识点。
 
@@ -7323,27 +7323,27 @@ MySQL认为如果对一张表使用大量行锁，会导致事务执行效率下
 * partitions：访问的分区表信息。
 * type：表示从表中查询到行所执行的方式，查询方式是SQL优化中一个很重要的指标，结果值从好到差依次是：system > const > eq\_ref > ref > range > index > ALL。
 
-![1719645390070](images/Java-performance-tuning/1719645390070.png)
+![1719645390070](./Java-performance-tuning/1719645390070.png)
 
 * system/const：表中只有一行数据匹配，此时根据索引查询一次就能找到对应的数据。
 
-![1719645703351](images/Java-performance-tuning/1719645703351.png)
+![1719645703351](./Java-performance-tuning/1719645703351.png)
 
 * eq\_ref：使用唯一索引扫描，常见于多表连接中使用主键和唯一索引作为关联条件。
 
-![1719645794415](images/Java-performance-tuning/1719645794415.png)
+![1719645794415](./Java-performance-tuning/1719645794415.png)
 
 * ref：非唯一索引扫描，还可见于唯一索引最左原则匹配扫描。
 
-![1719646018042](images/Java-performance-tuning/1719646018042.png)
+![1719646018042](./Java-performance-tuning/1719646018042.png)
 
 * range：索引范围扫描，比如，<，>，between等操作。
 
-![1719646059086](images/Java-performance-tuning/1719646059086.png)
+![1719646059086](./Java-performance-tuning/1719646059086.png)
 
 * index：索引全表扫描，此时遍历整个索引树。
 
-![1719646134352](images/Java-performance-tuning/1719646134352.png)
+![1719646134352](./Java-performance-tuning/1719646134352.png)
 
 * ALL：表示全表扫描，需要遍历全表来找到对应的行。
 * possible\_keys：可能使用到的索引。
@@ -7377,19 +7377,19 @@ type参数：
 
 值得注意的是，MySQL是在5.0.37版本之后才支持Show Profile功能的，如果你不太确定的话，可以通过select @@have\_profiling查询是否支持该功能，如下图所示：
 
-![1719648374902](images/Java-performance-tuning/1719648374902.png)
+![1719648374902](./Java-performance-tuning/1719648374902.png)
 
 最新的MySQL版本是默认开启Show Profile功能的，但在之前的旧版本中是默认关闭该功能的，你可以通过set语句在Session级别开启该功能：
 
-![1719648414340](images/Java-performance-tuning/1719648414340.png)
+![1719648414340](./Java-performance-tuning/1719648414340.png)
 
 Show Profiles只显示最近发给服务器的SQL语句，默认情况下是记录最近已执行的15条记录，我们可以重新设置profiling\_history\_size增大该存储记录，最大值为100。
 
-![1719648643640](images/Java-performance-tuning/1719648643640.png)
+![1719648643640](./Java-performance-tuning/1719648643640.png)
 
 获取到Query\_ID之后，我们再通过Show Profile for Query ID语句，就能够查看到对应Query\_ID的SQL语句在执行过程中线程的每个状态所消耗的时间了：
 
-![1719648673435](images/Java-performance-tuning/1719648673435.png)
+![1719648673435](./Java-performance-tuning/1719648673435.png)
 
 通过以上分析可知：SELECT COUNT(\*) FROM \`order\`; SQL语句在Sending data状态所消耗的时间最长，这是因为在该状态下，MySQL线程开始读取数据并返回到客户端，此时有大量磁盘I/O操作。
 
@@ -7409,9 +7409,9 @@ select * from `demo`.`order` order by order_no limit 10000, 20;
 
 通过EXPLAIN分析可知：该查询使用到了索引，扫描行数为10020行，但所用查询时间为0.018s，相对来说时间偏长了。
 
-![1719649073002](images/Java-performance-tuning/1719649073002.png)
+![1719649073002](./Java-performance-tuning/1719649073002.png)
 
-![1719649087373](images/Java-performance-tuning/1719649087373.png)
+![1719649087373](./Java-performance-tuning/1719649087373.png)
 
 * 利用子查询优化分页查询
 
@@ -7423,9 +7423,9 @@ select * from `demo`.`order` where id> (select id from `demo`.`order` order by o
 
 通过EXPLAIN分析可知：子查询遍历索引的范围跟上一个查询差不多，而主查询扫描了更多的行数，但执行时间却减少了，只有0.004s。这就是因为返回行数只有20行了，执行效率得到了明显的提升。
 
-![1719649535700](images/Java-performance-tuning/1719649535700.png)
+![1719649535700](./Java-performance-tuning/1719649535700.png)
 
-![1719649579482](images/Java-performance-tuning/1719649579482.png)
+![1719649579482](./Java-performance-tuning/1719649579482.png)
 
 #### 2. 优化SELECT COUNT(\*)
 
@@ -7509,19 +7509,19 @@ SQL 查询的执行顺序
 
 1.数据丢失
 
-![1719651376968](images/Java-performance-tuning/1719651376968.png)
+![1719651376968](./Java-performance-tuning/1719651376968.png)
 
 2.脏读
 
-![1719651409310](images/Java-performance-tuning/1719651409310.png)
+![1719651409310](./Java-performance-tuning/1719651409310.png)
 
 3.不可重复读
 
-![1719651427869](images/Java-performance-tuning/1719651427869.png)
+![1719651427869](./Java-performance-tuning/1719651427869.png)
 
 4.幻读
 
-![1719651451127](images/Java-performance-tuning/1719651451127.png)
+![1719651451127](./Java-performance-tuning/1719651451127.png)
 
 ### 6.2.2 事务隔离解决并发问题
 
@@ -7574,7 +7574,7 @@ MySQLQueryInterruptedException: Query execution was interrupted
 
 由于在抢购提交订单中开启了事务，在高并发时对一条记录进行更新的情况下，由于更新记录所在的事务还可能存在其他操作，导致一个事务比较长，当有大量请求进入时，就可能导致一些请求同时进入到事务中。又因为锁的竞争是不公平的，当多个事务同时对一条记录进行更新时，极端情况下，一个更新操作进去排队系统后，可能会一直拿不到锁，最后因超时被系统打断踢出。在用户购买商品时，首先我们需要查询库存余额，再新建一个订单，并扣除相应的库存。这一系列操作是处于同一个事务的。以上业务若是在两种不同的执行顺序下，其结果都是一样的，但在事务性能方面却不一样：
 
-![1719652488392](images/Java-performance-tuning/1719652488392.png)
+![1719652488392](./Java-performance-tuning/1719652488392.png)
 
 这是因为，虽然这些操作在同一个事务，但锁的申请在不同时间，只有当其他操作都执行完，才会释放所有锁。因为扣除库存是更新操作，属于行锁，这将会影响到其他操作该数据的事务，所以我们应该尽量避免长时间地持有该锁，尽快释放该锁。又因为先新建订单和先扣除库存都不会影响业务，所以我们可以将扣除库存操作放到最后，也就是使用执行顺序1，以此尽量减小锁的持有时间。
 
@@ -7606,7 +7606,7 @@ select \* from order where status =1 and sku=10001 order by create\_time asc
 
 索引是优化数据库查询最重要的方式之一，它是在MySQL的存储引擎层中实现的，所以每一种存储引擎对应的索引不一定相同。我们可以通过下面这张表格，看看不同的存储引擎分别支持哪种索引类型：
 
-![1719729518971](images/Java-performance-tuning/1719729518971.png)
+![1719729518971](./Java-performance-tuning/1719729518971.png)
 
 - B+Tree索引和Hash索引是我们比较常用的两个索引数据存储结构，B+Tree索引是通过B+树实现的，是有序排列存储，所以在排序和范围查找方面都比较有优势。如果你对B+Tree索引不够了解，可以通过该[链接](https://zhuanlan.zhihu.com/p/27700617)了解下它的数据结构原理。
 - Hash索引相对简单些，只有Memory存储引擎支持Hash索引。Hash索引适合key-value键值对查询，无论表数据多大，查询数据的复杂度都是O(1)，且直接通过Hash索引查询的性能比其它索引都要优越。
@@ -7625,15 +7625,15 @@ CREATE TABLE `merchandise`  (
 
 然后新增了以下几行数据，如下：
 
-![1719729745737](images/Java-performance-tuning/1719729745737.png)
+![1719729745737](./Java-performance-tuning/1719729745737.png)
 
 如果我们使用的是MyISAM存储引擎，由于MyISAM使用的是辅助索引，索引中每一个叶子节点仅仅记录的是每行数据的物理地址，即行指针，如下图所示：
 
-![1719729764642](images/Java-performance-tuning/1719729764642.png)
+![1719729764642](./Java-performance-tuning/1719729764642.png)
 
 如果我们使用的是InnoDB存储引擎，由于InnoDB使用的是聚簇索引，聚簇索引中的叶子节点则记录了主键值、事务id、用于事务和MVCC的回流指针以及所有的剩余列，如下图所示：
 
-![1719729806996](images/Java-performance-tuning/1719729806996.png)
+![1719729806996](./Java-performance-tuning/1719729806996.png)
 
 基于上面的图示，如果我们需要根据商品编码查询商品，我们就需要将商品编码serial\_no列作为一个索引列。此时创建的索引是一个辅助索引，与MyISAM存储引擎的主键索引的存储方式是一致的，但叶子节点存储的就不是行指针了，而是主键值，并以此来作为指向行的指针。这样的好处就是当行发生移动或者数据分裂时，不用再维护索引的变更。如果我们使用主键索引查询商品，则会按照B+树的索引找到对应的叶子节点，直接获取到行数据：
 
@@ -7649,7 +7649,7 @@ select \* from merchandise where id=7
 
 通常在InnoDB中，除了查询部分字段可以使用覆盖索引来优化查询性能之外，统计数量也会用到。例如，在[第32讲](https://time.geekbang.org/column/article/113440)我们讲 SELECT COUNT(\*)时，如果不存在辅助索引，此时会通过查询聚簇索引来统计行数，如果此时正好存在一个辅助索引，则会通过查询辅助索引来统计行数，减少I/O操作。通过EXPLAIN，我们可以看到 InnoDB 存储引擎使用了idx\_order索引列来统计行数，如下图所示：
 
-![1719730012320](images/Java-performance-tuning/1719730012320.png)
+![1719730012320](./Java-performance-tuning/1719730012320.png)
 
 #### 2.自增字段作主键优化查询
 
@@ -7673,11 +7673,11 @@ select \* from merchandise where id=7
 
 当我们习惯建立索引来实现查询SQL的性能优化后，是不是就万事大吉了呢？当然不是，有时候我们看似使用到了索引，但实际上并没有被优化器选择使用。
 
-- 对于Hash索引实现的列，如果使用到范围查询，那么该索引将无法被优化器使用到。也就是说Memory引擎实现的Hash索引只有在“=”的查询条件下，索引才会生效。我们将order表设置为Memory存储引擎，分析查询条件为id<10的SQL，可以发现没有使用到索引。![1719731051650](images/Java-performance-tuning/1719731051650.png)
-- 如果是以%开头的LIKE查询将无法利用节点查询数据：![1719731113852](images/Java-performance-tuning/1719731113852.png)
-- 当我们在使用复合索引时，需要使用索引中的最左边的列进行查询，才能使用到复合索引。例如我们在order表中建立一个复合索引idx\_user\_order\_status(order\_no, status, user\_id)，如果我们使用order\_no、order\_no+status、order\_no+status+user\_id以及order\_no+user\_id组合查询，则能利用到索引；而如果我们用status、status+user\_id查询，将无法使用到索引，这也是我们经常听过的最左匹配原则。![1719731180552](images/Java-performance-tuning/1719731180552.png)
-- ![1719731201834](images/Java-performance-tuning/1719731201834.png)
-- 如果查询条件中使用or，且or的前后条件中有一个列没有索引，那么涉及的索引都不会被使用到。![1719731272268](images/Java-performance-tuning/1719731272268.png)
+- 对于Hash索引实现的列，如果使用到范围查询，那么该索引将无法被优化器使用到。也就是说Memory引擎实现的Hash索引只有在“=”的查询条件下，索引才会生效。我们将order表设置为Memory存储引擎，分析查询条件为id<10的SQL，可以发现没有使用到索引。![1719731051650](./Java-performance-tuning/1719731051650.png)
+- 如果是以%开头的LIKE查询将无法利用节点查询数据：![1719731113852](./Java-performance-tuning/1719731113852.png)
+- 当我们在使用复合索引时，需要使用索引中的最左边的列进行查询，才能使用到复合索引。例如我们在order表中建立一个复合索引idx\_user\_order\_status(order\_no, status, user\_id)，如果我们使用order\_no、order\_no+status、order\_no+status+user\_id以及order\_no+user\_id组合查询，则能利用到索引；而如果我们用status、status+user\_id查询，将无法使用到索引，这也是我们经常听过的最左匹配原则。![1719731180552](./Java-performance-tuning/1719731180552.png)
+- ![1719731201834](./Java-performance-tuning/1719731201834.png)
+- 如果查询条件中使用or，且or的前后条件中有一个列没有索引，那么涉及的索引都不会被使用到。![1719731272268](./Java-performance-tuning/1719731272268.png)
 
 所以，你懂了吗？作为一名开发人员，如果没有熟悉MySQL，特别是MySQL索引的基础知识，很多时候都将被DBA批评到怀疑人生。
 
@@ -7736,11 +7736,11 @@ Query OK, 0 rows affected (0.00 sec)
 
 订单在做幂等性校验时，先是通过订单号检查订单是否存在，如果不存在则新增订单记录。知道具体的逻辑之后，我们再来模拟创建产生死锁的运行SQL语句。首先，我们模拟新建两个订单，并按照以下顺序执行幂等性校验SQL语句（垂直方向代表执行的时间顺序）：
 
-![1719733775259](images/Java-performance-tuning/1719733775259.png)
+![1719733775259](./Java-performance-tuning/1719733775259.png)
 
 此时，我们会发现两个事务已经进入死锁状态。我们可以在information\_schema数据库中查询到具体的死锁情况，如下图所示：
 
-![1719733829302](images/Java-performance-tuning/1719733829302.png)
+![1719733829302](./Java-performance-tuning/1719733829302.png)
 
 看到这，你可能会想，为什么SELECT要加for update排他锁，而不是使用共享锁呢？试想下，如果是两个订单号一样的请求同时进来，就有可能出现幻读。也就是说，一开始事务A中的查询没有该订单号，后来事务B新增了一个该订单号的记录，此时事务A再新增一条该订单号记录，就会创建重复的订单记录。面对这种情况，我们可以使用锁间隙算法来防止幻读。
 
@@ -7764,7 +7764,7 @@ INSERT INTO demo.order_record(order_no, status, create_date) VALUES (5, 1, ‘20
 
 我们可以通过以下锁的兼容矩阵图，来查看锁的兼容性：
 
-![1719734745647](images/Java-performance-tuning/1719734745647.png)
+![1719734745647](./Java-performance-tuning/1719734745647.png)
 
 ### 6.4.2 避免死锁的措施
 
@@ -7778,11 +7778,11 @@ INSERT INTO demo.order_record(order_no, status, create_date) VALUES (5, 1, ‘20
 
 我们讲过，InnoDB存储引擎的主键索引为聚簇索引，其它索引为辅助索引。如果我们之前使用辅助索引来更新数据库，就需要修改为使用聚簇索引来更新数据库。如果两个更新事务使用了不同的辅助索引，或一个使用了辅助索引，一个使用了聚簇索引，就都有可能导致锁资源的循环等待。由于本身两个事务是互斥，也就构成了以上死锁的四个必要条件了。我们还是以上面的这个订单记录表来重现下聚簇索引和辅助索引更新时，循环等待锁资源导致的死锁问题：
 
-![1719735071056](images/Java-performance-tuning/1719735071056.png)
+![1719735071056](./Java-performance-tuning/1719735071056.png)
 
 出现死锁的步骤:
 
-![1719735127621](images/Java-performance-tuning/1719735127621.png)
+![1719735127621](./Java-performance-tuning/1719735127621.png)
 
 综上可知，在更新操作时，我们应该尽量使用主键来更新表字段，这样可以有效避免一些不必要的死锁发生。
 
@@ -7915,7 +7915,7 @@ INSERT INTO demo.order_record(order_no, status, create_date) VALUES (5, 1, ‘20
 
 通常一个订单分为以下几个状态：待付款、待发货、待收货、待评价、交易完成、用户取消、仅退款、退货退款状态。一个订单的流程见下图：
 
-![1720080511115](images/Java-performance-tuning/1720080511115.png)
+![1720080511115](./Java-performance-tuning/1720080511115.png)
 
 #### 4. 库存模块
 
@@ -8065,7 +8065,7 @@ MySQL是一个灵活性比较强的数据库系统，提供了很多可配置参
 - 第三层包括了各种存储引擎，主要负责数据的存取，这一层涉及到的Buffer缓存，也和这一讲密切相关。
 - 最下面一层是数据存储层，主要负责将数据存储在文件系统中，并完成与存储引擎的交互。
 
-![1720086175325](images/Java-performance-tuning/1720086175325.png)
+![1720086175325](./Java-performance-tuning/1720086175325.png)
 
 接下来我们再来了解下，当数据接收到一个SQL语句时，是如何处理的。
 
@@ -8091,7 +8091,7 @@ MySQL是一个灵活性比较强的数据库系统，提供了很多可配置参
 
 很明显，Query Cache可以优化查询SQL语句，减少大量工作，特别是减少了I/O读取操作。我们可以通过以下几个主要的设置参数来优化查询操作：
 
-![1720094277235](images/Java-performance-tuning/1720094277235.png)
+![1720094277235](./Java-performance-tuning/1720094277235.png)
 
 我们可以通过设置合适的 query\_cache\_min\_res\_unit 来减少碎片，这个参数最合适的大小和应用程序查询结果的平均大小直接相关，可以通过以下公式计算所得：
 
@@ -8173,7 +8173,7 @@ InnoDB Buffer Pool（简称IBP）是InnoDB存储引擎的一个缓冲池，与My
 
 MySQL数据库的参数设置非常多，今天我们仅仅是了解了与内存优化相关的参数设置。除了这些参数设置，我们还有一些常用的提高MySQL并发的相关参数设置，总结如下：
 
-![1720095754529](images/Java-performance-tuning/1720095754529.png)
+![1720095754529](./Java-performance-tuning/1720095754529.png)
 
 **思考题：**我们知道，InnoDB的IBP的内存大小是有限的，你知道InnoDB是如何将热点数据留在内存中，淘汰非热点数据的吗？
 
@@ -8185,7 +8185,7 @@ MySQL数据库的参数设置非常多，今天我们仅仅是了解了与内存
 
 InnoDB主要包括了内存池、后台线程以及存储文件。内存池又是由多个内存块组成的，主要包括缓存磁盘数据、redo log缓冲等；后台线程则包括了Master Thread、IO Thread以及Purge Thread等；由InnoDB存储引擎实现的表的存储结构文件一般包括表结构文件（.frm）、共享表空间文件（ibdata1）、独占表空间文件（ibd）以及日志文件（redo文件等）等。
 
-![1720096316042](images/Java-performance-tuning/1720096316042.png)
+![1720096316042](./Java-performance-tuning/1720096316042.png)
 
 #### 1. 内存池
 
@@ -8207,7 +8207,7 @@ Master Thread 主要负责将缓冲池中的数据异步刷新到磁盘中，除
 
 InnoDB逻辑存储结构分为表空间（Tablespace）、段(Segment)、区(Extent)、页Page)以及行(row)。
 
-![1720096815018](images/Java-performance-tuning/1720096815018.png)
+![1720096815018](./Java-performance-tuning/1720096815018.png)
 
 #### 1. 表空间（Tablespace）
 
@@ -8241,7 +8241,7 @@ Buffer Pool中更新的数据未刷新到磁盘中，该内存页我们称之为
 
 在生产环境中，如果我们开启了慢SQL监控，你会发现偶尔会出现一些用时稍长的SQL。这是因为脏页在刷新到磁盘时可能会给数据库带来性能开销，导致数据库操作抖动。
 
-![1720097305563](images/Java-performance-tuning/1720097305563.png)
+![1720097305563](./Java-performance-tuning/1720097305563.png)
 
 ### 6.8.4 LRU淘汰策略
 
@@ -8886,3 +8886,341 @@ Seata是一种高效的分布式事务解决方案，设计初衷就是解决分
 
 
 Seata在第一阶段已经提交了事务，那如果在第二阶段发生了异常要回滚到Before快照前，别的线程若是更新了数据，且业务走完了，那么恢复的这个快照不就是脏数据了吗？但事实上，Seata是不会出现这种情况的，你知道它是怎么做到的吗？
+
+
+
+## 7.3 如何使用缓存优化系统性能？
+
+缓存是我们提高系统性能的一项必不可少的技术，无论是前端、还是后端，都应用到了缓存技术。前端使用缓存，可以降低多次请求服务的压力；后端使用缓存，可以降低数据库操作的压力，提升读取数据的性能。今天我们将从前端到服务端，系统了解下各个层级的缓存实现，并分别了解下各类缓存的优缺点以及应用场景。
+
+
+
+### 7.3.1 前端缓存技术
+
+如果你是一位Java开发工程师，你可能会想，我们有必要去了解前端的技术吗？不想当将军的士兵不是好士兵，作为一个技术人员，不想做架构师的开发不是好开发。作为架构工程师的话，我们就很有必要去了解前端的知识点了，这样有助于我们设计和优化系统。前端做缓存，可以缓解服务端的压力，减少带宽的占用，同时也可以提升前端的查询性能。
+
+
+
+#### 1. 本地缓存
+
+平时使用拦截器（例如Fiddler）或浏览器Debug时，我们经常会发现一些接口返回304状态码+ Not Modified字符串，如下图中的极客时间Web首页。
+
+![5ae757f7c5b12901d4422b5722c0647b](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/5ae757f7c5b12901d4422b5722c0647b.png)
+
+如果我们对前端缓存技术不了解，就很容易对此感到困惑。浏览器常用的一种缓存就是这种基于304响应状态实现的本地缓存了，通常这种缓存被称为协商缓存。协商缓存，顾名思义就是与服务端协商之后，通过协商结果来判断是否使用本地缓存。一般协商缓存可以基于请求头部中的If-Modified-Since字段与返回头部中的Last-Modified字段实现，也可以基于请求头部中的If-None-Match字段与返回头部中的ETag字段来实现。
+
+
+
+两种方式的实现原理是一样的，前者是基于时间实现的，后者是基于一个唯一标识实现的，相对来说后者可以更加准确地判断文件内容是否被修改，避免由于时间篡改导致的不可靠问题。下面我们再来了解下整个缓存的实现流程：
+
+- 当浏览器第一次请求访问服务器资源时，服务器会在返回这个资源的同时，在Response头部加上ETag唯一标识，这个唯一标识的值是根据当前请求的资源生成的；
+- 当浏览器再次请求访问服务器中的该资源时，会在Request头部加上If-None-Match字段，该字段的值就是Response头部加上ETag唯一标识；
+- 服务器再次收到请求后，会根据请求中的If-None-Match值与当前请求的资源生成的唯一标识进行比较，如果值相等，则返回304 Not Modified，如果不相等，则在Response头部加上新的ETag唯一标识，并返回资源；
+- 如果浏览器收到304的请求响应状态码，则会从本地缓存中加载资源，否则更新资源。
+
+本地缓存中除了这种协商缓存，还有一种就是强缓存的实现。强缓存指的是只要判断缓存没有过期，则直接使用浏览器的本地缓存。如下图中，返回的是200状态码，但在size项中标识的是memory cache。
+
+![0a169df1141f31326b4b6ab331ab3748](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/0a169df1141f31326b4b6ab331ab3748.png)
+
+强缓存是利用Expires或者Cache-Control这两个HTTP Response Header实现的，它们都用来表示资源在客户端缓存的有效期。Expires是一个绝对时间，而Cache-Control是一个相对时间，即一个过期时间大小，与协商缓存一样，基于Expires实现的强缓存也会因为时间问题导致缓存管理出现问题。我建议使用Cache-Control来实现强缓存。具体的实现流程如下：
+
+- 当浏览器第一次请求访问服务器资源时，服务器会在返回这个资源的同时，在Response头部加上Cache-Control，Cache-Control中设置了过期时间大小；
+- 浏览器再次请求访问服务器中的该资源时，会先通过请求资源的时间与Cache-Control中设置的过期时间大小，来计算出该资源是否过期，如果没有，则使用该缓存，否则请求服务器；
+- 服务器再次收到请求后，会再次更新Response头部的Cache-Control。
+
+#### 2. 网关缓存
+
+除了以上本地缓存，我们还可以在网关中设置缓存，也就是我们熟悉的CDN。CDN缓存是通过不同地点的缓存节点缓存资源副本，当用户访问相应的资源时，会调用最近的CDN节点返回请求资源，这种方式常用于视频资源的缓存。
+
+
+
+### 7.3.2 服务层缓存技术
+
+前端缓存一般用于缓存一些不常修改的常量数据或一些资源文件，大部分接口请求的数据都缓存在了服务端，方便统一管理缓存数据。服务端缓存的初衷是为了提升系统性能。例如，数据库由于并发查询压力过大，可以使用缓存减轻数据库压力；在后台管理中的一些报表计算类数据，每次请求都需要大量计算，消耗系统CPU资源，我们可以使用缓存来保存计算结果。
+
+
+
+服务端的缓存也分为进程缓存和分布式缓存，在Java中进程缓存就是JVM实现的缓存，常见的有我们经常使用的容器类，ArrayList、ConcurrentHashMap等，分布式缓存则是基于Redis实现的缓存。
+
+
+
+#### 1. 进程缓存
+
+对于进程缓存，虽然数据的存取会更加高效，但JVM的堆内存数量是有限的，且在分布式环境下很难同步各个服务间的缓存更新，所以我们一般缓存一些数据量不大、更新频率较低的数据。常见的实现方式如下：
+
+```java
+//静态常量
+public final staticS String url = "https://time.geekbang.org";
+//list容器
+public static List<String> cacheList = new Vector<String>();
+ //map容器   
+private static final Map<String, Object> cacheMap= new ConcurrentHashMap<String, Object>();
+```
+
+除了Java自带的容器可以实现进程缓存，我们还可以基于Google实现的一套内存缓存组件Guava Cache来实现。Guava Cache适用于高并发的多线程缓存，它和ConcurrentHashMap一样，都是基于分段锁实现的并发缓存。Guava Cache同时也实现了数据淘汰机制，当我们设置了缓存的最大值后，当存储的数据超过了最大值时，它就会使用LRU算法淘汰数据。我们可以通过以下代码了解下Guava Cache的实现：
+
+```java
+public class GuavaCacheDemo {
+    public static void main(String[] args) {
+        Cache<String,String> cache = CacheBuilder.newBuilder()
+                .maximumSize(2)
+                .build();
+        cache.put("key1","value1");
+        cache.put("key2","value2");
+        cache.put("key3","value3");
+        System.out.println("第一个值：" + cache.getIfPresent("key1"));
+        System.out.println("第二个值：" + cache.getIfPresent("key2"));
+        System.out.println("第三个值：" + cache.getIfPresent("key3"));
+    }
+}
+```
+
+运行结果：
+
+```java
+第一个值：null
+第二个值：value2
+第三个值：value3
+```
+
+那如果我们的数据量比较大，且数据更新频繁，又是在分布式部署的情况下，想要使用JVM堆内存作为缓存，这时我们又该如何去实现呢？Ehcache是一个不错的选择，Ehcache经常在Hibernate中出现，主要用来缓存查询数据结果。Ehcache是Apache开源的一套缓存管理类库，是基于JVM堆内存实现的缓存，同时具备多种缓存失效策略，支持磁盘持久化以及分布式缓存机制。
+
+
+
+#### 2. 分布式缓存
+
+由于高并发对数据一致性的要求比较严格，我一般不建议使用Ehcache缓存有一致性要求的数据。对于分布式缓存，我们建议使用Redis来实现，Redis相当于一个内存数据库，由于是纯内存操作，又是基于单线程串行实现，查询性能极高，读速度超过了10W次/秒。Redis除了高性能的特点之外，还支持不同类型的数据结构，常见的有string、list、set、hash等，还支持数据淘汰策略、数据持久化以及事务等。两种缓存讲完了，接下来我们看看其中可能出现的问题。
+
+
+
+### 7.3.3 数据库与缓存数据一致性问题
+
+在查询缓存数据时，我们会先读取缓存，如果缓存中没有该数据，则会去数据库中查询，之后再放入到缓存中。当我们的数据被缓存之后，一旦数据被修改（修改时也是删除缓存中的数据）或删除，我们就需要同时操作缓存和数据库。这时，就会存在一个数据不一致的问题。
+
+
+
+例如，在并发情况下，当A操作使得数据发生删除变更，那么该操作会先删除缓存中的数据，之后再去删除数据库中的数据，此时若是还没有删除成功，另外一个请求查询操作B进来了，发现缓存中已经没有了数据，则会去数据库中查询，此时发现有数据，B操作获取之后又将数据存放在了缓存中，随后数据库的数据又被删除了。此时就出现了数据不一致的情况。
+
+
+
+那如果先删除数据库，再删除缓存呢？我们可以试一试。在并发情况下，当A操作使得数据发生删除变更，那么该操作会先删除了数据库的操作，接下来删除缓存，失败了，那么缓存中的数据没有被删除，而数据库的数据已经被删除了，同样会存在数据不一致的问题。所以，我们还是需要先做缓存删除操作，再去完成数据库操作。那我们又该如何避免高并发下，数据更新删除操作所带来的数据不一致的问题呢？
+
+
+
+通常的解决方案是，如果我们需要使用一个线程安全队列来缓存更新或删除的数据，当A操作变更数据时，会先删除一个缓存数据，此时通过线程安全的方式将缓存数据放入到队列中，并通过一个线程进行数据库的数据删除操作。当有另一个查询请求B进来时，如果发现缓存中没有该值，则会先去队列中查看该数据是否正在被更新或删除，如果队列中有该数据，则阻塞等待，直到A操作数据库成功之后，唤醒该阻塞线程，再去数据库中查询该数据。
+
+
+
+但其实这种实现也存在很多缺陷，例如，可能存在读请求被长时间阻塞，高并发时低吞吐量等问题。所以我们在考虑缓存时，如果数据更新比较频繁且对数据有一定的一致性要求，我通常不建议使用缓存。
+
+
+
+
+
+### 7.3.4 缓存穿透、缓存击穿、缓存雪崩
+
+对于分布式缓存实现大数据的存储，除了数据不一致的问题以外，还有缓存穿透、缓存击穿、缓存雪崩等问题，我们平时实现缓存代码时，应该充分、全面地考虑这些问题。
+
+- 缓存穿透是指大量查询没有命中缓存，直接去到数据库中查询，如果查询量比较大，会导致数据库的查询流量大，对数据库造成压力。
+  - 通常有两种解决方案，一种是将第一次查询的空值缓存起来，同时设置一个比较短的过期时间。但这种解决方案存在一个安全漏洞，就是当黑客利用大量没有缓存的key攻击系统时，缓存的内存会被占满溢出。
+
+- 另一种则是使用布隆过滤算法（BloomFilter），该算法可以用于检查一个元素是否存在，返回结果有两种：可能存在或一定不存在。这种情况很适合用来解决故意攻击系统的缓存穿透问题，在最初缓存数据时也将key值缓存在布隆过滤器的BitArray中，当有key值查询时，对于一定不存在的key值，我们可以直接返回空值，对于可能存在的key值，我们会去缓存中查询，如果没有值，再去数据库中查询。
+
+
+
+BloomFilter的实现原理与Redis中的BitMap类似，首先初始化一个m长度的数组，并且每个bit初始化值都是0，当插入一个元素时，会使用n个hash函数来计算出n个不同的值，分别代表所在数组的位置，然后再将这些位置的值设置为1。假设我们插入两个key值分别为20,28的元素，通过两次哈希函数取模后的值分别为4,9以及14,19，因此4,9以及14,19都被设置为1。
+
+![d939bf92331838da581c4b500e7473a3](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/d939bf92331838da581c4b500e7473a3.jpg)
+
+
+
+那为什么说BloomFilter返回的结果是可能存在和一定不存在呢？假设我们查找一个元素25，通过n次哈希函数取模后的值为1,9,14。此时在BitArray中肯定是不存在的。而当我们查找一个元素21的时候，n次哈希函数取模后的值为9,14，此时会返回可能存在的结果，但实际上是不存在的。BloomFilter不允许删除任何元素的，为什么？假设以上20,25,28三个元素都存在于BitArray中，取模的位置值分别为4,9、1,9,14以及14,19，如果我们要删除元素25，此时需要将1,9,14的位置都置回0，这样就影响20,28元素了。
+
+
+
+因此，BloomFilter是不允许删除任何元素的，这样会导致已经删除的元素依然返回可能存在的结果，也会影响BloomFilter判断的准确率，解决的方法则是重建一个BitArray。那什么缓存击穿呢？在高并发情况下，同时查询一个key时，key值由于某种原因突然失效（设置过期时间或缓存服务宕机），就会导致同一时间，这些请求都去查询数据库了。这种情况经常出现在查询热点数据的场景中。通常我们会在查询数据库时，使用排斥锁来实现有序地请求数据库，减少数据库的并发压力。
+
+
+
+缓存雪崩则与缓存击穿差不多，区别就是失效缓存的规模。雪崩一般是指发生大规模的缓存失效情况，例如，缓存的过期时间同一时间过期了，缓存服务宕机了。对于大量缓存的过期时间同一时间过期的问题，我们可以采用分散过期时间来解决；而针对缓存服务宕机的情况，我们可以采用分布式集群来实现缓存服务。
+
+
+
+### 7.3.5 总结
+
+从前端到后端，对于一些不常变化的数据，我们都可以将其缓存起来，这样既可以提高查询效率，又可以降低请求后端的压力。对于前端来说，一些静态资源文件都是会被缓存在浏览器端，除了静态资源文件，我们还可以缓存一些常量数据，例如商品信息。服务端的缓存，包括了JVM的堆内存作为缓存以及Redis实现的分布式缓存。如果是一些不常修改的数据，数据量小，且对缓存数据没有严格的一致性要求，我们就可以使用堆内存缓存数据，这样既实现简单，查询也非常高效。如果数据量比较大，且是经常被修改的数据，或对缓存数据有严格的一致性要求，我们就可以使用分布式缓存来存储。
+
+
+
+在使用后端缓存时，我们应该注意数据库和缓存数据的修改导致的数据不一致问题，如果对缓存与数据库数据有非常严格的一致性要求，我就不建议使用缓存了。同时，我们应该针对大量请求缓存的接口做好预防工作，防止查询缓存的接口出现缓存穿透、缓存击穿和缓存雪崩等问题。
+
+
+
+思考题
+
+在基于Redis实现的分布式缓存中，我们更新数据时，为什么建议直接将缓存中的数据删除，而不是更新缓存中的数据呢？
+
+
+
+## 7.4 记一次双十一抢购性能瓶颈调优
+
+今天我们来聊聊双十一的那些事儿，由于场景比较复杂，这一讲的出发点主要是盘点各个业务中高频出现的性能瓶颈，给出相应的优化方案，但优化方案并没有一一展开，深度讲解其具体实现。你可以结合自己在这个专栏的所学和日常积累，有针对性地在留言区提问，我会一一解答。下面切入正题。每年的双十一都是很多研发部门最头痛的节日，由于这个节日比较特殊，公司一般都会准备大量的抢购活动，相应的瞬时高并发请求对系统来说是个不小的考验。
+
+
+
+还记得我们公司商城第一次做双十一抢购活动，优惠力度特别大，购买量也很大，提交订单的接口TPS一度达到了10W。在首波抢购时，后台服务监控就已经显示服务器的各项指标都超过了70%，CPU更是一直处于400%（4核CPU），数据库磁盘I/O一直处于100%状态。由于瞬时写入日志量非常大，导致我们的后台服务监控在短时间内，无法实时获取到最新的请求监控数据，此时后台开始出现一系列的异常报警。
+
+
+
+更严重的系统问题是出现在第二波的抢购活动中，由于第一波抢购时我们发现后台服务的压力比较大，于是就横向扩容了服务，但却没能缓解服务的压力，反而在第二波抢购中，我们的系统很快就出现了宕机。
+
+
+
+这次活动暴露出来的问题很多。首先，由于没有限流，超过预期的请求量导致了系统卡顿；其次，我们是基于Redis实现了一个分布式锁分发抢购名额的功能，但这个功能抛出了大量异常；再次，就是我们误判了横向扩容服务可以起到的作用，其实第一波抢购的性能瓶颈是在数据库，横向扩容服务反而又增加了数据库的压力，起到了反作用；最后，就是在服务挂掉的情况下，丢失了异步处理的业务请求。接下来我会以上面的这个案例为背景，重点讲解抢购业务中的性能瓶颈该如何调优。
+
+
+
+### 7.4.1 抢购业务流程
+
+在进行具体的性能问题讨论之前，我们不妨先来了解下一个常规的抢购业务流程，这样方便我们更好地理解一个抢购系统的性能瓶颈以及调优过程。
+
+- 用户登录后会进入到商品详情页面，此时商品购买处于倒计时状态，购买按钮处于置灰状态。
+- 当购买倒计时间结束后，用户点击购买商品，此时用户需要排队等待获取购买资格，如果没有获取到购买资格，抢购活动结束，反之，则进入提交页面。
+- 用户完善订单信息，点击提交订单，此时校验库存，并创建订单，进入锁定库存状态，之后，用户支付订单款。
+- 当用户支付成功后，第三方支付平台将产生支付回调，系统通过回调更新订单状态，并扣除数据库的实际库存，通知用户购买成功。
+
+![e47d6d3c0bcd5aa455252a045c9f52e0](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/e47d6d3c0bcd5aa455252a045c9f52e0.jpg)
+
+
+
+### 7.4.2 抢购系统中的性能瓶颈
+
+熟悉了一个常规的抢购业务流程之后，我们再来看看抢购中都有哪些业务会出现性能瓶颈。
+
+#### 1. 商品详情页面
+
+如果你有过抢购商品的经验，相信你遇到过这样一种情况，在抢购马上到来的时候，商品详情页面几乎是无法打开的。这是因为大部分用户在抢购开始之前，会一直疯狂刷新抢购商品页面，尤其是倒计时一分钟内，查看商品详情页面的请求量会猛增。此时如果商品详情页面没有做好，就很容易成为整个抢购系统中的第一个性能瓶颈。
+
+
+
+类似这种问题，我们通常的做法是提前将整个抢购商品页面生成为一个静态页面，并push到CDN节点，并且在浏览器端缓存该页面的静态资源文件，通过 CDN 和浏览器本地缓存这两种缓存静态页面的方式来实现商品详情页面的优化。
+
+
+
+#### 2. 抢购倒计时
+
+在商品详情页面中，存在一个抢购倒计时，这个倒计时是服务端时间的，初始化时间需要从服务端获取，并且在用户点击购买时，还需要服务端判断抢购时间是否已经到了。如果商品详情每次刷新都去后端请求最新的时间，这无疑将会把整个后端服务拖垮。我们可以改成初始化时间从客户端获取，每隔一段时间主动去服务端刷新同步一次倒计时，这个时间段是随机时间，避免集中请求服务端。这种方式可以避免用户主动刷新服务端的同步时间接口。
+
+
+
+#### 3. 获取购买资格
+
+可能你会好奇，在抢购中我们已经通过库存数量限制用户了，那为什么会出现一个获取购买资格的环节呢？我们知道，进入订单详情页面后，需要填写相关的订单信息，例如收货地址、联系方式等，在这样一个过程中，很多用户可能还会犹豫，甚至放弃购买。如果把这个环节设定为一定能购买成功，那我们就只能让同等库存的用户进来，一旦用户放弃购买，这些商品可能无法再次被其他用户抢购，会大大降低商品的抢购销量。
+
+
+
+增加购买资格的环节，选择让超过库存的用户量进来提交订单页面，这样就可以保证有足够提交订单的用户量，确保抢购活动中商品的销量最大化。获取购买资格这步的并发量会非常大，还是基于分布式的，通常我们可以通过Redis分布式锁来控制购买资格的发放。
+
+
+
+#### 4. 提交订单
+
+由于抢购入口的请求量会非常大，可能会占用大量带宽，为了不影响提交订单的请求，我建议将提交订单的子域名与抢购子域名区分开，分别绑定不同网络的服务器。用户点击提交订单，需要先校验库存，库存足够时，用户先扣除缓存中的库存，再生成订单。如果校验库存和扣除库存都是基于数据库实现的，那么每次都去操作数据库，瞬时的并发量就会非常大，对数据库来说会存在一定的压力，从而会产生性能瓶颈。与获取购买资格一样，我们同样可以通过分布式锁来优化扣除消耗库存的设计。
+
+
+
+由于我们已经缓存了库存，所以在提交订单时，库存的查询和冻结并不会给数据库带来性能瓶颈。但在这之后，还有一个订单的幂等校验，为了提高系统性能，我们同样可以使用分布式锁来优化。
+
+
+
+而保存订单信息一般都是基于数据库表来实现的，在单表单库的情况下，碰到大量请求，特别是在瞬时高并发的情况下，磁盘I/O、数据库请求连接数以及带宽等资源都可能会出现性能瓶颈。此时我们可以考虑对订单表进行分库分表，通常我们可以基于userid字段来进行hash取模，实现分库分表，从而提高系统的并发能力。
+
+
+
+#### 5. 支付回调业务操作
+
+在用户支付订单完成之后，一般会有第三方支付平台回调我们的接口，更新订单状态。除此之外，还可能存在扣减数据库库存的需求。如果我们的库存是基于缓存来实现查询和扣减，那提交订单时的扣除库存就只是扣除缓存中的库存，为了减少数据库的并发量，我们会在用户付款之后，在支付回调的时候去选择扣除数据库中的库存。
+
+
+
+此外，还有订单购买成功的短信通知服务，一些商城还提供了累计积分的服务。在支付回调之后，我们可以通过异步提交的方式，实现订单更新之外的其它业务处理，例如库存扣减、积分累计以及短信通知等。通常我们可以基于MQ实现业务的异步提交。
+
+
+
+### 7.4.3 性能瓶颈调优
+
+了解了各个业务流程中可能存在的性能瓶颈，我们再来讨论下，完成了常规的优化设计之后，商城还可能出现的一些性能问题，我们又该如何做进一步调优。
+
+#### 1. 限流实现优化
+
+限流是我们常用的兜底策略，无论是倒计时请求接口，还是抢购入口，系统都应该对它们设置最大并发访问数量，防止超出预期的请求集中进入系统，导致系统异常。通常我们是在网关层实现高并发请求接口的限流，如果我们使用了Nginx做反向代理的话，就可以在Nginx配置限流算法。Nginx是基于漏桶算法实现的限流，这样做的好处是能够保证请求的实时处理速度。
+
+
+
+Nginx中包含了两个限流模块：[ngx_http_limit_conn_module](http://nginx.org/en/docs/http/ngx_http_limit_conn_module.html)和 [ngx_http_limit_req_module](http://nginx.org/en/docs/http/ngx_http_limit_req_module.html)，前者是用于限制单个IP单位时间内的请求数量，后者是用来限制单位时间内所有IP的请求数量。以下分别是两个限流的配置：
+
+```nginx
+limit_conn_zone $binary_remote_addr zone=addr:10m;
+
+server {
+    location / {
+        limit_conn addr 1;
+    }
+```
+
+```nginx
+http {
+    limit_req_zone $binary_remote_addr zone=one:10m rate=1r/s;
+    server {
+        location / {
+            limit_req zone=one burst=5 nodelay;
+        }
+} 
+```
+
+在网关层，我们还可以通过Lua编写OpenResty来实现一套限流功能，也可以通过现成的Kong安装插件来实现。除了网关层的限流之外，我们还可以基于服务层实现接口的限流，通过Zuul RateLimit或Guava RateLimiter实现。
+
+
+
+#### 2. 流量削峰
+
+瞬间有大量请求进入到系统后台服务之后，首先是要通过Redis分布式锁获取购买资格，这个时候我们看到了大量的“JedisConnectionException Could not get connection from pool”异常。
+
+
+
+这个异常是一个Redis连接异常，由于我们当时的Redis集群是基于哨兵模式部署的，哨兵模式部署的Redis也是一种主从模式，我们在写Redis的时候都是基于主库来实现的，在高并发操作一个Redis实例就很容易出现性能瓶颈。你可能会想到使用集群分片的方式来实现，但对于分布式锁来说，集群分片的实现只会增加性能消耗，这是因为我们需要基于Redission的红锁算法实现，需要对集群的每个实例进行加锁。
+
+
+
+后来我们使用Redission插件替换Jedis插件，由于Jedis的读写I/O操作还是阻塞式的，方法调用都是基于同步实现，而Redission底层是基于Netty框架实现的，读写I/O是非阻塞I/O操作，且方法调用是基于异步实现。但在瞬时并发非常大的情况下，依然会出现类似问题，此时，我们可以考虑在分布式锁前面新增一个等待队列，减缓抢购出现的集中式请求，相当于一个流量削峰。当请求的key值放入到队列中，请求线程进入阻塞状态，当线程从队列中获取到请求线程的key值时，就会唤醒请求线程获取购买资格。
+
+
+
+#### 3. 数据丢失问题
+
+无论是服务宕机，还是异步发送给MQ，都存在请求数据丢失的可能。例如，当第三方支付回调系统时，写入订单成功了，此时通过异步来扣减库存和累计积分，如果应用服务刚好挂掉了，MQ还没有存储到该消息，那即使我们重启服务，这条请求数据也将无法还原。重试机制是还原丢失消息的一种解决方案。在以上的回调案例中，我们可以在写入订单时，同时在数据库写入一条异步消息状态，之后再返回第三方支付操作成功结果。在异步业务处理请求成功之后，更新该数据库表中的异步消息状态。
+
+
+
+假设我们重启服务，那么系统就会在重启时去数据库中查询是否有未更新的异步消息，如果有，则重新生成MQ业务处理消息，供各个业务方消费处理丢失的请求数据。
+
+
+
+### 7.4.4 总结
+
+减少抢购中操作数据库的次数，缩短抢购流程，是抢购系统设计和优化的核心点。抢购系统的性能瓶颈主要是在数据库，即使我们对服务进行了横向扩容，当流量瞬间进来，数据库依然无法同时响应处理这么多的请求操作。我们可以对抢购业务表进行分库分表，通过提高数据库的处理能力，来提升系统的并发处理能力。
+
+
+
+除此之外，我们还可以分散瞬时的高并发请求，流量削峰是最常用的方式，用一个队列，让请求排队等待，然后有序且有限地进入到后端服务，最终进行数据库操作。当我们的队列满了之后，可以将溢出的请求放弃，这就是限流了。通过限流和削峰，可以有效地保证系统不宕机，确保系统的稳定性。
+
+
+
+思考题
+
+在提交了订单之后会进入到支付阶段，此时系统是冻结了库存的，一般我们会给用户一定的等待时间，这样就很容易出现一些用户恶意锁库存，导致抢到商品的用户没办法去支付购买该商品。你觉得该怎么优化设计这个业务操作呢？
+
+
+
+## 7.5 测试
+
