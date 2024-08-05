@@ -1083,7 +1083,7 @@ select * from geek where c=N order by b limit 1;
 
 ---
 
-## 1.6.2 表级锁
+### 1.6.2 表级锁
 
 MySQL里面表级别的锁有两种：一种是表锁，一种是元数据锁（meta data lock，MDL)。
 
