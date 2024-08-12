@@ -1760,3 +1760,213 @@ Cardinality of BitSet1: 2
 - **特征表示**：在机器学习中用来表示特征的存在与否。
 
 以上是 Java 中 `BitSet` 的使用介绍，具有很高的灵活性和功能性，适用于多种场景。
+
+
+
+## 4.12 SkipList跳表
+
+跳表（Skip List）是一种用于高速查找的随机化数据结构，支持动态插入和删除。它由多层链表构成，其中每一层都是对下一层的子集，允许以较高的效率进行搜索。
+
+下面是一个基本的 Java 实现的跳表程序，支持插入、搜索和删除操作：
+
+```java
+import java.util.Random;
+
+class Node {
+    int value;
+    Node[] forward; 
+
+    public Node(int value, int level) {
+        this.value = value;
+        this.forward = new Node[level + 1]; 
+    }
+}
+
+class SkipList {
+    private static final double P = 0.5; 
+    private Node header; 
+    private int maxLevel; 
+    private int currentLevel; 
+    private Random random; 
+
+    public SkipList(int maxLevel) {
+        this.maxLevel = maxLevel;
+        this.currentLevel = 0;
+        this.header = new Node(-1, maxLevel); 
+        this.random = new Random();
+    }
+
+    private int randomLevel() {
+        int level = 0;
+        while (level < maxLevel && random.nextDouble() < P) {
+            level++;
+        }
+        return level;
+    }
+
+    public void insert(int value) {
+        Node[] update = new Node[maxLevel + 1];
+        Node current = header;
+
+        for (int i = currentLevel; i >= 0; i--) {
+            while (current.forward[i] != null && current.forward[i].value < value) {
+                current = current.forward[i];
+            }
+            update[i] = current;
+        }
+
+        current = current.forward[0];
+
+        if (current == null || current.value != value) {
+            int newLevel = randomLevel();
+
+            if (newLevel > currentLevel) {
+                for (int i = currentLevel + 1; i <= newLevel; i++) {
+                    update[i] = header; 
+                }
+                currentLevel = newLevel; 
+            }
+
+            Node newNode = new Node(value, newLevel);
+            for (int i = 0; i <= newLevel; i++) {
+                newNode.forward[i] = update[i].forward[i];
+                update[i].forward[i] = newNode; 
+            }
+        }
+    }
+
+    public boolean search(int value) {
+        Node current = header;
+        for (int i = currentLevel; i >= 0; i--) {
+            while (current.forward[i] != null && current.forward[i].value < value) {
+                current = current.forward[i];
+            }
+        }
+        current = current.forward[0];
+
+        return current != null && current.value == value; 
+    }
+
+    public boolean delete(int value) {
+        Node[] update = new Node[maxLevel + 1];
+        Node current = header;
+
+        for (int i = currentLevel; i >= 0; i--) {
+            while (current.forward[i] != null && current.forward[i].value < value) {
+                current = current.forward[i];
+            }
+            update[i] = current;
+        }
+
+        current = current.forward[0];
+
+        if (current != null && current.value == value) {
+            for (int i = 0; i <= currentLevel; i++) {
+                if (update[i].forward[i] != current) {
+                    break;
+                }
+                update[i].forward[i] = current.forward[i];
+            }
+
+            while (currentLevel > 0 && header.forward[currentLevel] == null) {
+                currentLevel--;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public void printList() {
+        System.out.println("Skip List:");
+        for (int i = 0; i <= currentLevel; i++) {
+            Node node = header.forward[i];
+            System.out.print("Level " + i + ": ");
+            while (node != null) {
+                System.out.print(node.value + " ");
+                node = node.forward[i];
+            }
+            System.out.println();
+        }
+    }
+
+    public static void main(String[] args) {
+        SkipList skipList = new SkipList(3);
+
+        skipList.insert(3);
+        skipList.insert(6);
+        skipList.insert(7);
+        skipList.insert(9);
+        skipList.insert(12);
+        skipList.insert(19);
+        skipList.insert(17);
+
+        skipList.printList();
+
+        System.out.println("Search for 7: " + skipList.search(7));
+        System.out.println("Delete 3: " + skipList.delete(3));
+        skipList.printList();
+    }
+}
+```
+
+**功能解释:**
+
+1. **Node** 类：表示跳表中的一个节点，包含值和指向下一个节点的引用数组。
+2. **SkipList** 类：主要的跳表实现，提供插入、搜索和删除的方法。
+3. **随机级别生成**：通过 `randomLevel()` 方法产生一个随机的层级，决定新插入节点的高度。
+4. **插入、搜索、删除**：分别实现对应的功能。
+5. **打印跳表**：`printList()` 方法用于打印跳表的每一层。
+
+你可以直接运行这个程序，观察跳表的行为并测试其功能！
+
+
+
+## 4.13 KMP算法
+
+```java
+package com.algo;
+
+public class KMP {
+    public static void getNext(char[] s, int[] next) {
+        int len = s.length;
+        int j = -1;
+        next[0] = -1;
+        for (int i = 1; i < len; i++) {
+            while (j != -1 && s[j + 1] != s[i]) {
+                j = next[j];
+            }
+            if (s[i] == s[j + 1]) {
+                j++;
+            }
+            next[i] = j;
+        }
+    }
+
+    public static boolean kmp(char[] text, char[] pattern) {
+        int n = text.length;
+        int m = pattern.length;
+        int[] next = new int[n];
+        getNext(text, next);
+        int j = -1;
+        for (int i = 0; i < n; i++) {
+            while (j != -1 && pattern[j + 1] != text[i]) {
+                j = next[j];
+            }
+            if (pattern[j + 1] == text[i]) {
+                j++;
+            }
+            if (j == m - 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void main(String[] args) {
+        char[] text = "ababababc".toCharArray();
+        char[] pattern = "ababc".toCharArray();
+        System.out.println(kmp(text, pattern));
+    }
+
+}
+```
