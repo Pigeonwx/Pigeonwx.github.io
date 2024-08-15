@@ -30,7 +30,7 @@
 > 核心jar包
 >
 > ```java
->                                           mybatis-3.2.2.jar 核心jar 
+>    mybatis-3.2.2.jar 核心jar 
 > mysql-connector-java-5.1.10-bin.jar 数据库访问 
 > asm-3.3.1.jar 增强类 
 > cglib-2.2.2.jar 动态代理 
@@ -53,9 +53,8 @@
   	PER_HEIGHT_M FLOAT NOT NULL, 
   	PRIMARY KEY (PER_ID) 
   ) 
-  
   ```
-
+  
 - Java Bean：Person类
 
   ```java
@@ -319,7 +318,7 @@ Spring 对 Junit 提供支持，可以通过**注解**快捷地测试 Spring 程
 
 方便集成各种优秀框架，Spring 不排斥各种优秀的开源框架，其内部提供了对各种优秀框架（如：Struts、Hibernate、MyBatis、Quartz 等）的直接支持。
 
-复杂 API 模板封装
+- 复杂 API 模板封装
 
 Spring 对 JavaEE 开发中非常难用的一些 API（JDBC、JavaMail、远程调用等）都提供了模板化的封装，这些封装 API 的提供使得应用难度大大降低。
 
@@ -345,7 +344,7 @@ Spring 对 JavaEE 开发中非常难用的一些 API（JDBC、JavaMail、远程�
 
 ### 2.1.3 SpringMVC
 
-#### Spring MVC 的核心组件
+#### 2.1.3.1 Spring MVC 的核心组件
 
 1. **DispatcherServlet**：前置控制器，是整个流程控制的**核心**，控制其他组件的执行，进行统一调度，降低组件之间的耦合性，相当于总指挥。
 2. **Handler**：处理器，完成具体的业务逻辑，相当于 Servlet 或 Action。
@@ -358,7 +357,7 @@ Spring 对 JavaEE 开发中非常难用的一些 API（JDBC、JavaMail、远程�
 
 ---
 
-#### Spring MVC 的工作流程
+#### 2.1.3.2 Spring MVC 的工作流程
 
 一图胜千言：
 
@@ -384,7 +383,7 @@ Spring 对 JavaEE 开发中非常难用的一些 API（JDBC、JavaMail、远程�
 
 ---
 
-#### SpringMVC Restful 风格的接口的流程
+#### 2.1.3.3 SpringMVC Restful 接口流程
 
 PS:这是一道全新的八股，毕竟 ModelAndView 这种方式应该没人用了吧？现在都是前后端分离接口，八股也该更新换代了。
 
@@ -424,7 +423,7 @@ PS:这是一道全新的八股，毕竟 ModelAndView 这种方式应该没人用
 
 ![spring-8d0a1518-a425-4887-9735-45321095d927](./JavaFramework/spring-8d0a1518-a425-4887-9735-45321095d927.png)
 
-**Web**:
+### 2.2.1 Web
 
 - @Controller：组合注解（组合了@Component 注解），应用在 MVC 层（控制层）。
 - @RestController：该注解为一个组合注解，相当于@Controller 和@ResponseBody 的组合，注解在类上，意味着，该 Controller 的所有方法都默认加上了@ResponseBody。
@@ -436,9 +435,8 @@ PS:这是一道全新的八股，毕竟 ModelAndView 这种方式应该没人用
 - @ResponseBody：支持将返回值放在 response 内，而不是一个页面，通常用户返回 json 数据。
 - @RequestBody：允许 request 的参数在 request 体中，而不是在直接连接在地址后面。
 - @PathVariable：用于接收路径参数，比如 `@RequestMapping(“/hello/{name}”)`申明的路径，将注解放在参数中前，即可获取该值，通常作为 Restful 的接口实现方法。
-- @RestController：该注解为一个组合注解，相当于@Controller 和@ResponseBody 的组合，注解在类上，意味着，该 Controller 的所有方法都默认加上了@ResponseBody。
 
-**容器**:
+### 2.2.2 容器
 
 - @Component：表示一个带注释的类是一个“组件”，成为 Spring 管理的 Bean。当使用基于注解的配置和类路径扫描时，这些类被视为自动检测的候选对象。同时@Component 还是一个元注解。
 - @Service：组合注解（组合了@Component 注解），应用在 service 层（业务逻辑层）。
@@ -450,19 +448,92 @@ PS:这是一道全新的八股，毕竟 ModelAndView 这种方式应该没人用
 - @Bean：注解在方法上，声明当前方法的返回值为一个 Bean。返回的 Bean 对应的类中可以定义 init()方法和 destroy()方法，然后在`@Bean(initMethod=”init”,destroyMethod=”destroy”)`定义，在构造之后执行 init，在销毁之前执行 destroy。
 - @Scope:定义我们采用什么模式去创建 Bean（方法上，得有@Bean） 其设置类型包括：Singleton 、Prototype、Request 、 Session、GlobalSession。
 
-**AOP**:
+#### @Order
 
-- @Aspect:声明一个切面（类上） 使用@After、@Before、@Around 定义建言（advice），可直接将拦截规则（切点）作为参数。
-  - `@After` ：在方法执行之后执行（方法上）。
-  - `@Before`： 在方法执行之前执行（方法上）。
-  - `@Around`： 在方法执行之前与之后执行（方法上）。
-  - `@PointCut`： 声明切点 在 java 配置类中使用@EnableAspectJAutoProxy 注解开启 Spring 对 AspectJ 代理的支持（类上）。
+在 Spring 框架中，`@Order` 注解可以用于多个组件，以控制它们的执行顺序。以下是几个常见的使用场景：
 
-**事务：**
+1. **Filter**
 
-- @Transactional：在要开启事务的方法上使用@Transactional 注解，即可声明式开启事务。
+如前所述，`@Order` 可以用于自定义的 Filter 类，用于控制多个过滤器的执行顺序。
 
-### 2.2.1 @Autowired 的实现原理
+```java
+import org.springframework.core.annotation.Order;
+
+@Order(1)
+public class MyFilterA implements Filter {
+    // ...
+}
+
+@Order(2)
+public class MyFilterB implements Filter {
+    // ...
+}
+```
+
+2. **Interceptor**
+
+在 Spring MVC 中，`@Order` 可以用于自定义的拦截器（`HandlerInterceptor`），以定义多个拦截器的执行顺序。
+
+```java
+import org.springframework.core.annotation.Order;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+@Order(1)
+public class MyInterceptorA implements HandlerInterceptor {
+    // ...
+}
+
+@Order(2)
+public class MyInterceptorB implements HandlerInterceptor {
+    // ...
+}
+```
+
+3. **Aspect**
+
+在 AOP（面向切面编程）中，`@Order` 可以用于定义多个切面的执行顺序，特别是在使用 Spring AOP 时。
+
+```java
+import org.springframework.core.annotation.Order;
+import org.aspectj.lang.annotation.Aspect;
+
+@Aspect
+@Order(1)
+public class MyAspectA {
+    // ...
+}
+
+@Aspect
+@Order(2)
+public class MyAspectB {
+    // ...
+}
+```
+
+4. **@Configuration Class**
+
+在 Spring 中，`@Order` 也可以应用于配置类（`@Configuration`）。这通常用于确保不同的配置类按照特定的顺序进行处理。
+
+```java
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+
+@Order(1)
+@Configuration
+public class FirstConfig {
+    // ...
+}
+
+@Order(2)
+@Configuration
+public class SecondConfig {
+    // ...
+}
+```
+
+
+
+#### 2.2.2.1 @Autowired 的实现原理
 
 实现@Autowired 的关键是：**AutowiredAnnotationBeanPostProcessor**
 
@@ -523,6 +594,81 @@ protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable B
       }
   }
 ```
+
+## 
+
+### 2.2.3 AOP
+
+- @Aspect:声明一个切面（类上） 使用@After、@Before、@Around 定义建言（advice），可直接将拦截规则（切点）作为参数。
+  - `@After` ：在方法执行之后执行（方法上）。
+  - `@Before`： 在方法执行之前执行（方法上）。
+  - `@Around`： 在方法执行之前与之后执行（方法上）。
+  - `@PointCut`： 声明切点 在 java 配置类中使用@EnableAspectJAutoProxy 注解开启 Spring 对 AspectJ 代理的支持（类上）。
+  - `@AfterReturning`：在没有异常时方法返回后执行。
+  - `@AfterThrowing`：在方法抛出异常后执行。
+
+```java
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.AfterThrowing;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.Pointcut;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+@Aspect
+@Component
+public class LoggingAspect {
+
+    private static final Logger logger = LoggerFactory.getLogger(LoggingAspect.class);
+
+    // 1. 定义切点
+    @Pointcut("execution(* com.example.service.*.*(..))")
+    public void serviceMethods() {}
+
+    // 2. Before advice
+    @Before("serviceMethods()")
+    public void logBefore(JoinPoint joinPoint) {
+        logger.info("Before executing: " + joinPoint.getSignature());
+    }
+
+    // 3. After advice
+    @After("serviceMethods()")
+    public void logAfter(JoinPoint joinPoint) {
+        logger.info("After executing: " + joinPoint.getSignature());
+    }
+
+    // 4. AfterReturning advice
+    @AfterReturning(pointcut = "serviceMethods()", returning = "result")
+    public void logAfterReturning(JoinPoint joinPoint, Object result) {
+        logger.info("Method returned: " + result);
+    }
+
+    // 5. AfterThrowing advice
+    @AfterThrowing(pointcut = "serviceMethods()", throwing = "exception")
+    public void logAfterThrowing(JoinPoint joinPoint, Throwable exception) {
+        logger.error("Exception in method: " + joinPoint.getSignature() + " with cause: " + exception.getMessage());
+    }
+
+    // 6. Around advice (示例)
+    @Around("serviceMethods()")
+    public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
+        logger.info("Around before executing: " + joinPoint.getSignature());
+        Object result = joinPoint.proceed(); // 执行目标方法
+        logger.info("Around after executing: " + joinPoint.getSignature());
+        return result;
+    }
+}
+```
+
+
+
+### 2.2.4 事务
+
+- @Transactional：在要开启事务的方法上使用@Transactional 注解，即可声明式开启事务。
 
 ## 2.3 Spring 中的设计模式
 
@@ -725,6 +871,8 @@ AOP 的核心其实就是**动态代理**，可以使用 JDK 的动态代理，�
 
 ③运行期织入：切面在应用运行的某个时刻被织入。一般情况下，在织入切面时，AOP 容器会为目标对象动态地创建一个代理对象。Spring AOP 就是以这种方式织入切面。Spring 采用运行期织入，而 AspectJ 采用编译期织入和类加载器织入。**多个切面的情况下，可以通过 @Order 指定先后顺序，数字越小，优先级越高。**
 
+
+
 AOP 一般有 **5 种**环绕方式：
 
 - 前置通知 (@Before)
@@ -732,56 +880,6 @@ AOP 一般有 **5 种**环绕方式：
 - 异常通知 (@AfterThrowing)
 - 后置通知 (@After)
 - 环绕通知 (@Around)
-
-```java
-@Aspect
-@Component
-public class WebLogAspect {
-
-    private final static Logger logger = LoggerFactory.getLogger(WebLogAspect.class);
-
-    @Pointcut("@annotation(cn.fighter3.spring.aop_demo.WebLog)")
-    public void webLog() {}
-
-    @Before("webLog()")
-    public void doBefore(JoinPoint joinPoint) throws Throwable {
-        // 开始打印请求日志
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        HttpServletRequest request = attributes.getRequest();
-        // 打印请求相关参数
-        logger.info("========================================== Start ==========================================");
-        // 打印请求 url
-        logger.info("URL            : {}", request.getRequestURL().toString());
-        // 打印 Http method
-        logger.info("HTTP Method    : {}", request.getMethod());
-        // 打印调用 controller 的全路径以及执行方法
-        logger.info("Class Method   : {}.{}", joinPoint.getSignature().getDeclaringTypeName(), joinPoint.getSignature().getName());
-        // 打印请求的 IP
-        logger.info("IP             : {}", request.getRemoteAddr());
-        // 打印请求入参
-        logger.info("Request Args   : {}",new ObjectMapper().writeValueAsString(joinPoint.getArgs()));
-    }
-
-    @After("webLog()")
-    public void doAfter() throws Throwable {
-        // 结束后打个分隔线，方便查看
-        logger.info("=========================================== End ===========================================");
-    }
-
-    @Around("webLog()")
-    public Object doAround(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
-        //开始时间
-        long startTime = System.currentTimeMillis();
-        Object result = proceedingJoinPoint.proceed();
-        // 打印出参
-        logger.info("Response Args  : {}", new ObjectMapper().writeValueAsString(result));
-        // 执行耗时
-        logger.info("Time-Consuming : {} ms", System.currentTimeMillis() - startTime);
-        return result;
-    }
-}
-
-```
 
 
 
@@ -926,7 +1024,7 @@ Spring 的 AOP 是通过[动态代理open in new window](https://mp.weixin.qq.co
 
 ---
 
-#### **JDK 动态代理实现**
+#### 2.4.5.1 **JDK 动态代理实现**
 
 ![spring-65b14a3f-2653-463e-af77-a8875d3d635c](./JavaFramework/spring-65b14a3f-2653-463e-af77-a8875d3d635c.png)
 
@@ -1095,9 +1193,7 @@ AspectJ 属于**静态织入**，通过修改代码来实现，在实际运行�
 
 BeanFactory 是类的通用工厂，可以创建并管理各种类的对象。
 
-Spring 为 BeanFactory 提供了很多种实现，最常用的是 XmlBeanFactory，但在 Spring 3.2 中已被废弃，建议使用 XmlBeanDefinitionReader、DefaultListableBeanFactory。ApplicationContext 接口
-
-ApplicationContext 由 BeanFactory 派生而来，提供了更多面向实际应用的功能。可以这么说，使用 BeanFactory 就是手动档，使用 ApplicationContext 就是自动档。
+Spring 为 BeanFactory 提供了很多种实现，最常用的是 XmlBeanFactory，但在 Spring 3.2 中已被废弃，建议使用 XmlBeanDefinitionReader、DefaultListableBeanFactory、ApplicationContext 接口。ApplicationContext 由 BeanFactory 派生而来，提供了更多面向实际应用的功能。可以这么说，使用 BeanFactory 就是手动档，使用 ApplicationContext 就是自动档。
 
 ![spring-6e6d4b69-f36c-41e6-b8ba-9277be147c9b](./JavaFramework/spring-6e6d4b69-f36c-41e6-b8ba-9277be147c9b.png)
 
@@ -1134,7 +1230,7 @@ public class HelloWorldApp{
 
 ApplicationContext 包含 BeanFactory 的所有特性，通常推荐使用前者。
 
-## 2.6 spring容器
+## 2.6 🌟spring容器
 
 ### 2.6.1 启动阶段
 
@@ -1342,7 +1438,9 @@ Bean使用中：工作，只有对社会没有用的人才放假。。
 
 有三种方式：**直接编码方式**、**配置文件方式**、**注解方式**。
 
-![spring-89f0f50d-a9e4-4dec-b267-cb1a526cb340](./JavaFramework/spring-89f0f50d-a9e4-4dec-b267-cb1a526cb340.png))Bean依赖配置方式
+![spring-89f0f50d-a9e4-4dec-b267-cb1a526cb340](./JavaFramework/spring-89f0f50d-a9e4-4dec-b267-cb1a526cb340.png)
+
+Bean依赖配置方式
 
 - 直接编码方式：我们一般接触不到直接编码的方式，但其实其它的方式最终都要通过直接编码来实现。
 - 配置文件方式：通过 xml、propreties 类型的配置文件，配置相应的依赖关系，Spring 读取配置文件，完成依赖关系的注入。
@@ -1404,7 +1502,7 @@ Spring 提供了 4 种自动装配类型：
 
 ### 2.6.8 bean的循环依赖
 
-#### 什么是循环依赖
+#### 2.6.8.1 什么是循环依赖
 
 ![spring-f8fea53f-56fa-4cca-9199-ec7f648da625](./JavaFramework/spring-f8fea53f-56fa-4cca-9199-ec7f648da625.png)
 
@@ -1424,7 +1522,7 @@ Spring 不支持基于构造器注入的循环依赖，但是假如 AB 循环依
 
 ---
 
-#### 解决循环依赖
+#### 2.6.8.2 解决循环依赖
 
 > PS：其实正确答案是开发人员做好设计，别让 Bean 循环依赖，但是没办法，面试官不想听这个。
 
@@ -1465,7 +1563,7 @@ Bean初始化步骤注入就发生在第二步，**属性赋值**，结合这个
 
 ---
 
-#### 三级缓存VS⼆级
+#### 2.6.8.3 三级缓存VS⼆级
 
 不行，主要是为了**⽣成代理对象**。如果是没有代理的情况下，使用二级缓存解决循环依赖也是 OK 的。但是如果存在代理，三级没有问题，二级就不行了。
 
@@ -1476,6 +1574,131 @@ Bean初始化步骤注入就发生在第二步，**属性赋值**，结合这个
 ![spring-6ece8a46-25b1-459b-8cfa-19fc696dd7d6](./JavaFramework/spring-6ece8a46-25b1-459b-8cfa-19fc696dd7d6.png)
 
 ### 2.6.9 bean创建顺序
+
+在 Spring 中，Bean 的创建顺序可以通过多种方式来控制和限定。以下是一些常用的方法：
+
+#### 1. 使用 `@DependsOn` 注解
+
+使用 `@DependsOn` 注解可以声明一个 Bean 依赖于另一个 Bean。这意味着在被依赖的 Bean 初始化之前，依赖者 Bean 不会被创建。
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.DependsOn;
+import org.springframework.stereotype.Component;
+
+@Component
+public class BeanA {
+    // BeanB 需要在 BeanA 创建之前被创建
+    @DependsOn("beanB")
+    public BeanA() {
+        System.out.println("BeanA created");
+    }
+}
+
+@Component
+public class BeanB {
+    public BeanB() {
+        System.out.println("BeanB created");
+    }
+}
+```
+
+在这个例子中，首先会创建 `BeanB`，然后创建 `BeanA`。
+
+#### 2. 构造函数依赖注入
+
+如果一个 Bean 通过构造函数依赖注入另一个 Bean，Spring 将确保先创建被依赖的 Bean。
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class BeanA {
+    private final BeanB beanB;
+
+    @Autowired
+    public BeanA(BeanB beanB) {
+        this.beanB = beanB;
+        System.out.println("BeanA created with BeanB");
+    }
+}
+
+@Component
+public class BeanB {
+    public BeanB() {
+        System.out.println("BeanB created");
+    }
+}
+```
+
+在这个例子中，`BeanA` 的构造函数依赖 `BeanB`，因此 `BeanB` 将在 `BeanA` 之前创建。
+
+#### 3. `@PostConstruct` 注解
+
+可以使用 `@PostConstruct` 注解在 Bean 初始化之后执行特定的方法。虽然这并不控制创建顺序，但可以在依赖 Bean 初始化之后执行某些逻辑。
+
+```java
+import javax.annotation.PostConstruct;
+import org.springframework.stereotype.Component;
+
+@Component
+public class BeanA {
+
+    @PostConstruct
+    public void init() {
+        System.out.println("BeanA initialized");
+    }
+}
+```
+
+#### 4. 使用 `@Order` 注解
+
+`@Order` 注解用于控制 Bean 的执行顺序，特别在使用 `@Configuration` 类中的多个 `@Bean` 时。
+
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+
+@Configuration
+public class AppConfig {
+
+    @Bean
+    @Order(1)
+    public BeanA beanA() {
+        return new BeanA();
+    }
+
+    @Bean
+    @Order(2)
+    public BeanB beanB() {
+        return new BeanB();
+    }
+}
+```
+
+#### 5. `ApplicationContextInitializer`
+
+你也可以实现 `ApplicationContextInitializer` 来在上下文启动时控制 Bean 的创建顺序：
+
+```java
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
+
+public class MyInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+    @Override
+    public void initialize(ConfigurableApplicationContext applicationContext) {
+        // 在这里可以控制 Bean 的加载
+    }
+}
+```
+
+#### 6. Profile 和配置文件
+
+可以使用 Spring Profiles 来区分不同环境下的 Bean 创建。根据不同的环境条件选择性地创建 Bean。
+
+
 
 ## 2.7 Spring事务
 
@@ -1561,7 +1784,9 @@ Spring 默认的事务传播行为是 PROPAFATION_REQUIRED，它适合绝大多�
 
 ### 2.7.5 声明式事务在哪些情况下会失效
 
-![spring-381e4ec9-a235-4cfa-9b4d-518095a7502a](./JavaFramework/spring-381e4ec9-a235-4cfa-9b4d-518095a7502a.png)声明式事务的几种失效的情况
+![spring-381e4ec9-a235-4cfa-9b4d-518095a7502a](./JavaFramework/spring-381e4ec9-a235-4cfa-9b4d-518095a7502a.png)
+
+声明式事务的几种失效的情况
 
 **1、@Transactional 应用在非 public 修饰的方法上**
 
@@ -1590,7 +1815,9 @@ protected TransactionAttribute computeTransactionAttribute(Method method,
 
 rollbackFor 可以指定能够触发事务回滚的异常类型。Spring 默认抛出了未检查 unchecked 异常（继承自 RuntimeException 的异常）或者 Error 才回滚事务，其他异常不会触发回滚事务。
 
-![spring-381e4ec9-a235-4cfa-9b4d-518095a7502a](./JavaFramework/spring-381e4ec9-a235-4cfa-9b4d-518095a7502a.png)Spring默认支持的异常回滚
+![spring-381e4ec9-a235-4cfa-9b4d-518095a7502a](./JavaFramework/spring-381e4ec9-a235-4cfa-9b4d-518095a7502a.png)
+
+Spring默认支持的异常回滚
 
 ```java
 // 希望自定义的异常可以进行回滚
@@ -1661,6 +1888,333 @@ private Integer A() throws Exception {
 ```java
 org.springframework.transaction.UnexpectedRollbackException: Transaction rolled back because it has been marked as rollback-only
 ```
+
+## 2.8 Filter和Interceptor
+
+- filter过滤器依赖于servlet容器，而interceptor依赖于spring容器
+- filter是基于函数回调实现的，interceptor是基于Java反射机制实现的
+- filter是实现javax.servlet.Filter，该接口由servlet规范定义，使用过滤器（filter）需要依赖于servlet容器，如Tomcat容器。而interceptor是实现org.springframework.web.servlet.HandlerInterceptor接口，由spring框架提供且由spring容器管理，不依赖servlet容器，依赖spring容器。
+- filter（过滤器）是在请求到达servlet之前进行预处理。interceptor（拦截器）是在请求到达servlet之后在进入action（controller）之前进行预处理，在action（controller）处理完返回视图前再处理，待action（controller）返回视图后进行最终处理。
+- filter可以过滤被web容器管理的几乎所有资源请求（JSP、Servlet、静态资源等），interceptor只能对action（SpringMVC里的controller）进行拦截处理。
+
+![Snipaste_2024-08-14_17-38-16](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JavaFramework/Snipaste_2024-08-14_17-38-16.png)
+
+![4414bee0263d0b48a7efcea94d9e6060](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JavaFramework/4414bee0263d0b48a7efcea94d9e6060.png)
+
+### 2.8.1 Filter
+
+![filter-interceptor-and-aop-1](./JavaFramework/filter-interceptor-and-aop-1.jpeg)
+
+- **定义**：Filter 是一个接口，定义了四个方法：`init()`、`doFilter()`、`destroy()` 和 `setFilterConfig()`。其中，`doFilter()` 方法是用于实际处理请求和响应的核心方法。
+- **生命周期**：
+  1. **init(FilterConfig filterConfig)**: Filter 被实例化后，调用此方法进行初始化。
+  2. **doFilter(ServletRequest request, ServletResponse response, FilterChain chain)**: 过滤器执行时被调用。在此方法中，您可以执行需要的操作，然后调用 `chain.doFilter(request, response)` 继续将请求传递给下一个过滤器或目标资源。
+  3. **destroy()**: 在 Filter 被销毁之前调用，用于释放资源。
+
+- 过滤器的使用场景
+
+  - **权限检查**：对每个请求进行身份验证和授权。
+
+  - **日志记录**：记录请求和响应的数据，如请求时间、用户 IP 等。
+
+  - **性能监控**：计算请求的处理时间，为性能分析提供支持。
+
+  - **数据修改**：对请求数据进行校验或转换，或对响应数据进行修改。
+
+  - **跨域处理**：处理 CORS（跨域资源共享）相关的请求头。
+
+- 注意事项
+
+  - **Filter 不应涉及业务逻辑**：过滤器主要应处理跨切关注点，如日志和安全控制，而业务逻辑应放在 Servlets 或 Controllers 中。
+
+  - **Filter 的调用顺序**：在 web.xml 中定义的多个 Filter 按照在配置文件中出现的顺序进行调用；在 Spring 中，可以通过设置 FilterRegistrationBean 的顺序来控制。
+
+  - **性能影响**：过多的 Filter 或复杂的过滤逻辑可能会影响请求的处理性能，需谨慎设计。
+
+---
+
+代码示例
+
+```java
+import javax.servlet.*;
+import java.io.IOException;
+
+@Order(1)  // FilterA 的优先级
+public class FilterA implements Filter {
+    @Override
+    public void init(FilterConfig filterConfig) {
+        System.out.println("FilterA initialized");
+    }
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        System.out.println("FilterA before chain");
+        chain.doFilter(request, response); // 继续调用下一个 Filter
+        System.out.println("FilterA after chain");
+    }
+
+    @Override
+    public void destroy() {
+        System.out.println("FilterA destroyed");
+    }
+}
+
+@Order(2)  // FilterB 的优先级
+public class FilterB implements Filter {
+    @Override
+    public void init(FilterConfig filterConfig) {
+        System.out.println("FilterB initialized");
+    }
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        System.out.println("FilterB before chain");
+        chain.doFilter(request, response); // 继续调用下一个 Filter
+        System.out.println("FilterB after chain");
+    }
+
+    @Override
+    public void destroy() {
+        System.out.println("FilterB destroyed");
+    }
+}
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class FilterConfig {
+
+    @Bean
+    public FilterA filterA() {
+        return new FilterA();
+    }
+
+    @Bean
+    public FilterB filterB() {
+        return new FilterB();
+    }
+}
+```
+
+
+
+### 2.8.2 Zuul-Filter
+
+![o_QQ截图20190313145207](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JavaFramework/o_QQ截图20190313145207.png)
+
+Zuul 是 Netflix 开源的一个边缘服务解决方案，主要用于提供动态路由、监控、弹性、负载均衡等功能。**Zuul Filter** 是其核心部分之一，允许开发者在请求路径的不同阶段插入自定义的处理逻辑，以扩展或修改请求和响应的处理流程。
+
+- 过滤器类型
+
+  - **Pre Filter**：
+
+    - 在请求被路由到目标服务之前执行。
+
+    - 常用于身份验证、请求日志记录、请求修改等操作。
+
+    - 例如：检查用户的权限，拒绝未授权的请求。
+
+  - **Route Filter**：
+
+    - 在请求被路由到具体的后端服务时执行。
+
+    - 主要用于处理请求的转发。
+
+    - 例如：根据某种条件选择不同的后端服务进行路由。
+
+  - **Post Filter**：
+
+    - 在请求被后端服务处理完成后、响应返回给客户端之前执行。
+
+    - 常用于记录日志、修改响应等功能。
+
+    - 例如：记录请求处理时间，或对返回的数据进行包装。
+
+  - **Error Filter**：在请求处理过程中发生错误时执行。
+
+    - 常用于对错误进行统一处理和返回，保证响应的一致性。
+
+    - 例如：返回自定义的错误信息给客户端。
+
+- 过滤器的生命周期
+
+  - **filterType()**：返回过滤器的类型，决定该过滤器在请求处理过程中的执行时机。
+
+  - **filterOrder()**：返回过滤器的执行顺序，数值越小表示优先级越高。
+
+  - **shouldFilter()**：返回一个布尔值，决定该过滤器是否应该被执行。可以添加逻辑来动态判断。
+
+  - **run()**：执行过滤器的主要逻辑。在这里，可以实现具体的请求处理和响应修改的功能。
+
+- Filter的加载所需要的主要类在Zuul-Core包下，这里简单介绍一下
+
+  - ZuulServlet 负责Zuul初始化以及Filter的执行
+  - ZuulRunner 负责将用户请求的javax.servlet.http.HttpServletRequest包装成com.netflix.zuul.http.HttpServletRequestWrapper。并封装ZuulProcessor的方法，以对外部类提供访问方式
+  - ZuulProcessor 负责Filter的具体执行
+  - ZuulLoader 负责加载过滤器到当前过滤器链中
+
+- 使用场景
+
+  - 
+    XSS过滤，可以利用Pre过滤器预先处理数据，防止不安全数据到下游服务。
+  - 接口权限过滤，同样是采用Pre过滤器验证当前用户是否拥有访问权限。
+  - 灰度发布，可以采用Route过滤器自定义路由规则
+
+#### 2.8.2.1 Zuul默认过滤器
+
+在Spring Cloud Zuul中，为了让api网关组件可以被更方便的使用，它在http请求生命周期的各个阶段默认实现了一批核心过滤器，它们会在api网关服务启动的时候被自动加载和启动。我们可以在源码中查看和了解它们，它们定义与spring-cloud-netflix-core模块的
+org.springframework.cloud.netflix.zuul.filters包下。在默认启动的过滤器中包含三种不同生命周期的过滤器，这些过滤器都非常重要，可以帮组我们理解zuul对外部请求处理的过程，以及帮助我们在此基础上扩展过滤器去完成自身系统需要的功能。
+
+ 
+
+##### Pre过滤器
+
+- ServletDetectionFilter：它的执行顺序为-3，是最先被执行的过滤器。该过滤器总是会被执行，主要用来检测当前请求是通过Spring的DispatcherServlet处理运行的，还是通过ZuulServlet来处理运行的。它的检测结果会以布尔类型保存在当前请求上下文的isDispatcherServletRequest参数中，这样后续的过滤器中，我们就可以通过RequestUtils.isDispatcherServletRequest()和RequestUtils.isZuulServletRequest()方法来判断请求处理的源头，以实现后续不同的处理机制。一般情况下，发送到api网关的外部请求都会被Spring的DispatcherServlet处理，除了通过/zuul/\*路径访问的请求会绕过DispatcherServlet（比如之前我们说的大文件上传），被ZuulServlet处理，主要用来应对大文件上传的情况。另外，对于ZuulServlet的访问路径/zuul/\*，我们可以通过zuul.servletPath参数进行修改。
+
+​    [![img](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f1.png)](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f1.png)
+
+- Servlet30WrapperFilter：它的执行顺序为-2，是第二个执行的过滤器，目前的实现会对所有请求生效，主要为了将原始的HttpServletRequest包装成Servlet30RequestWrapper对象。
+
+​    [![img](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f2.png)](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f2.png)
+
+
+
+FormBodyWrapperFilter：它的执行顺序为-1，是第三个执行的过滤器。该过滤器仅对两类请求生效，第一类是Context-Type为application/x-www-form-urlencoded的请求，第二类是Context-Type为multipart/form-data并且是由String的DispatcherServlet处理的请求（用到了ServletDetectionFilter的处理结果）。而该过滤器的主要目的是将符合要求的请求体包装成FormBodyRequestWrapper对象。
+
+[![img](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f3.png)](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f3.png)
+
+- DebugFilter：
+
+  它的执行顺序为1，是第四个执行的过滤器，该过滤器会根据配置参数zuul.debug.request和请求中的debug参数来决定是否执行过滤器中的操作。而它的具体操作内容是将当前请求上下文中的debugRouting和debugRequest参数设置为true。由于在同一个请求的不同生命周期都可以访问到这二个值，所以我们在后续的各个过滤器中可以利用这二个值来定义一些debug信息，这样当线上环境出现问题的时候，可以通过参数的方式来激活这些debug信息以帮助分析问题，另外，对于请求参数中的debug参数，我们可以通过zuul.debug.parameter来进行自定义。
+
+  ![img](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f4.png)
+
+  
+
+- PreDecorationFilter：执行顺序是5，是pre阶段最后被执行的过滤器，该过滤器会判断当前请求上下文中是否存在forward.do和serviceId参数，如果都不存在，那么它就会执行具体过滤器的操作（如果有一个存在的话，说明当前请求已经被处理过了，因为这二个信息就是根据当前请求的路由信息加载进来的）。而当它的具体操作内容就是为当前请求做一些预处理，比如说，进行路由规则的匹配，在请求上下文中设置该请求的基本信息以及将路由匹配结果等一些设置信息等，这些信息将是后续过滤器进行处理的重要依据，我们可以通过RequestContext.getCurrentContext()来访问这些信息。另外，我们还可以在该实现中找到对HTTP头请求进行处理的逻辑，其中包含了一些耳熟能详的头域，比如X-Forwarded-Host,X-Forwarded-Port。另外，对于这些头域是通过zuul.addProxyHeaders参数进行控制的，而这个参数默认值是true，所以zuul在请求跳转时默认会为请求增加X-Forwarded-*头域，包括X-Forwarded-Host,X-Forwarded-Port，X-Forwarded-For，X-Forwarded-Prefix,X-Forwarded-Proto。也可以通过设置zuul.addProxyHeaders=false关闭对这些头域的添加动作。
+
+##### Route过滤器
+
+- RibbonRoutingFilter:它的执行顺序为10，是route阶段的第一个执行的过滤器。该过滤器只对请求上下文中存在serviceId参数的请求进行处理，即只对通过serviceId配置路由规则的请求生效。而该过滤器的执行逻辑就是面向服务路由的核心，它通过使用ribbon和hystrix来向服务实例发起请求，并将服务实例的请求结果返回。这里摘选一部分源码，SERVICE_ID_KEY等参数则是在PreDecorationFilter中预处理
+
+​    [![img](https://images.cnblogs.com/cnblogs_com/pettyfer/1418344/o_QQ%E6%88%AA%E5%9B%BE20190313145929.png)](https://images.cnblogs.com/cnblogs_com/pettyfer/1418344/o_QQ截图20190313145929.png)
+
+​    [![img](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_QQ%e6%88%aa%e5%9b%be20190313150108.png)](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_QQ截图20190313150108.png)
+
+- SimpleHostRoutingFilter：它的执行顺序为100，是route阶段的第二个执行的过滤器。该过滤器只对请求上下文存在routeHost参数的请求进行处理，即只对通过url配置路由规则的请求生效。而该过滤器的执行逻辑就是直接向routeHost参数的物理地址发起请求，从源码中我们可以知道该请求是直接通过httpclient包实现的，而没有使用Hystrix命令进行包装，所以这类请求并没有线程隔离和断路器的保护。
+
+​    [![img](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f5.png)](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f5.png)
+
+- SendForwardFilter：它的执行顺序是500，是route阶段第三个执行的过滤器。该过滤器只对请求上下文中存在的forward.do参数进行处理请求，即用来处理路由规则中的forward本地跳转装配。
+
+​    [![img](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f6.png)](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f6.png)
+
+ 
+
+##### Post过滤器
+
+- SendErrorFilter：它的执行顺序是0，是post阶段的第一个执行的过滤器。该过滤器仅在请求上下文中包含error.status_code参数（由之前执行的过滤器设置的错误编码）并且还没有被该过滤器处理过的时候执行。而该过滤器的具体逻辑就是利用上下文中的错误信息来组成一个forward到api网关/error错误端点的请求来产生错误响应。
+
+​    [![img](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f7.png)](https://www.cnblogs.com/images/cnblogs_com/pettyfer/1418344/o_f7.png)[
+](https://www.cnblogs.com/pettyfer/p/$image6.png)
+
+- SendResponseFilter：它的执行顺序为1000，是post阶段最后执行的过滤器，该过滤器会检查请求上下文中是否包含请求响应相关的头信息，响应数据流或是响应体，只有在包含它们其中一个的时候执行处理逻辑。而该过滤器的处理逻辑就是利用上下文的响应信息来组织需要发送回客户端的响应内容。
+
+### 2.8.3 Interceptor
+
+![Snipaste_2024-08-15_10-01-42](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JavaFramework/Snipaste_2024-08-15_10-01-42.png)
+
+**拦截器**（Interceptor）是 Spring MVC 中的重要组件，用于在处理 HTTP 请求与响应的过程中，对请求的执行进行拦截和处理。拦截器可以对请求进行预处理、目标方法执行前后的处理、以及响应的后处理，通常用于实现日志记录、权限检查等功能。
+
+- 主要特性
+  - **生命周期**：拦截器可以在请求到达 Controller 之前执行代码，并且在 Controller 处理完毕后返回响应之前进行后续处理。
+  - **灵活性**：拦截器可以对特定的 URL 路径进行配置，使其仅对某些请求生效。
+  - **多个拦截器**：可以定义多个拦截器，并按顺序执行它们，操作连续的请求和响应处理。
+
+- 主要方法：拦截器通常需要实现 `HandlerInterceptor` 接口，该接口包含以下三个方法：
+  - **`preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)`**：
+    - 在 Controller 执行前调用。返回 `true` 时表示继续执行下一个拦截器或目标方法，返回 `false` 时表示请求被终止。
+  - **`postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView)`**：
+    - 在 Controller 执行后调用，但在视图渲染之前。可以用于修改返回的 ModelAndView。
+  - **`afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)`**：
+    - 在整个请求完成后调用，主要用于进行资源清理工作。比如关闭数据库连接等。
+- 应用场景
+  - **日志记录**：记录请求和响应信息。
+  - **权限检查**：在请求进入 Controller 之前进行身份验证和授权。
+  - **性能监控**：监控请求的处理时间，返回结果等，并进行性能分析。
+  - **请求参数校验**：对请求参数进行预处理和校验。
+
+- 总结
+  - 拦截器是处理请求的强大工具，可以在请求与响应的生命周期中执行额外的处理逻辑。通过实现 `HandlerInterceptor` 接口，开发者可以轻松增加多种功能，如日志、权限控制、性能监控等。灵活配置的特性使得拦截器在 Spring MVC 中广泛应用，是实现企业级 Web 应用程序的一个重要工具。
+
+---
+
+**使用示例**
+
+下面是一个简单的自定义拦截器的示例，演示如何记录每个请求的日志。
+
+1. 创建拦截器
+
+```java
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@Component
+public class LoggingInterceptor implements HandlerInterceptor {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        System.out.println("Incoming request: " + request.getRequestURI());
+        return true; // 继续执行后续的处理
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+        System.out.println("Response status: " + response.getStatus());
+        // 可以对 modelAndView 进行进一步处理
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        System.out.println("Request completed");
+        // 进行资源清理等
+    }
+}
+```
+
+2. 注册拦截器
+
+您需要在 Spring 的配置中注册拦截器，以确保它能够拦截请求。
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Autowired
+    private LoggingInterceptor loggingInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(loggingInterceptor)
+                .addPathPatterns("/api/**") // 只拦截以 "/api/" 开头的请求
+                .excludePathPatterns("/api/public/**"); // 排除特定路径
+    }
+}
+```
+
+
+
+## 2.9 自定义注解
+
+
 
 # 三、SpringBoot
 
@@ -1744,15 +2298,15 @@ SpringBoot 开启自动配置的注解是`@EnableAutoConfiguration` ，启动类
 - 创建一个项目，命名为 demo-spring-boot-starter，引入 SpringBoot 相关依赖
 
 ```java
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-configuration-processor</artifactId>
+    <optional>true</optional>
+</dependency>
 ```
 
 - 编写配置文件
