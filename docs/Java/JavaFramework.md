@@ -2214,6 +2214,259 @@ public class WebConfig implements WebMvcConfigurer {
 
 ## 2.9 自定义注解
 
+自定义注解需要使用 `@interface` 关键字定义。基本的注解定义示例如下：
+
+```java
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.METHOD) // 注解的应用目标，比如方法、类、字段等
+@Retention(RetentionPolicy.RUNTIME) // 注解的生命周期（可选: POLICY_SOURCE, POLICY_CLASS, POLICY_RUNTIME）
+public @interface MyCustomAnnotation {
+    String value(); // 注解的属性
+    int count() default 0; // 带默认值的属性
+}
+```
+
+- **@Target**：定义注解可以应用于哪些Java元素（如类、方法、字段等）。
+  - `ElementType.TYPE`: 注解可以用于类、接口（包括注解）或枚举。
+  - `ElementType.FIELD`: 注解可以用于字段（成员变量）。
+  - `ElementType.METHOD`: 注解可以用于方法。
+  - `ElementType.PARAMETER`: 注解可以用于方法参数。
+  - `ElementType.CONSTRUCTOR`: 注解可以用于构造函数。
+  - `ElementType.LOCAL_VARIABLE`: 注解可以用于局部变量。
+  - `ElementType.ANNOTATION_TYPE`: 注解可以用于注解类型。
+  - `ElementType.PACKAGE`: 注解可以用于包。
+- **@Retention**：定义注解在何种级别可用，`RUNTIME` 表示可以在运行时查看。
+  - `RetentionPolicy.SOURCE`: 注解在源代码中存在，编译后会被丢弃，不会包含在字节码中。
+  - `RetentionPolicy.CLASS`: 注解在字节码中存在，但在运行时不可获取，默认设置。
+  - `RetentionPolicy.RUNTIME`: 注解在字节码中存在，在运行时也可通过反射获取。
+- **@Documented**：如果使用此标注，表示该注解将包含在 Javadoc 中。
+- **@Inherited**：表示该注解可以被子类继承。
+
+---
+
+复合缓存实现代码例子
+
+设计一个更高级的缓存机制，优先使用本地缓存（Caffeine），并通过 Redis 实现分布式一致性同步，涉及消息通知机制。这里的设计包括以下几个要素：
+
+1. **本地缓存**：使用 Caffeine 存储热数据。
+2. **Redis**：作为集中式的存储和统一状态同步。
+3. **消息队列**：使用 Redis Pub/Sub 或者其他消息传递机制，确保在某个实例的缓存发生变化时，其他实例能够同步更新自己的缓存。
+
+
+
+1. 添加依赖
+
+确保在 `pom.xml` 中添加相关依赖，包括 `Caffeine` 和 `Spring Data Redis`，还要考虑使用消息队列的库，比如 `spring-boot-starter-amqp`（用于 RabbitMQ）或者直接使用 Redis 的 Pub/Sub 功能。
+
+```xml
+<dependencies>
+    <!-- Caffeine Cache -->
+    <dependency>
+        <groupId>com.github.ben-manes.caffeine</groupId>
+        <artifactId>caffeine</artifactId>
+        <version>3.0.5</version>
+    </dependency>
+
+    <!-- Spring Data Redis -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-redis</artifactId>
+    </dependency>
+
+    <!-- Optional: Spring Boot AMQP for RabbitMQ -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-amqp</artifactId>
+    </dependency>
+</dependencies>
+```
+
+2. 自定义注解
+
+我们仍然可以使用前面的 `@Cacheable` 注解。
+
+```java
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Cacheable {
+    String key(); // 缓存键
+}
+```
+
+3. 复合缓存管理器
+
+实现一个复合缓存管理器，优先使用 Caffeine 缓存，同时通过 Redis 进行数据同步。
+
+```java
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import java.util.concurrent.TimeUnit;
+
+@Component
+public class CompositeCacheManager {
+
+    private final Cache<String, String> caffeineCache;
+    private final StringRedisTemplate redisTemplate;
+
+    @Autowired
+    public CompositeCacheManager(StringRedisTemplate redisTemplate) {
+        this.caffeineCache = Caffeine.newBuilder()
+                .expireAfterWrite(10, TimeUnit.MINUTES)
+                .maximumSize(100)
+                .build();
+        this.redisTemplate = redisTemplate;
+    }
+
+    public String get(String key) {
+        // 先从 Caffeine 中获取
+        String value = caffeineCache.getIfPresent(key);
+        if (value != null) {
+            return value;
+        }
+        // 如果 Caffeine 中没有，再从 Redis 中获取
+        value = redisTemplate.opsForValue().get(key);
+        if (value != null) {
+            // 如果从 Redis 中获取到，存入 Caffeine
+            caffeineCache.put(key, value);
+        }
+        return value;
+    }
+
+    public void put(String key, String value) {
+        // 同时存入 Caffeine 和 Redis
+        caffeineCache.put(key, value);
+        redisTemplate.opsForValue().set(key, value);
+        // 发出消息以通知其他实例
+        redisTemplate.convertAndSend("cacheChannel", key);
+    }
+
+    public void evict(String key) {
+        caffeineCache.invalidate(key);
+        redisTemplate.delete(key);
+        // 发出删除通知
+        redisTemplate.convertAndSend("cacheChannel", key);
+    }
+}
+```
+
+4. 处理消息同步
+
+创建一个消息监听器，在接收到消息时刷新本地缓存。
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.listener.annotation.MessageListener;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CacheMessageListener {
+
+    private final CompositeCacheManager cacheManager;
+
+    @Autowired
+    public CacheMessageListener(CompositeCacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+    }
+
+    @MessageListener(topics = "cacheChannel")
+    public void refreshCache(String key) {
+        // 当接收到删除或更新消息时，自行进行缓存的清除
+        cacheManager.evict(key);
+    }
+}
+```
+
+5. 订阅频道
+
+确保在 Redis 配置中启用消息订阅。
+
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+
+@Configuration
+public class RedisConfig {
+    
+    @Bean
+    public RedisMessageListenerContainer messageListenerContainer(RedisConnectionFactory connectionFactory, MessageListenerAdapter listenerAdapter) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+        container.addMessageListener(listenerAdapter, new PatternTopic("cacheChannel"));
+        return container;
+    }
+}
+```
+
+6. 使用自定义注解
+
+如前所述，在您的服务类中使用自定义注解：
+
+```java
+import org.springframework.stereotype.Service;
+
+@Service
+public class MyService {
+
+    @Cacheable(key = "myKey")
+    public String fetchData() {
+        // 模拟数据获取
+        return "Hello, World!";
+    }
+    
+    public void updateData(String value) {
+        // 使用复合缓存更新数据
+        cacheManager.put("myKey", value);
+    }
+}
+```
+
+7. 测试功能
+
+你可以通过一个简单的测试类来验证功能：
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CacheTest implements CommandLineRunner {
+
+    @Autowired
+    private MyService myService;
+
+    @Override
+    public void run(String... args) throws Exception {
+        System.out.println(myService.fetchData()); // Hello, World!
+        myService.updateData("New Value");
+        System.out.println(myService.fetchData()); // New Value  (来自 Redis 的最新值)
+    }
+}
+```
+
+
+
+## 2.10 反射机制
+
+
+
 
 
 # 三、SpringBoot
@@ -2291,7 +2544,9 @@ SpringBoot 开启自动配置的注解是`@EnableAutoConfiguration` ，启动类
     }
 ```
 
-### 3.2.2 自定义一个 SpringBoot Srarter
+
+
+### 3.2.2 自定义一个 SpringBoot Starter
 
 知道了自动配置原理，创建一个自定义 SpringBoot Starter 也很简单。
 
