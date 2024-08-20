@@ -10,7 +10,60 @@
 
 # 一、多线程基础
 
+## 1.1 什么是多线程
 
+- 1.1 定义
+  - 1.1.1 多线程的概念与描述
+- 1.2 多线程的特点
+  - 1.2.1 并发执行
+  - 1.2.2 资源共享
+- 1.3 多线程的优势
+  - 1.3.1 资源利用率提高
+  - 1.3.2 应用程序响应速度改进
+  - 1.3.3 有利于分布式处理
+- 1.4 多线程的应用场景
+  - 1.4.1 网络服务器
+  - 1.4.2 用户界面
+  - 1.4.3 计算密集型任务
+
+## 1.2 线程的基本概念
+
+- 2.1 线程的定义
+  - 2.1.1 线程的含义与作用
+- 2.2 进程与线程的关系
+  - 2.2.1 进程的概念及功能
+  - 2.2.2 线程的概念及区分
+  - 2.2.3 进程与线程的主要区别
+- 2.3 线程的生命周期
+  - 2.3.1 新建状态
+  - 2.3.2 就绪状态
+  - 2.3.3 运行状态
+  - 2.3.4 阻塞状态
+  - 2.3.5 终止状态
+- 2.4 线程的属性
+  - 2.4.1 线程ID
+  - 2.4.2 线程优先级
+  - 2.4.3 线程状态
+
+## 1.3 操作系统中的线程管理
+
+- 3.1 线程的创建
+  - 3.1.1 操作系统中的线程创建机制
+  - 3.1.2 用户空间与内核空间的创建比较
+- 3.2 线程的调度
+  - 3.2.1 调度策略与算法
+    - 3.2.1.1 先来先服务（FCFS）
+    - 3.2.1.2 最短作业优先（SJF）
+    - 3.2.1.3 时间片轮转（RR）
+  - 3.2.2 线程调度与系统调用
+- 3.3 线程的同步与互斥
+  - 3.3.1 死锁的概念与预防
+  - 3.3.2 同步的必要性
+  - 3.3.3 互斥量（Mutex）的使用
+  - 3.3.4 信号量（Semaphore）的应用
+- 3.4 线程的终止与清理
+  - 3.4.1 线程的终止条件
+  - 3.4.2 清理线程资源的策略
 
 # 二、 多线程的实现
 
@@ -264,6 +317,64 @@ Java中有两类线程：User Thread(用户线程)、Daemon Thread(守护线程)
 - 在守护线程中产生的新线程也是守护线程
 - 不要认为所有的应用都可以分配守护线程来进行服务，比如读写操作或者计算逻辑。
 
+---
+
+在 Java 中，`IllegalThreadStateException` 是一种运行时异常，它表示线程的状态不合法，此异常通常在以下几种情况下会被抛出：
+
+1. 启动已启动的线程
+
+当你尝试再次启动一个已经启动过的线程时，会抛出 `IllegalThreadStateException`。
+
+```java
+public class MyThread extends Thread {
+    public void run() {
+        System.out.println("Thread is running");
+    }
+
+    public static void main(String[] args) {
+        MyThread thread = new MyThread();
+        thread.start(); // 第一次启动
+        thread.start(); // 第二次启动，会抛出异常
+    }
+}
+```
+
+2. 线程的状态与操作不符合预期
+
+- **中断已结束的线程**：如果线程已经结束，再次调用 `start()` 方法时，就会抛出此异常。
+
+3. 对于FutureTask的特殊情况
+
+在使用 `FutureTask` 时，如果你调用 `run()` 方法来直接执行任务，可能会导致 `IllegalThreadStateException`。因为 `FutureTask` 实际上是设计为以线程的方式执行任务的，如果该任务已经完成就不能再次执行。
+
+```java
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
+
+public class Example {
+    public static void main(String[] args) {
+        Callable<String> callable = () -> {
+            return "Task executed";
+        };
+
+        FutureTask<String> futureTask = new FutureTask<>(callable);
+        futureTask.run(); // 直接执行
+        futureTask.run(); // 再次执行会抛出异常
+    }
+}
+```
+
+4. 线程池中的状态更新
+
+在使用线程池（如 `ExecutorService`）时，如果一个线程已被终止，且重复使用同一个线程（例如，重新提交到线程池），可能会抛出此异常。
+
+- 预防措施
+
+  - **检查线程状态**：在调用 `start()` 方法前，确保线程状态是 "NEW"。
+
+  - **使用线程池**：使用线程池管理线程的生命周期，避免直接管理线程状态。
+
+  - **了解线程的生命周期**：掌握线程的不同状态（如 NEW、RUNNABLE、BLOCKED、WAITING、TERMINATED）有助于减少不合法操作的发生。
 
 
 
@@ -631,7 +742,6 @@ class Worker implements Runnable {
 Worker 1 is working.
 Worker 2 is working.
 All workers have completed.
-
 ```
 
 
@@ -821,7 +931,101 @@ public class CoroutineExample {
 
 #### 使用 Fork/Join 框架
 
-Java 的 Fork/Join 框架适合并行计算，可以用来实现一些协作式的任务处理。虽然它的设计目的是并行性，但可以通过适当地使用 `RecursiveTask` 等实现某些协作式任务。
+Java 的 Fork/Join 框架适合并行计算，可以用来实现一些协作式的任务处理。虽然它的设计目的是并行性，但可以通过适当地使用 `RecursiveTask` 等实现某些协作式任务。`Fork/Join` 是 Java 7 引入的一个并行处理框架，属于 Java 并发包的一部分，主要用于简化并行任务的执行，特别适合计算密集型的场景。它的主要思想是将一个大的任务分解为多个小任务，分别执行后再合并结果。
+
+1. 基本概念
+
+- **Fork**：将大的任务分割成小的子任务。
+- **Join**：合并子任务的结果，得到最终的计算结果。
+
+2. 重要组件
+
+- **ForkJoinPool**：用于执行 `ForkJoinTask` 的线程池。它会自动管理线程的创建和调度。
+- **ForkJoinTask**：是 `ForkJoinPool` 中的任务，可以是子任务，也可以是合并结果的任务。它有两个主要的实现：
+  - **RecursiveAction**：当任务不需要返回结果时使用。
+  - **RecursiveTask<V>**：当任务需要返回结果时使用。
+
+3. 使用示例
+
+以下是一个使用 `Fork/Join` 框架的示例，计算数组元素的和。
+
+```java
+import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.ForkJoinPool;
+
+public class ForkJoinExample {
+
+    // 最大任务大小
+    private static final int THRESHOLD = 10;
+
+    // RecursiveTask 用于计算数组的和
+    static class SumTask extends RecursiveTask<Integer> {
+        private final int[] numbers;
+        private final int start;
+        private final int end;
+
+        public SumTask(int[] numbers, int start, int end) {
+            this.numbers = numbers;
+            this.start = start;
+            this.end = end;
+        }
+
+        @Override
+        protected Integer compute() {
+            if (end - start <= THRESHOLD) {
+                // 基础情况：直接计算和
+                int sum = 0;
+                for (int i = start; i < end; i++) {
+                    sum += numbers[i];
+                }
+                return sum;
+            } else {
+                // 分割任务
+                int mid = (start + end) / 2;
+                SumTask leftTask = new SumTask(numbers, start, mid);
+                SumTask rightTask = new SumTask(numbers, mid, end);
+                
+                // Fork 子任务，并等待结果
+                leftTask.fork();
+                int rightResult = rightTask.compute(); // 右边任务直接计算
+                int leftResult = leftTask.join(); // 等待左边任务完成
+                
+                return leftResult + rightResult; // 合并结果
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        int[] numbers = new int[100];
+        for (int i = 0; i < 100; i++) {
+            numbers[i] = i + 1; // 初始化数组
+        }
+
+        // 创建 ForkJoinPool
+        ForkJoinPool pool = new ForkJoinPool();
+        
+        // 创建并执行任务
+        SumTask sumTask = new SumTask(numbers, 0, numbers.length);
+        int result = pool.invoke(sumTask);
+        
+        System.out.println("Sum: " + result); // 输出结果
+    }
+}
+```
+
+4. 工作原理
+
+1. **任务分割**：在 `compute()` 方法中，如果任务的大小超过某个阈值，就会将任务分割为两个子任务（左和右），并分别处理。
+2. **执行**：使用 `fork()` 方法将子任务提交给 `ForkJoinPool`，然后使用 `join()` 方法等待并获取子任务的结果。
+3. **结果合并**：合并数组中两个子任务的结果。
+
+5. 注意事项
+
+- **任务大小**：需要合理设置阈值（如上例中的 `THRESHOLD`），以避免任务分割过多带来的性能损耗。
+- **适用场景**：Fork/Join 框架主要适用于可分割的计算密集型任务，不适合 I/O 密集型任务。
+- **性能**：使用 Fork/Join 框架可以充分利用多核处理器，提高计算效率。
+
+
 
 #### 使用第三方库Kotlin/Quasar
 
