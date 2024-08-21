@@ -3410,7 +3410,7 @@ public class HighConcurrencyExample {
 }
 ```
 
-### 总结
+### 6. 总结
 
 - **`AtomicBoolean`、`AtomicInteger`、`AtomicLong`**：用于原子地更新布尔值和基本类型。
 - **`AtomicIntegerArray`、`AtomicLongArray`、`AtomicReferenceArray`**：用于原子地更新数组类型。
@@ -3420,9 +3420,9 @@ public class HighConcurrencyExample {
 
 通过这些原子类，Java 提供了在并发环境中安全且高效地进行各种类型更新的机制，极大简化了多线程编程中的复杂性。这些工具类在构建高性能、高可靠性的并发应用程序时非常有用。
 
-## 并发容器
+## 6.8 并发容器
 
-### CopyOnWrite容器
+### 6.8.1 CopyOnWrite容器
 
 `CopyOnWrite` 容器是 Java 并发编程中的一种用于实现线程安全的容器。这种容器在写操作（如增加、删除、修改）时，会创建原始容器的副本，并在副本上进行操作，写完后再将修改后的副本设置为新的容器。这种机制在读操作较多而写操作较少的场景中非常高效，因为读操作不会加锁，可以并发进行，不会阻塞。Java 中的 `CopyOnWriteArrayList` 和 `CopyOnWriteArraySet` 是典型的 `CopyOnWrite` 容器。`CopyOnWrite` 容器的核心思想是写时复制（Copy-On-Write）。当需要修改容器时，而不是直接修改容器本身，首先会复制一份副本，对副本进行修改，最后再将副本替换掉原容器。这样可以保证读操作在进行时不受写操作的影响，从而避免锁竞争。
 
@@ -3544,7 +3544,7 @@ public class CopyOnWriteSetExample {
 
 在 Java 并发编程中，为了满足多线程环境下的数据一致性和高效性，Java 提供了多种并发集合类，其中包括 `ConcurrentHashMap` 和 `ConcurrentSkipListMap`。这些类提供线程安全的 `Map` 实现，并且针对不同的使用场景进行了优化。
 
-### 并发Map
+### 6.8.2 并发Map
 
 #### ConcurrentHashMap
 
@@ -3688,8 +3688,74 @@ public class ConcurrentSkipListMapExample {
 
   - **ConcurrentSkipListMap**：一个基于跳表的数据结构，支持排序操作，通过无锁算法实现高并发性能，适用于需要有序访问且要求线程安全的场景。
 
+---
 
-### 并发Queue
+在 `ConcurrentHashMap` 中，使用 `volatile` 和 CAS 的组合来实现无锁化的读操作，核心的实现逻辑如下：
+
+- **桶的结构**：每个桶（即哈希槽）可以是一个链表或红黑树。
+- **节点的引用**：桶中的节点引用用 `volatile` 修饰，确保当节点结构变化（如插入或删除节点）时，所有线程都能看到最新的结构。
+
+**例子：读取操作**
+
+在进行读取操作时，`ConcurrentHashMap` 使用 `volatile` 修饰的引用来获取节点的值。以下是简单的伪代码，示范了如何进行无锁读取。
+
+```
+public V get(Object key) {
+    int hash = hash(key);
+    // 找到对应的桶
+    Node<K,V>[] tab = table; 
+    Node<K,V> node = tab[index];
+
+    // 如果桶存在
+    if (node != null) {
+        // 使用 volatile 保证节点的可见性
+        do {
+            // 读取节点值
+            if (node.hash == hash && (node.key == key || (key != null && key.equals(node.key)))) {
+                return node.value; // 返回节点的值
+            }
+            node = node.next; // 移动到下一个节点
+        } while (node != null);
+    }
+    return null; // 如果未找到
+}
+```
+
+在这个示例中：
+
+- 当读取操作开始时，多个线程可能会同时访问同一个桶。
+- 由于节点被声明为 `volatile`，即使某个线程正在对链表进行修改，其他线程仍然可以安全地读取到链表中的最新值。
+
+**使用 CAS 更新节点**
+
+当需要插入或更新操作时，`ConcurrentHashMap` 将使用 CAS 来确保线程安全。以下是伪代码示例：
+
+```
+public V putIfAbsent(K key, V value) {
+    int hash = hash(key);
+    int index = indexFor(hash, table.length);
+    
+    // 查找节点
+    Node<K,V> node = table[index];
+
+    if (node != null) {
+        // 如果节点已经存在，使用 CAS 更新值
+        while (node != null) {
+            if (node.hash == hash && (node.key == key || (key != null && key.equals(node.key)))) {
+                // 使用 CAS 更新值
+                return node.value; // 如果存在则返回当前值
+            }
+            node = node.next; // 继续查找
+        }
+    }
+
+    // 如果节点不存在，添加一个新节点
+    // 使用 CAS 来保证只在条件满足的情况下插入新节点
+    // 代码省略...
+}
+```
+
+### 6.8.3 并发Queue
 
 #### 非阻塞Queue
 
@@ -4141,7 +4207,7 @@ public class SynchronousQueueExample {
 
 
 
-### Collection相关
+### 6.8.4 Collection相关
 
 
 
@@ -4193,7 +4259,7 @@ public class SafeCollectionIteration extends Object {
 
 
 
-## Java CompletableFuture
+## 6.9 Java CompletableFuture
 
 `CompletableFuture` 是 Java 中强大的异步编程工具。它不仅扩展了 `Future` 接口，还提供了丰富的 API 用于异步操作、任务组合和结果处理。以下是 `CompletableFuture` 的各种用法整理，帮助开发者全面掌握其功能。
 
@@ -4213,7 +4279,7 @@ public class SafeCollectionIteration extends Object {
 - **自定义 Executor**：
   - 指定自定义的 Executor 来执行异步任务。
 
-### 创建 CompletableFuture
+### 6.9.1 创建 CompletableFuture
 
 已完成的 CompletableFuture
 
@@ -4239,7 +4305,7 @@ CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
 });
 ```
 
-### 链式操作
+### 6.9.2 链式操作
 
 任务完成后的处理
 
@@ -4264,7 +4330,7 @@ CompletableFuture<Void> future = CompletableFuture.supplyAsync(() -> "Hello")
     .thenRun(() -> System.out.println("Task completed"));
 ```
 
-### 异常处理
+### 6.9.3 异常处理
 
 - **exceptionally**
 
@@ -4296,7 +4362,7 @@ CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
 });
 ```
 
-### 组合多个任务
+### 6.9.4 组合多个任务
 
 ##### thenCombine
 
@@ -4305,7 +4371,6 @@ CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
 ```java
 CompletableFuture<String> future1 = CompletableFuture.supplyAsync(() -> "Hello");
 CompletableFuture<String> future2 = CompletableFuture.supplyAsync(() -> "World");
-
 CompletableFuture<String> combinedFuture = future1.thenCombine(future2, (result1, result2) -> result1 + " " + result2);
 ```
 
@@ -4350,7 +4415,7 @@ CompletableFuture<Object> anyOfFuture = CompletableFuture.anyOf(future1, future2
 anyOfFuture.thenAccept(result -> System.out.println(result));
 ```
 
-### 自定义 Executor
+### 6.9.5 自定义 Executor
 
 可以指定自定义的线程池来执行异步任务。
 
@@ -4372,7 +4437,7 @@ future.thenAccept(result -> {
 executor.shutdown();
 ```
 
-### 延伸功能
+### 6.9.6 延伸功能
 
 #### 组合式异步编程
 
@@ -4388,6 +4453,159 @@ future.thenAccept(System.out::println); // 输出: HELLO WORLD!
 ```
 
 
+
+## 6.10 多线程下异常捕获
+
+- **主线程**：在主线程中，未捕获的异常将导致程序崩溃。
+- **子线程**：未捕获的异常不会终止整个程序，但会打印异常堆栈。
+- 可以使用 **`Thread.UncaughtExceptionHandler`** 来处理子线程中的异常，从而自定义异常处理逻辑。
+
+为了处理子线程中的异常，可以实现 `Thread.UncaughtExceptionHandler` 接口，使用你的自定义处理逻辑。通过设置该处理器，您可以在子线程抛出未捕获的异常时执行特定的代码。
+
+```
+class MyRunnable implements Runnable {
+    @Override
+    public void run() {
+        throw new RuntimeException("Thread exception");
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Thread thread = new Thread(new MyRunnable());
+
+        // 设置自定义异常处理器
+        thread.setUncaughtExceptionHandler((t, e) -> {
+            System.out.println("Caught " + e + " in thread " + t.getName());
+        });
+
+        thread.start();
+
+        // 主线程继续执行
+        System.out.println("Main thread continues...");
+    }
+}
+```
+
+在这个例子中，如果子线程抛出异常，自定义的异常处理器将捕获并处理它。在 Java 的多线程环境下，除了使用 `Thread.UncaughtExceptionHandler` 来捕获未处理的异常，还有其他一些方式可以处理线程中的异常。以下是几种常用的方法：
+
+### 6.10.1 Try-Catch 块
+
+在每个线程的 `run()` 方法内部使用 `try-catch` 块来捕获和处理异常。这是最常见的方法，允许你在每个线程内实现自定义的异常处理逻辑。
+
+```java
+class MyRunnable implements Runnable {
+    @Override
+    public void run() {
+        try {
+            // 可能抛出异常的代码
+            throw new RuntimeException("Thread exception");
+        } catch (RuntimeException e) {
+            System.out.println("Caught exception: " + e.getMessage());
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Thread thread = new Thread(new MyRunnable());
+        thread.start();
+    }
+}
+```
+
+### 6.10.2 Future 和 Callable
+
+使用 `ExecutorService` 提供的 `Future` 和 `Callable` 接口可以捕获线程执行期间抛出的异常。当线程抛出异常时，该异常会封装在 `ExecutionException` 中，可以通过 `Future.get()` 方法进行捕获。
+
+```java
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+public class Main {
+    public static void main(String[] args) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        
+        Callable<Void> task = () -> {
+            throw new RuntimeException("Exception in Callable task");
+        };
+
+        Future<Void> future = executor.submit(task);
+        executor.shutdown();
+
+        try {
+            future.get(); // 调用 get() 会抛出 ExecutionException
+        } catch (InterruptedException e) {
+            System.err.println("Thread was interrupted");
+        } catch (ExecutionException e) {
+            System.err.println("Caught exception: " + e.getCause().getMessage());
+        }
+    }
+}
+```
+
+### 6.10.3 使用 CompletedFuture
+
+对于某些异步操作，使用 `CompletableFuture` 可以允许对异常更灵活的处理。`CompletableFuture` 提供了 `exceptionally`、`handle` 和 `whenComplete` 方法。
+
+```java
+import java.util.concurrent.CompletableFuture;
+
+public class Main {
+    public static void main(String[] args) {
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+            throw new RuntimeException("Exception in CompletableFuture");
+        });
+
+        future.exceptionally(ex -> {
+            System.out.println("Caught exception: " + ex.getMessage());
+            return null;
+        });
+        
+        // 等待 CompletableFuture 完成
+        future.join();
+    }
+}
+```
+
+### 6.10.4 线程池中的异常处理
+
+如果使用线程池（例如 `ExecutorService`），可以在 `ThreadFactory` 中自定义线程，以便在发生异常时通过 `thread.setUncaughtExceptionHandler()` 设置处理器。
+
+```java
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class Main {
+    public static void main(String[] args) {
+        ExecutorService executor = Executors.newFixedThreadPool(2, r -> {
+            Thread thread = new Thread(r);
+            thread.setUncaughtExceptionHandler((t, e) ->
+                System.out.println("Caught exception in thread " + t.getName() + ": " + e.getMessage())
+            );
+            return thread;
+        });
+
+        executor.submit(() -> {
+            throw new RuntimeException("Exception thrown from thread pool");
+        });
+        
+        executor.shutdown();
+    }
+}
+```
+
+
+
+### 6.10.5 总结
+
+- **Try-Catch 块**：直接在 `run()` 方法内捕获异常。
+- **Future 和 Callable**：通过 `ExecutionException` 捕获线程异常。
+- **CompletableFuture**：使用异步编程时有效处理异常。
+- **自定义 ThreadFactory**：在线程池中自定义线程以处理异常。
 
 
 
@@ -4554,7 +4772,7 @@ CAS 就是通过这种方式实现比较和交换操作的原子性的。**值�
 
 上面提到，CAS 保证了比较和交换的原子性。但是从读取到开始比较这段期间，其他核心仍然是可以修改这个值的。如果核心将 A 修改为 B，CAS 可以判断出来。但是如果核心将 A 修改为 B 再修改回 A。那么 CAS 会认为这个值并没有被改变，从而继续操作。这是和实际情况不符的。解决方案是加一个版本号。
 
-## 5.6 可重入锁
+## 7.3 可重入锁 ReentrantLock
 
 > 当某个线程请求一个由其他线程持有的锁时，发出请求的线程就会阻塞。然而，由于内置锁是可重入的，因此如果摸个线程试图获得一个已经由它自己持有的锁，那么这个请求就会成功。“重入”意味着获取锁的操作的粒度是“线程”，而不是调用。重入的一种实现方法是，为每个锁关联一个获取计数值和一个所有者线程。当计数值为0时，这个锁就被认为是没有被任何线程所持有，当线程请求一个未被持有的锁时，JVM将记下锁的持有者，并且将获取计数值置为1，如果同一个线程再次获取这个锁，计数值将递增，而当线程退出同步代码块时，计数器会相应地递减。当计数值为0时，这个锁将被释放。
 
@@ -4581,8 +4799,6 @@ public class Child extends Father
 
 - 子类覆写了父类的同步方法，然后调用父类中的方法，此时如果没有可重入的锁，那么这段代码件产生死锁。
 - 由于Father和Child中的doSomething方法都是synchronized方法，因此每个doSomething方法在执行前都会获取Child对象实例上的锁。如果内置锁不是可重入的，那么在调用super.doSomething时将无法获得该Child对象上的互斥锁，因为这个锁已经被持有，从而线程会永远阻塞下去，一直在等待一个永远也无法获取的锁。重入则避免了这种死锁情况的发生。
-
-## 7.3 可重入锁 ReentrantLock
 
 
 
