@@ -1178,7 +1178,7 @@ func main() {
 - 提高响应速度。当任务到达时，任务可以不需要的等到线程创建就能立即执行。
 - 提高线程的可管理性。线程是稀缺资源，如果无限制的创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一的分配，调优和监控。
 
-### 4.1 使用原始API创建线程池
+## 4.1 使用原始API创建线程池
 
 ```java
 /**
@@ -1311,7 +1311,7 @@ private final class Worker extends AbstractQueuedSynchronizer implements Runnabl
 }
 ```
 
-### 4.2 Executor
+## 4.2 Executor
 
 > Executor 管理多个异步任务的执⾏，⽽⽆需程序员显式地管理线程的⽣命周期。这⾥的异步是指多个任务的执⾏互不⼲扰，不需要进⾏同步操作。
 
@@ -1335,7 +1335,7 @@ public static void main(String[] args) {
 }
 ```
 
-### 4.3 CachedThreadPool
+## 4.3 CachedThreadPool
 
 `CachedThreadPool` 是 Java 中 `ExecutorService` 接口的一个实现类，它提供了一个基于线程池的执行器，用于执行异步任务。
 
@@ -1374,7 +1374,7 @@ public class Main {
 
 在这个示例中，我们使用 `Executors.newCachedThreadPool()` 方法创建了一个 `CachedThreadPool` 实例。然后我们提交了 10 个任务给线程池执行，每个任务都会打印执行线程的名称。最后，我们调用 `shutdown()` 方法关闭线程池。
 
-### 4.4 线程池参数
+## 4.4 线程池参数
 
 线程池在 Java 中通常由 `ThreadPoolExecutor` 类来实现，其构造函数提供了一些参数来配置线程池的行为。主要参数包括：
 
@@ -1453,7 +1453,7 @@ public class Main {
 
 不同类型的工作队列适用于不同的场景，选择合适的工作队列类型可以提高线程池的性能和效率。在使用线程池时，根据任务的特性和需求选择适合的工作队列类型是很重要的。
 
-### 4.5 关闭线程池
+## 4.5 关闭线程池
 
 调⽤ Executor 的 shutdown() ⽅法会等待线程都执⾏完毕之后再关闭，但是如果调⽤的是shutdownNow() ⽅法，则相当于调⽤每个线程的 interrupt() ⽅法。
 
@@ -1891,7 +1891,7 @@ ObjectVarilabe obj = new ObjectVarilabe()
 
 - 在构造函数内对一个final变量的写入，与随后把这个被构造对象的引用赋值给一个引用变量，这个两个操作不能被重排序，即需要先初始化final变量才可以给构造的对象地址赋给引用【普通域可能在地址赋给引用之后才初始化】
 
-  ```
+  ```java
     public class FinalExample {
       int i = 0;
       final int f;
@@ -1915,7 +1915,7 @@ ObjectVarilabe obj = new ObjectVarilabe()
 
 - 初次读一个包含final的对象的引用，与随后初次读这个final域，这两个操作之间不能重排序
 
-  ```
+  ```java
     // ①一定发生在③之前，但是①不一定发生在②之前
     public static void reader() { 
       FinalExample example = obj;    // ①读对象引用
@@ -2317,6 +2317,79 @@ public class WaitNotifyExample {
 ```
 
 在这个例子中，等待线程先获得了锁，然后调用 `wait()` 方法进入等待状态。在等待一段时间后，唤醒线程获取了相同的锁，并调用 `notify()` 或 `notifyAll()` 方法唤醒等待线程。当被唤醒的线程再次获得锁时，它将继续执行。
+---
+`IllegalMonitorStateException` 是 Java 中的一种运行时异常，属于 `java.lang` 包。它通常在尝试对一个对象的监视器（monitor）进行操作时抛出，但当前线程并没有持有该对象的监视器。
+
+**监视器（Monitor）**
+
+在 Java 中，每个对象都有一个监视器（monitor），用于实现同步。监视器确保在同一时刻只有一个线程可以执行某个对象的同步方法或同步块。线程可以通过以下方式获取对象的监视器：
+
+1. **同步方法**：当一个线程调用一个同步方法时，它会自动获取该对象的监视器。
+2. **同步块**：当一个线程进入一个同步块时，它会获取指定对象的监视器。
+
+**何时抛出 `IllegalMonitorStateException`**
+
+`IllegalMonitorStateException` 通常在以下情况下抛出：
+
+1. **调用 `wait()`、`notify()` 或 `notifyAll()` 方法时**：如果当前线程没有持有对象的监视器，调用这些方法会抛出 `IllegalMonitorStateException`。
+2. **在没有同步的情况下使用监视器**：例如，尝试在没有同步的情况下调用 `wait()` 或 `notify()`。
+
+**示例代码**
+
+以下是一个简单的示例，演示了如何触发 `IllegalMonitorStateException`：
+
+```java
+public class IllegalMonitorStateExceptionExample {
+    public static void main(String[] args) {
+        Object lock = new Object();
+
+        // 试图在没有持有锁的情况下调用 wait()
+        try {
+            lock.wait(); // 这里会抛出 IllegalMonitorStateException
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+在这个例子中，`lock.wait()` 被调用，但当前线程并没有持有 `lock` 对象的监视器，因此会抛出 `IllegalMonitorStateException`。
+
+**正确的使用方式**
+
+要正确使用 `wait()`、`notify()` 和 `notifyAll()`，需要确保当前线程持有对象的监视器。以下是一个正确的示例：
+
+```java
+public class CorrectMonitorExample {
+    public static void main(String[] args) {
+        Object lock = new Object();
+
+        Thread t1 = new Thread(() -> {
+            synchronized (lock) {
+                try {
+                    System.out.println("Thread 1 is waiting...");
+                    lock.wait(); // 正确使用，当前线程持有 lock 的监视器
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        Thread t2 = new Thread(() -> {
+            synchronized (lock) {
+                System.out.println("Thread 2 is notifying...");
+                lock.notify(); // 正确使用，当前线程持有 lock 的监视器
+            }
+        });
+
+        t1.start();
+        t2.start();
+    }
+}
+```
+
+在这个例子中，`t1` 线程在 `synchronized` 块中调用 `lock.wait()`，因此它持有 `lock` 的监视器，调用是合法的。同样，`t2` 线程在 `synchronized` 块中调用 `lock.notify()`，也是合法的。
+
 
 ##  5.7 await/signal/signalAll
 
@@ -2408,11 +2481,11 @@ AQS支持独占锁（exclusive）和共享锁（share）两种模式
 
 无论是独占锁还是共享锁，本质上都是对AQS内部的一个变量state的获取。state是一个原子的int变量，用来表示锁状态、资源数等。
 
-![QIKsHg](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/QIKsHg.png)
+![QIKsHg](./Java/QIKsHg.png)
 
 **AQS内部实现了两个队列，一个同步队列，一个条件队列**
 
-![QIMk8I](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/QIMk8I.png)
+![QIMk8I](./Java/QIMk8I.png)
 
 1. **同步队列（Sync Queue）**：
    - **用途**：主要用于实现AQS的核心同步机制。当一个线程获取同步状态（如锁）失败时，会被加入到同步队列中。
@@ -2648,7 +2721,75 @@ final boolean nonfairTryAcquire(int acquires) {
 - **非公平锁**：不按照顺序，任何时刻请求锁的线程都可以尝试获取锁，可能导致饥饿现象，但总体吞吐量可能更高。
 
 
+AQS（AbstractQueuedSynchronizer）是 Java 中用于实现同步器的一个框架，它提供了一种基于队列的方式来管理线程的获取和释放锁的过程。在 AQS 中，线程的状态和等待队列的管理是通过节点（Node）来实现的。
 
+### 6.1.4 AQS 的 Waiter Node 结构
+
+在 AQS 中，每个线程在等待获取锁时，会被封装成一个 `Node` 对象，并加入到一个等待队列中。`Node` 的结构大致如下：
+
+```java
+static final class Node {
+    // 线程状态
+    static final int CANCELLED = 1; // 取消状态
+    static final int SIGNAL    = -1; // 需要唤醒状态
+    static final int CONDITION = -2; // 条件等待状态
+    static final int PROPAGATE = -3; // 传播状态
+
+    // 线程的引用
+    volatile Thread thread; // 线程引用
+
+    // 前驱节点和后继节点
+    Node prev; // 前驱节点
+    Node next; // 后继节点
+
+    // 节点状态
+    volatile int waitStatus; // 节点状态
+
+    // 其他字段
+    Node nextWaiter; // 用于条件队列的下一个节点
+
+    // 构造函数
+    Node(Thread thread) {
+        this.thread = thread;
+    }
+}
+```
+
+### `waitStatus` 变量的解释
+
+`waitStatus` 是 `Node` 中的一个重要字段，用于表示节点的状态。它的值可以是以下几种：
+
+1. **CANCELLED (1)**：表示该节点已经被取消，通常是因为线程在等待过程中被中断或超时。被取消的节点不会再被唤醒。
+
+2. **SIGNAL (-1)**：表示该节点的线程需要被唤醒。通常在一个线程释放锁时，会将下一个节点的 `waitStatus` 设置为 `SIGNAL`，以通知它可以尝试获取锁。
+
+3. **CONDITION (-2)**：表示该节点在条件队列中等待。通常在使用条件变量（如 `Condition`）时，线程会将自己放入条件队列中，此时 `waitStatus` 被设置为 `CONDITION`。
+
+4. **PROPAGATE (-3)**：用于表示需要传播的状态，通常在共享锁的情况下使用，表示需要唤醒后续的节点。
+
+### 6.2.5 AQS 的等待队列
+
+AQS 使用一个双向链表来管理等待的线程节点。每个节点都包含对前驱节点和后继节点的引用。以下是一个简单的示意图，展示了 AQS 的等待队列结构：
+
+```
++----------------+     +----------------+     +----------------+
+|     Node 1     |<--->|     Node 2     |<--->|     Node 3     |
+|  waitStatus=-1 |     |  waitStatus=0  |     |  waitStatus=0  |
+|   Thread A     |     |   Thread B     |     |   Thread C     |
++----------------+     +----------------+     +----------------+
+```
+
+在这个示意图中：
+
+- `Node 1` 的 `waitStatus` 为 `-1`，表示 `Thread A` 需要被唤醒。
+- `Node 2` 和 `Node 3` 的 `waitStatus` 为 `0`，表示它们处于等待状态。
+- 每个节点通过 `prev` 和 `next` 指针相互连接，形成一个双向链表。
+
+**总结**
+
+- AQS 的 `Node` 结构用于表示等待获取锁的线程。
+- `waitStatus` 变量用于表示节点的状态，包括取消、需要唤醒、条件等待和传播状态。
+- AQS 使用双向链表来管理等待的线程节点，确保线程在获取锁时的顺序性。
 
 
 ## 6.2 ReentrantLock 锁
@@ -2681,7 +2822,7 @@ public class ReentrantLock implements Lock, java.io.Serializable
 
 ReentrantLock总共有三个内部类，并且三个内部类是紧密相关的，下面先看三个类的关系。
 
-![java-thread-x-juc-reentrantlock-1](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/java-thread-x-juc-reentrantlock-1.png)
+![java-thread-x-juc-reentrantlock-1](./Java/java-thread-x-juc-reentrantlock-1.png)
 
 说明: ReentrantLock类内部总共存在Sync、NonfairSync、FairSync三个类，NonfairSync与FairSync类继承自Sync类，Sync类继承自AbstractQueuedSynchronizer抽象类。下面逐个进行分析。
 
@@ -2781,7 +2922,7 @@ abstract static class Sync extends AbstractQueuedSynchronizer {
 
 Sync类存在如下方法和作用如下。
 
-![java-thread-x-juc-reentrantlock-2](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/java-thread-x-juc-reentrantlock-2.png)
+![java-thread-x-juc-reentrantlock-2](./Java/java-thread-x-juc-reentrantlock-2.png)
 
 - NonfairSync类
 
@@ -2860,7 +3001,7 @@ static final class FairSync extends Sync {
 
 说明: 跟踪lock方法的源码可知，当资源空闲时，它总是会先判断sync队列(AbstractQueuedSynchronizer中的数据结构)是否有等待时间更长的线程，如果存在，则将该线程加入到等待队列的尾部，实现了公平获取原则。其中，FairSync类的lock的方法调用如下，只给出了主要的方法。
 
-![java-thread-x-juc-reentrantlock-3](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/java-thread-x-juc-reentrantlock-3.png)
+![java-thread-x-juc-reentrantlock-3](./Java/java-thread-x-juc-reentrantlock-3.png)
 
 说明: 可以看出只要资源被其他线程占用，该线程就会添加到sync queue中的尾部，而不会先尝试获取资源。这也是和Nonfair最大的区别，Nonfair每一次都会尝试去获取资源，如果此时该资源恰好被释放，则会被当前线程获取，这就造成了不公平的现象，当获取不成功，再加入队列尾部。
 
@@ -2958,43 +3099,43 @@ Thread[t2,5,main] running
 Thread[t3,5,main] running
 ```
 
-![java-thread-x-juc-reentrantlock-4](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/java-thread-x-juc-reentrantlock-4.png)
+![java-thread-x-juc-reentrantlock-4](./Java/java-thread-x-juc-reentrantlock-4.png)
 
 说明: 首先，t1线程的lock操作 -> t2线程的lock操作 -> t3线程的lock操作 -> t1线程的unlock操作 -> t2线程的unlock操作 -> t3线程的unlock操作。根据这个时序图来进一步分析源码的工作流程。
 
 - t1线程执行lock.lock，下图给出了方法调用中的主要方法。
 
-![java-thread-x-juc-reentrantlock-5](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/java-thread-x-juc-reentrantlock-5.png)
+![java-thread-x-juc-reentrantlock-5](./Java/java-thread-x-juc-reentrantlock-5.png)
 
 说明: 由调用流程可知，t1线程成功获取了资源，可以继续执行。
 
 - t2线程执行lock.lock，下图给出了方法调用中的主要方法。
 
-![java-thread-x-juc-reentrantlock-6](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/java-thread-x-juc-reentrantlock-6.png)
+![java-thread-x-juc-reentrantlock-6](./Java/java-thread-x-juc-reentrantlock-6.png)
 
 说明: 由上图可知，最后的结果是t2线程会被禁止，因为调用了LockSupport.park。
 
 - t3线程执行lock.lock，下图给出了方法调用中的主要方法。
 
-![java-thread-x-juc-reentrantlock-7](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/java-thread-x-juc-reentrantlock-7.png)
+![java-thread-x-juc-reentrantlock-7](./Java/java-thread-x-juc-reentrantlock-7.png)
 
 说明: 由上图可知，最后的结果是t3线程会被禁止，因为调用了LockSupport.park。
 
 - t1线程调用了lock.unlock，下图给出了方法调用中的主要方法。
 
-![java-thread-x-juc-reentrantlock-8](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/java-thread-x-juc-reentrantlock-8.png)
+![java-thread-x-juc-reentrantlock-8](./Java/java-thread-x-juc-reentrantlock-8.png)
 
 说明: 如上图所示，最后，head的状态会变为0，t2线程会被unpark，即t2线程可以继续运行。此时t3线程还是被禁止。
 
 - t2获得cpu资源，继续运行，由于t2之前被park了，现在需要恢复之前的状态，下图给出了方法调用中的主要方法。
 
-![java-thread-x-juc-reentrantlock-9](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/java-thread-x-juc-reentrantlock-9.png)
+![java-thread-x-juc-reentrantlock-9](./Java/java-thread-x-juc-reentrantlock-9.png)
 
 说明: 在setHead函数中会将head设置为之前head的下一个结点，并且将pre域与thread域都设置为null，在acquireQueued返回之前，sync queue就只有两个结点了。
 
 - t2执行lock.unlock，下图给出了方法调用中的主要方法。
 
-![java-thread-x-juc-reentrantlock-10](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/java-thread-x-juc-reentrantlock-10.png)
+![java-thread-x-juc-reentrantlock-10](./Java/java-thread-x-juc-reentrantlock-10.png)
 
 
 
@@ -3002,13 +3143,13 @@ Thread[t3,5,main] running
 
 - t3线程获取cpu资源，恢复之前的状态，继续运行。
 
-![java-thread-x-juc-reentrantlock-11](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/java-thread-x-juc-reentrantlock-11.png)
+![java-thread-x-juc-reentrantlock-11](./Java/java-thread-x-juc-reentrantlock-11.png)
 
 说明: 最终达到的状态是sync queue中只剩下了一个结点，并且该节点除了状态为0外，其余均为null。
 
 - t3执行lock.unlock，下图给出了方法调用中的主要方法。
 
-![java-thread-x-juc-reentrantlock-12](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java/java-thread-x-juc-reentrantlock-12.png)
+![java-thread-x-juc-reentrantlock-12](./Java/java-thread-x-juc-reentrantlock-12.png)
 
 说明: 最后的状态和之前的状态是一样的，队列中有一个空节点，头节点为尾节点均指向它。
 
