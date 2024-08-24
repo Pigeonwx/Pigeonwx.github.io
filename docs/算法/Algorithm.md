@@ -1970,3 +1970,45 @@ public class KMP {
 
 }
 ```
+
+
+
+## 4.14 快速幂
+
+快速幂（Exponentiation by Squaring）是一种高效的算法，用于计算整数的幂（即 a^b*），在较高性能需求的应用场景中被广泛使用，如加密算法、数值计算等。快速幂在减少计算次数方面表现突出，可以将时间复杂度从 O(b)降低到 O(log⁡b)
+
+快速幂的核心思想在于：
+
+- 将指数 b 用二进制表示。
+- 根据指数的奇偶性，将幂次分解成较小的子问题递归求解。
+
+具体表达如下：
+
+1. 如果 b 是偶数，即 b=2k，那么 a^b=(a^2)^k。
+2. 如果 b 是奇数，即 b=2k+1，那么 a^b=a⋅(a^2)k。
+
+通过这种方式，可以将幂次计算逐步减少规模，使得计算量显著降低。
+
+```java
+public class FastPower {
+
+    // 计算 base^exponent
+    public static long fastPowRecursive(long base, long exponent) {
+        if (exponent == 0) {
+            return 1;  // 任何数的 0 次方等于 1
+        }
+        long half = fastPowRecursive(base, exponent / 2);
+        if (exponent % 2 == 0) {
+            return half * half;
+        } else {
+            return half * half * base;
+        }
+    }
+
+    public static void main(String[] args) {
+        System.out.println(fastPowRecursive(2, 10)); // 输出：1024
+        System.out.println(fastPowRecursive(3, 5));  // 输出：243
+    }
+}
+```
+
