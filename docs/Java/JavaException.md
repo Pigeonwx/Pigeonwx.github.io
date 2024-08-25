@@ -64,15 +64,15 @@
 Java异常类层次结构图：
 ![alt text](./JavaException/java-basic-exception-1.png)
 
-# Throwable
+## Throwable
 Throwable 是 Java 语言中所有错误与异常的超类。Throwable 包含两个子类：Error（错误）和 Exception（异常），它们通常用于指示发生了异常情况。Throwable 包含了其线程创建时线程执行堆栈的快照，它提供了 printStackTrace() 等接口用于获取堆栈跟踪数据等信息。
-# Error（错误）
+## Error（错误）
 Error 类及其子类：程序中无法处理的错误，表示运行应用程序中出现了严重的错误。此类错误一般表示代码运行时 JVM 出现问题。通常有 Virtual MachineError（虚拟机运行错误）、NoClassDefFoundError（类定义错误）等。比如 OutOfMemoryError：内存不足错误；StackOverflowError：栈溢出错误。此类错误发生时，JVM 将终止线程。这些错误是不受检异常，非代码性错误。因此，当此类错误发生时，应用程序不应该去处理此类错误。按照Java惯例，我们是不应该实现任何新的Error子类的！
-# Exception（异常）
+## Exception（异常）
 程序本身可以捕获并且可以处理的异常。Exception 这种异常又分为两类：运行时异常和编译时异常。
 - 运行时异常都是RuntimeException类及其子类异常，如NullPointerException(空指针异常)、IndexOutOfBoundsException(下标越界异常)等，这些异常是不检查异常，程序中可以选择捕获处理，也可以不处理。这些异常一般是由程序逻辑错误引起的，程序应该从逻辑角度尽可能避免这类异常的发生。运行时异常的特点是Java编译器不会检查它，也就是说，当程序中可能出现这类异常，即使没有用try-catch语句捕获它，也没有用throws子句声明抛出它，也会编译通过。
 - 非运行时异常 （编译异常）是RuntimeException以外的异常，类型上都属于Exception类及其子类。从程序语法角度讲是必须进行处理的异常，如果不处理，程序就不能编译通过。如IOException、SQLException等以及用户自定义的Exception异常，一般情况下不自定义检查异常。
-# 可查的异常（checked exceptions）和不可查的异常（unchecked exceptions）
+## 可查的异常（checked exceptions）和不可查的异常（unchecked exceptions）
 - 可查异常（编译器要求必须处置的异常）：正确的程序在运行中，很容易出现的、情理可容的异常状况。可查异常虽然是异常状况，但在一定程度上它的发生是可以预计的，而且一旦发生这种异常状况，就必须采取某种方式进行处理。除了RuntimeException及其子类以外，其他的Exception类及其子类都属于可查异常。这种异常的特点是Java编译器会检查它，也就是说，当程序中可能出现这类异常，要么用try-catch语句捕获它，要么用throws子句声明抛出它，否则编译不会通过。
 - 不可查异常(编译器不要求强制处置的异常)包括运行时异常（RuntimeException与其子类）和错误（Error）。# 异常基础提示接下来我们看下异常使用的基础。
 
@@ -82,7 +82,7 @@ Error 类及其子类：程序中无法处理的错误，表示运行应用程�
 - finally – finally语句块总是会被执行。它主要用于回收在try块里打开的物力资源(如数据库连接、网络连接和磁盘文件)。只有finally块，执行完成之后，才会回来执行try或者catch块中的return或者throw语句，如果finally中使用了return或者throw等终止方法的语句，则就不会跳回执行，直接停止。
 - throw – 用于抛出异常。
 - throws – 用在方法签名中，用于声明该方法可能抛出的异常。
-# 异常的申明(throws)
+## 异常的申明(throws)
 在Java中，当前执行的语句必属于某个方法，Java解释器调用main方法执行开始执行程序。若方法中存在检查异常，如果不对其捕获，那必须在方法头中显式声明该异常，以便于告知方法调用者此方法有异常，需要进行处理。 在方法中声明一个异常，方法头中使用关键字throws，后面接上要声明的异常。若声明多个异常，则使用逗号分割。如下所示：
 ```java
   public static void method() throws IOException,        FileNotFoundException{
@@ -107,7 +107,7 @@ Throws抛出异常的规则：
 - 必须声明方法可抛出的任何可查异常（checked exception）。即如果一个方法可能出现受可查异常，要么用try-catch语句捕获，要么用throws子句声明将它抛出，否则会导致编译错误仅当抛出了异常，该方法的调用者才必须处理或者重新抛出该异常。当方法的调用者无力处理该异常的时候，应该继续抛出，而不是囫囵吞枣。
 - 调用方法必须遵循任何可查异常的处理和声明规则。若覆盖一个方法，则不能声明与覆盖方法不同的异常。声明的任何异常必须是被覆盖方法所声明异常的同类或子类。
 
-# 异常的抛出(throw)
+## 异常的抛出(throw)
 如果代码可能会引发某种错误，可以创建一个合适的异常类实例并抛出它，这就是抛出异常。如下所示：
 ```java
 public static double method(int value) {
@@ -130,7 +130,7 @@ private static void readFile(String filePath) throws MyException {
     }
 }
 ```
-# 异常的自定义
+## 异常的自定义
 习惯上，定义一个异常类应包含两个构造函数，一个无参构造函数和一个带有详细描述信息的构造函数（Throwable 的 toString 方法会打印这些详细信息，调试时很有用）, 比如上面用到的自定义MyException：
 ```java
 public class MyException extends Exception {
@@ -141,12 +141,12 @@ public class MyException extends Exception {
     // ...
 }
 ```
-# 异常的捕获
+## 异常的捕获
 异常捕获处理的方法通常有：
 - try-catch
 - try-catch-finally
 - try-finallytry-with-resource
-# try-catch
+## try-catch
 在一个 try-catch 语句块中可以捕获多个异常类型，并对不同类型的异常做出不同的处理
 ```java
 private static void readFile(String filePath) {
@@ -211,7 +211,7 @@ private static void readFile(String filePath) throws MyException {
     }
 }
 ```
-# try-finally
+## try-finally
 > 可以直接用try-finally吗？ 可以。
 try块中引起异常，异常代码之后的语句不再执行，直接执行finally语句。 try块没有引发异常，则执行完try块就执行finally语句。try-finally可用在不需要捕获异常的代码，可以保证资源在使用后被关闭。例如IO流中执行完相应操作后，关闭相应资源；使用Lock对象保证线程同步，通过finally可以保证锁会被释放；数据库连接代码时，关闭连接操作等等。
 ```java
@@ -228,7 +228,7 @@ finally遇见如下情况不会执行
 - finally语句块中发生了异常。
 - 程序所在的线程死亡。
 - 关闭CPU。
-# try-with-resource
+## try-with-resource
 try-with-resource是Java 7中引入的，很容易被忽略。上面例子中，finally 中的 close 方法也可能抛出 IOException, 从而覆盖了原始异常。JAVA 7 提供了更优雅的方式来实现资源的自动释放，自动释放的资源需要是实现了 AutoCloseable 接口的类。
 - 代码实现
 ```java
@@ -266,7 +266,7 @@ try 代码块退出时，会自动调用 scanner.close 方法，和把 scanner.c
   - 进行简化（如果你的异常模式使问题变得太复杂，那么用起来会非常痛苦）。
   - 让类库和程序更安全。
 
-# 常用的异常
+## 常用的异常
 在Java中提供了一些异常用来描述经常发生的错误，对于这些异常，有的需要程序员进行捕获处理或声明抛出，有的是由Java虚拟机自动进行捕获处理。Java中常见的异常类:
 - RuntimeException
   - java.lang.ArrayIndexOutOfBoundsException 数组索引越界异常。当对数组的索引值为负数或大于等于数组大小时抛出。
@@ -291,11 +291,11 @@ try 代码块退出时，会自动调用 scanner.close 方法，和把 scanner.c
   - IllegalAccessException 不允许访问某类异常
   - InstantiationException 当应用程序试图使用Class类中的newInstance()方法创建一个类的实例，而指定的类对象无法被实例化时，抛出该异常
 
-# 异常实践
+## 异常实践
 > 提示在 Java 中处理异常并不是一个简单的事情。不仅仅初学者很难理解，即使一些有经验的开发者也需要花费很多时间来思考如何处理异常，包括需要处理哪些异常，怎样处理等等。这也是绝大多数开发团队都会制定一些规则来规范进行异常处理的原因。
 
 当你抛出或捕获异常的时候，有很多不同的情况需要考虑，而且大部分事情都是为了改善代码的可读性或者 API 的可用性。异常不仅仅是一个错误控制机制，也是一个通信媒介。因此，为了和同事更好的合作，一个团队必须要制定出一个最佳实践和规则，只有这样，团队成员才能理解这些通用概念，同时在工作中使用它。这里给出几个被很多团队使用的异常处理最佳实践。
-# 只针对不正常的情况才使用异常异常
+### 只针对不正常的情况才使用异常异常
 只应该被用于不正常的条件，它们永远不应该被用于正常的控制流。《阿里手册》中：【强制】Java 类库中定义的可以通过预检查方式规避的RuntimeException异常不应该通过catch 的方式来处理，比如：NullPointerException，IndexOutOfBoundsException等等。比如，在解析字符串形式的数字时，可能存在数字格式错误，不得通过catch Exception来实现
 代码1
 ```java
@@ -315,8 +315,25 @@ try {
 - 异常机制的设计初衷是用于不正常的情况，所以很少会会JVM实现试图对它们的性能进行优化。所以，创建、抛出和捕获异常的开销是很昂贵的。
 - 把代码放在try-catch中返回阻止了JVM实现本来可能要执行的某些特定的优化。
 - 对数组进行遍历的标准模式并不会导致冗余的检查，有些现代的JVM实现会将它们优化掉。
+---
+标准模式的遍历：
+在 Java 中，遍历数组的标准模式通常是使用 for 循环，例如：
 
-# 在 finally 块中清理资源或者使用 try-with-resource 语句
+```java
+for (int i = 0; i < array.length; i++) {
+    // 处理 array[i]
+}
+```
+在这个模式中，array.length 的检查是必要的，因为它确保了我们不会访问数组的越界索引。
+
+- JVM 优化：现代的 JVM 实现可以对这种标准的数组遍历模式进行优化。例如，JVM 可以在编译时或运行时分析代码，发现某些条件是恒定的，从而省略一些不必要的检查。这种优化可以减少运行时的开销，提高性能。
+- 消除冗余检查：如果 JVM 确定在某个上下文中，数组的长度不会改变，且循环条件是安全的，它可能会省略对 array.length 的重复检查。
+内联优化：JVM 可能会将某些方法调用内联，从而减少方法调用的开销。
+- 与异常处理的对比：当使用异常处理（如 try-catch）来处理可能的错误情况时，JVM 不会进行这些优化，因为异常机制的设计初衷是处理不正常的情况。异常的创建、抛出和捕获是昂贵的操作，JVM 在处理异常时会保持代码的完整性和安全性，而不会进行过多的优化。
+  - 性能开销：如果在正常的控制流中使用异常处理，JVM 可能会因为需要处理异常而无法进行其他优化，导致性能下降。
+  - 不必要的检查：在正常情况下，使用标准的控制流（如条件语句）可以避免不必要的异常检查，从而提高性能。
+
+### 在 finally 块中清理资源或者使用 try-with-resource 语句
 当使用类似InputStream这种需要使用后关闭的资源时，一个常见的错误就是在try块的最后关闭资源。
 错误示例
 ```java
@@ -371,7 +388,7 @@ public void automaticallyCloseResource() {
     }
 }
 ```
-# 尽量使用标准的异常代码
+### 尽量使用标准的异常代码
 重用是值得提倡的，这是一条通用规则，异常也不例外。重用现有的异常有几个好处：它使得你的API更加易于学习和使用，因为它与程序员原来已经熟悉的习惯用法是一致的。对于用到这些API的程序而言，它们的可读性更好，因为它们不会充斥着程序员不熟悉的异常。异常类越少，意味着内存占用越小，并且转载这些类的时间开销也越小。
 
 Java标准异常中有几个是经常被使用的异常。如下表格：
@@ -384,7 +401,7 @@ Java标准异常中有几个是经常被使用的异常。如下表格：
 
 虽然它们是Java平台库迄今为止最常被重用的异常，但是，在许可的条件下，其它的异常也可以被重用。例如，如果你要实现诸如复数或者矩阵之类的算术对象，那么重用ArithmeticException和NumberFormatException将是非常合适的。如果一个异常满足你的需要，则不要犹豫，使用就可以，不过你一定要确保抛出异常的条件与该异常的文档中描述的条件一致。这种重用必须建立在语义的基础上，而不是名字的基础上。最后，一定要清楚，选择重用哪一种异常并没有必须遵循的规则。例如，考虑纸牌对象的情形，假设有一个用于发牌操作的方法，它的参数(handSize)是发一手牌的纸牌张数。假设调用者在这个参数中传递的值大于整副牌的剩余张数。那么这种情形既可以被解释为IllegalArgumentException(handSize的值太大)，也可以被解释为IllegalStateException(相对客户的请求而言，纸牌对象的纸牌太少)。
 
-# 对异常进行文档说明
+### 对异常进行文档说明
 当在方法上声明抛出异常时，也需要进行文档说明。目的是为了给调用者提供尽可能多的信息，从而可以更好地避免或处理异常。在 Javadoc 添加 @throws 声明，并且描述抛出异常的场景。
 
 ```java
@@ -399,7 +416,7 @@ public void doSomething(String input) throws MyBusinessException {
 ```
 同时，在抛出MyBusinessException 异常时，需要尽可能精确地描述问题和相关信息，这样无论是打印到日志中还是在监控工具中，都能够更容易被人阅读，从而可以更好地定位具体错误信息、错误的严重程度等。
 
-# 优先捕获最具体的异常
+### 优先捕获最具体的异常
 大多数 IDE 都可以帮助你实现这个最佳实践。当你尝试首先捕获较不具体的异常时，它们会报告无法访问的代码块。但问题在于，只有匹配异常的第一个 catch 块会被执行。 因此，如果首先捕获 IllegalArgumentException ，则永远不会到达应该处理更具体的 NumberFormatException 的 catch 块，因为它是 IllegalArgumentException 的子类。总是优先捕获最具体的异常类，并将不太具体的 catch 块添加到列表的末尾。你可以在下面的代码片断中看到这样一个 try-catch 语句的例子。 第一个 catch 块处理所有 NumberFormatException 异常，第二个处理所有非 NumberFormatException 异常的IllegalArgumentException 异常。
 ```java
 public void catchMostSpecificExceptionFirst() {
@@ -412,7 +429,7 @@ public void catchMostSpecificExceptionFirst() {
     }
 }
 ```
-# 不要捕获 Throwable 类
+### 不要捕获 Throwable 类
 Throwable 是所有异常和错误的超类。你可以在 catch 子句中使用它，但是你永远不应该这样做！如果在 catch 子句中使用 Throwable ，它不仅会捕获所有异常，也将捕获所有的错误。JVM 抛出错误，指出不应该由应用程序处理的严重问题。 典型的例子是 OutOfMemoryError 或者 StackOverflowError 。两者都是由应用程序控制之外的情况引起的，无法处理。所以，最好不要捕获 Throwable ，除非你确定自己处于一种特殊的情况下能够处理错误。
 ```java
 public void doNotCatchThrowable() {
@@ -423,7 +440,7 @@ public void doNotCatchThrowable() {
     }
 }
 ```
-# 不要忽略异常
+### 不要忽略异常
 很多时候，开发者很有自信不会抛出异常，因此写了一个catch块，但是没有做任何处理或者记录日志。
 ```java
 public void doNotIgnoreExceptions() {
@@ -444,7 +461,7 @@ public void logAnException() {
     }
 }
 ```
-# 不要记录并抛出异常
+### 不要记录并抛出异常
 这可能是本文中最常被忽略的最佳实践。可以发现很多代码甚至类库中都会有捕获异常、记录日志并再次抛出的逻辑。如下：
 ```java
 try {
@@ -475,7 +492,7 @@ public void wrapException(String input) throws MyBusinessException {
 }
 ```
 因此，仅仅当想要处理异常时才去捕获，否则只需要在方法签名中声明让调用者去处理。
-# 包装异常时不要抛弃原始的异常
+### 包装异常时不要抛弃原始的异常
 捕获标准异常并包装为自定义异常是一个很常见的做法。这样可以添加更为具体的异常信息并能够做针对的异常处理。 在你这样做时，请确保将原始异常设置为原因（注：参考下方代码 NumberFormatException e 中的原始异常 e ）。Exception 类提供了特殊的构造函数方法，它接受一个 Throwable 作为参数。否则，你将会丢失堆栈跟踪和原始异常的消息，这将会使分析导致异常的异常事件变得困难。
 ```java
 public void wrapException(String input) throws MyBusinessException {
@@ -486,7 +503,7 @@ public void wrapException(String input) throws MyBusinessException {
     }
 }
 ```
-# 不要使用异常控制程序的流程
+### 不要使用异常控制程序的流程
 不应该使用异常控制应用的执行流程，例如，本应该使用if语句进行条件判断的情况下，你却使用异常处理，这是非常不好的习惯，会严重影响应用的性能。# 不要在finally块中使用return。try块中的return语句执行成功后，并不马上返回，而是继续执行finally块中的语句，如果此处存在return语句，则在此直接返回，无情丢弃掉try块中的返回点。如下是一个反例：
 ```java
 private int x = 0;
@@ -502,7 +519,7 @@ public int checkReturn() {
 ```
 # 深入理解异常
 提示我们再深入理解下异常，看下底层实现。
-# JVM处理异常的机制？
+## JVM处理异常的机制？
 提到JVM处理异常的机制，就需要提及Exception Table，以下称为异常表。我们暂且不急于介绍异常表，先看一个简单的 Java 处理异常的小例子。
 ```java
 public static void simpleTryCatch() {
@@ -667,7 +684,7 @@ public static java.lang.String tryCatchReturn();
       39: aload_2
       40: athrow  如果catch有未处理的异常，抛出去。
 ```
-# 异常是否耗时？为什么会耗时？
+## 异常是否耗时？为什么会耗时？
 说用异常慢，首先来看看异常慢在哪里？有多慢？下面的测试用例简单的测试了建立对象、建立异常对象、抛出并接住异常对象三者的耗时对比：
 ```java
 public class ExceptionTest {  
