@@ -71,6 +71,134 @@ int main() {
 }
 ```
 
+## Lambda
+C++11 引入了 lambda 表达式，这是一种可以在代码中定义匿名函数的方式。Lambda 表达式使得在需要函数对象的地方（如 STL 算法、线程等）能够更方便地使用函数。下面将详细介绍 C++ lambda 表达式的语法、特性和使用示例。
+
+### 1. Lambda 表达式的基本语法
+
+C++ 中的 lambda 表达式的基本语法如下：
+
+```cpp
+[capture](parameters) -> return_type {
+    // function body
+}
+```
+
+- **capture**：捕获列表，用于指定 lambda 表达式可以访问的外部变量。
+- **parameters**：参数列表，类似于普通函数的参数。
+- **return_type**：返回类型，可以省略，编译器会根据函数体推导。
+- **function body**：函数体，包含要执行的代码。
+
+### 2. 捕获列表
+
+捕获列表用于指定 lambda 表达式可以访问的外部变量。捕获方式有以下几种：
+
+- **按值捕获**：使用 `=`，表示按值捕获外部变量的副本。
+- **按引用捕获**：使用 `&`，表示按引用捕获外部变量。
+- **混合捕获**：可以同时使用按值和按引用捕获。
+- **捕获所有变量**：使用 `=` 捕获所有变量的副本，使用 `&` 捕获所有变量的引用。
+
+**示例**
+
+```cpp
+int x = 10;
+int y = 20;
+
+// 按值捕获
+auto lambda1 = [x]() {
+    return x + 5; // 这里 x 是按值捕获的
+};
+
+// 按引用捕获
+auto lambda2 = [&y]() {
+    return y + 5; // 这里 y 是按引用捕获的
+};
+
+// 混合捕获
+auto lambda3 = [x, &y]() {
+    return x + y; // x 按值捕获，y 按引用捕获
+};
+```
+
+### 3. 参数和返回类型
+
+参数和返回类型的定义与普通函数相似。可以省略返回类型，编译器会根据函数体推导。
+
+**示例**
+
+```cpp
+auto lambda = [](int a, int b) -> int {
+    return a + b;
+};
+
+// 使用 lambda
+int result = lambda(5, 3); // result = 8
+```
+
+### 4. 使用示例
+
+#### 4.1 在 STL 算法中使用
+
+Lambda 表达式常用于 STL 算法，如 `std::sort`、`std::for_each` 等。
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+int main() {
+    std::vector<int> vec = {1, 2, 3, 4, 5};
+
+    // 使用 lambda 表达式打印每个元素
+    std::for_each(vec.begin(), vec.end(), [](int n) {
+        std::cout << n << " ";
+    });
+    std::cout << std::endl;
+
+    // 使用 lambda 表达式进行排序
+    std::sort(vec.begin(), vec.end(), [](int a, int b) {
+        return a > b; // 降序排序
+    });
+
+    // 打印排序后的结果
+    std::for_each(vec.begin(), vec.end(), [](int n) {
+        std::cout << n << " ";
+    });
+    std::cout << std::endl;
+
+    return 0;
+}
+```
+
+### 5. Lambda 表达式的特性
+
+- **类型**：Lambda 表达式的类型是一个唯一的、不可命名的类型。可以通过 `auto` 关键字来声明 lambda。
+- **可调用性**：Lambda 表达式可以像普通函数一样被调用。
+- **状态**：Lambda 表达式可以捕获外部变量的状态，这使得它们在某些情况下非常灵活。
+- **内联**：Lambda 表达式可以在需要函数的地方直接定义，避免了额外的函数定义。
+
+### 6. 递归 Lambda
+
+C++14 引入了支持递归的 lambda 表达式。可以通过使用 `std::function` 来实现递归。
+
+```cpp
+#include <iostream>
+#include <functional>
+
+int main() {
+    std::function<int(int)> factorial = [&](int n) {
+        return (n <= 1) ? 1 : n * factorial(n - 1);
+    };
+
+    std::cout << "Factorial of 5: " << factorial(5) << std::endl; // 输出 120
+
+    return 0;
+}
+```
+
+### 7. 总结
+
+C++ 的 lambda 表达式提供了一种简洁的方式来定义匿名函数，支持捕获外部变量，适用于 STL 算法和多线程编程等场景。通过灵活的捕获方式和可调用性，lambda 表达式使得代码更加简洁和易于维护。
 
 # C++特性
 C++ 语言自其首次发布以来经历了多个版本的演进。以下是 C++ 的主要版本及其关键特性：
@@ -109,6 +237,99 @@ C++ 语言自其首次发布以来经历了多个版本的演进。以下是 C++
   - 引入了右值引用（rvalue references）和移动语义（move semantics），提高了性能。
   - 引入了 `nullptr`，替代了 `NULL`。
 
+### std::move
+`std::move` 是 C++11 引入的一个标准库函数，位于 `<utility>` 头文件中。它的主要作用是将一个对象的值转换为一个右值引用，从而支持移动语义（move semantics）。移动语义允许资源（如动态分配的内存、文件句柄等）在对象之间高效地转移，而不是进行昂贵的复制操作。
+
+#### 1. **基本概念**
+
+- **右值和左值**：
+  - **左值**（lvalue）：表示一个持久的对象，可以取地址的表达式。
+  - **右值**（rvalue）：表示一个临时的对象，通常是一个表达式的结果，不能取地址。
+
+- **移动语义**：通过移动语义，可以将资源的所有权从一个对象转移到另一个对象，而不需要复制资源。这在处理大型对象时可以显著提高性能。
+
+#### 2. **`std::move` 的作用**
+
+`std::move` 的作用是将一个左值转换为右值引用。它本身并不执行任何移动操作，而是提供了一种将对象标记为可以被移动的方式。
+
+```cpp
+#include <iostream>
+#include <utility> // for std::move
+#include <vector>
+
+class MyClass {
+public:
+    MyClass() { std::cout << "Constructor\n"; }
+    MyClass(const MyClass&) { std::cout << "Copy Constructor\n"; }
+    MyClass(MyClass&&) noexcept { std::cout << "Move Constructor\n"; }
+    ~MyClass() { std::cout << "Destructor\n"; }
+};
+
+int main() {
+    MyClass obj1; // Constructor
+    MyClass obj2 = std::move(obj1); // Move Constructor
+    return 0;
+}
+```
+
+在上面的例子中，`std::move(obj1)` 将 `obj1` 转换为右值引用，从而调用了移动构造函数，而不是复制构造函数。
+
+#### 3. **使用场景**
+
+- **容器类**：在 STL 容器（如 `std::vector`、`std::string` 等）中，使用 `std::move` 可以在插入或返回对象时避免不必要的复制。
+  
+- **自定义类**：在自定义类中实现移动构造函数和移动赋值运算符，以便在对象之间高效地转移资源。
+
+#### 4. **注意事项**
+
+- **使用后状态**：使用 `std::move` 后，原对象的状态是未定义的。虽然它仍然可以被使用，但不应依赖于其值。
+  
+- **避免误用**：不要对临时对象使用 `std::move`，因为临时对象本身就是右值，使用 `std::move` 只会增加不必要的复杂性。
+
+#### 5. **示例**
+
+以下是一个更复杂的示例，展示了如何在自定义类中使用 `std::move`：
+
+```cpp
+#include <iostream>
+#include <utility>
+#include <vector>
+
+class Resource {
+public:
+    Resource(size_t size) : data(new int[size]), size(size) {
+        std::cout << "Resource acquired\n";
+    }
+    
+    // 移动构造函数
+    Resource(Resource&& other) noexcept : data(other.data), size(other.size) {
+        other.data = nullptr; // 使原对象失去对资源的控制
+        other.size = 0;
+        std::cout << "Resource moved\n";
+    }
+    
+    ~Resource() {
+        delete[] data;
+        std::cout << "Resource released\n";
+    }
+
+private:
+    int* data;
+    size_t size;
+};
+
+int main() {
+    Resource res1(10); // Resource acquired
+    Resource res2 = std::move(res1); // Resource moved
+    return 0; // Resource released
+}
+```
+
+在这个示例中，`Resource` 类实现了移动构造函数，使用 `std::move` 将资源从 `res1` 移动到 `res2`，避免了不必要的复制。
+
+#### 总结
+
+`std::move` 是 C++11 中一个非常重要的工具，它使得移动语义成为可能，从而提高了程序的性能。通过合理使用 `std::move`，可以在对象之间高效地转移资源，减少不必要的复制开销。
 ## 4. C++14
 - **发布年份**：2014
 - **关键特性**：
