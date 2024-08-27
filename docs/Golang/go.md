@@ -45,7 +45,7 @@ Goroutine = Golang + Coroutine。**Goroutine是golang实现的协程，是用户
 
 #### 内核级线程模型 
 
-![ult_klt_1_1](/Users/xiangjianhang/pigeonwx.github.io/docs/Golang/go/ult_klt_1_1.jpg)
+![ult_klt_1_1](./go/ult_klt_1_1.jpg)
 
 **内核级线程模型中用户线程与内核线程是一对一关系（1 : 1）**。**线程的创建、销毁、切换工作都是有内核完成的**。应用程序不参与线程的管理工作，只能调用内核级线程编程接口(应用程序创建一个新线程或撤销一个已有线程时，都会进行一个系统调用）。每个用户线程都会被绑定到一个内核线程。用户线程在其生命期内都会绑定到该内核线程。一旦用户线程终止，两个线程都将离开系统。
 
@@ -63,7 +63,7 @@ Goroutine = Golang + Coroutine。**Goroutine是golang实现的协程，是用户
 
 #### 用户级线程模型
 
-![ult_klt_n_1](/Users/xiangjianhang/pigeonwx.github.io/docs/Golang/go/ult_klt_n_1.jpg)
+![ult_klt_n_1](./go/ult_klt_n_1.jpg)
 
 **用户线程模型中的用户线程与内核线程KSE是多对一关系（N : 1）**。**线程的创建、销毁以及线程之间的协调、同步等工作都是在用户态完成**，具体来说就是由应用程序的线程库来完成。**内核对这些是无感知的，内核此时的调度都是基于进程的**。线程的并发处理从宏观来看，任意时刻每个进程只能够有一个线程在运行，且只有一个处理器内核会被分配给该进程。
 
@@ -81,7 +81,7 @@ Goroutine = Golang + Coroutine。**Goroutine是golang实现的协程，是用户
 
 #### 两级线程模型 
 
-![ult_klt_n_m](/Users/xiangjianhang/pigeonwx.github.io/docs/Golang/go/ult_klt_n_m.jpg)
+![ult_klt_n_m](./go/ult_klt_n_m.jpg)
 
 **两级线程模型中用户线程与内核线程是一对一关系（N : M）**。两级线程模型充分吸收上面两种模型的优点，尽量规避缺点。其线程创建在用户空间中完成，线程的调度和同步也在应用程序中进行。一个应用程序中的多个用户级线程被绑定到一些（小于或等于用户级线程的数目）内核级线程上。
 
@@ -89,11 +89,11 @@ Goroutine = Golang + Coroutine。**Goroutine是golang实现的协程，是用户
 
 **Golang在底层实现了混合型线程模型**。M即系统线程，由系统调用产生，一个M关联一个KSE，即两级线程模型中的系统线程。G为Groutine，即两级线程模型的的应用及线程。M与G的关系是N:M。
 
-![golang_ult_klt](/Users/xiangjianhang/pigeonwx.github.io/docs/Golang/go/golang_ult_klt.jpg)
+![golang_ult_klt](./go/golang_ult_klt.jpg)
 
 ### G-M-P模型概览
 
-![gmp](/Users/xiangjianhang/pigeonwx.github.io/docs/Golang/go/gmp.jpeg)
+![gmp](./go/gmp.jpeg)
 
 G-M-P分别代表：
 
@@ -111,7 +111,7 @@ GMP调度流程大致如下：
 
 #### 调度的生命周期
 
-![golang_schedule_lifetime2](/Users/xiangjianhang/pigeonwx.github.io/docs/Golang/go/golang_schedule_lifetime2.png)
+![golang_schedule_lifetime2](./go/golang_schedule_lifetime2.png)
 
 
 
@@ -138,7 +138,7 @@ GMP调度流程大致如下：
 
 #### 调度的流程状态
 
-![golang_schedule_status](/Users/xiangjianhang/pigeonwx.github.io/docs/Golang/go/golang_schedule_status.jpeg)
+![golang_schedule_status](./go/golang_schedule_status.jpeg)
 
 从上图我们可以看出来：
 
