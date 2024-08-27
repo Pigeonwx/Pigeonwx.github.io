@@ -200,6 +200,86 @@ int main() {
 
 C++ 的 lambda 表达式提供了一种简洁的方式来定义匿名函数，支持捕获外部变量，适用于 STL 算法和多线程编程等场景。通过灵活的捕获方式和可调用性，lambda 表达式使得代码更加简洁和易于维护。
 
+
+## mutable
+在 C++ 中，`mutable` 关键字用于 lambda 表达式和类的成员函数，主要用于允许在特定上下文中修改被捕获的变量。以下是 `mutable` 的具体作用和用法：
+
+### 1. **在 Lambda 表达式中的作用**
+
+当您在 lambda 表达式中使用 `mutable` 关键字时，它允许您修改捕获的变量，即使这些变量是按值捕获的。默认情况下，lambda 表达式捕获的变量是只读的，不能在 lambda 的主体中被修改。
+
+#### 示例
+
+```cpp
+#include <iostream>
+
+int main() {
+    int x = 10;
+
+    // 默认情况下，捕获的变量是只读的
+    auto lambda1 = [x]() {
+        // x = x + 1; // 这会导致编译错误
+        std::cout << "x in lambda1: " << x << std::endl;
+    };
+    lambda1();
+
+    // 使用 mutable 关键字
+    auto lambda2 = [x]() mutable {
+        x = x + 1; // 现在可以修改 x
+        std::cout << "x in lambda2: " << x << std::endl;
+    };
+    lambda2();
+    std::cout << "x after lambda2: " << x << std::endl; // x 仍然是 10
+
+    return 0;
+}
+```
+
+在这个示例中：
+
+- `lambda1` 捕获 `x`，但不能修改它。
+- `lambda2` 使用 `mutable`，允许在 lambda 内部修改 `x`。但是，注意到 `x` 的原始值在 lambda 外部仍然保持不变，因为 `x` 是按值捕获的。
+
+### 2. **在类的成员函数中的作用**
+
+在类的成员函数中，`mutable` 关键字允许您修改类的成员变量，即使该成员函数被声明为 `const`。这在某些情况下非常有用，例如，当您希望在 `const` 成员函数中缓存计算结果。
+
+#### 示例
+
+```cpp
+#include <iostream>
+
+class Example {
+public:
+    mutable int cache; // 可变成员变量
+
+    Example() : cache(0) {}
+
+    void compute() const {
+        // 可以修改 mutable 成员变量
+        cache++;
+        std::cout << "Cache: " << cache << std::endl;
+    }
+};
+
+int main() {
+    Example ex;
+    ex.compute(); // Cache: 1
+    ex.compute(); // Cache: 2
+
+    return 0;
+}
+```
+
+在这个示例中，`cache` 是一个 `mutable` 成员变量，允许在 `const` 成员函数 `compute` 中被修改。
+
+### 3. **总结**
+
+- **在 lambda 表达式中**：`mutable` 允许修改按值捕获的变量。
+- **在类的成员函数中**：`mutable` 允许在 `const` 成员函数中修改可变成员变量。
+
+使用 `mutable` 可以在某些情况下提供更大的灵活性，但也要谨慎使用，以避免引入不必要的复杂性或错误。
+
 # C++特性
 C++ 语言自其首次发布以来经历了多个版本的演进。以下是 C++ 的主要版本及其关键特性：
 
