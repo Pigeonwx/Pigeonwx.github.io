@@ -8344,7 +8344,7 @@ select id from `order` where `order_no`= 'xxxx' for update
 
 我们熟悉了Zookeeper的这两个特性之后，就可以看看Zookeeper是如何实现分布式锁的了。首先，我们需要建立一个父节点，节点类型为持久节点（PERSISTENT） ，每当需要访问共享资源时，就会在父节点下建立相应的顺序子节点，节点类型为临时节点（EPHEMERAL），且标记为有序性（SEQUENTIAL），并且以临时节点名称+父节点名称+顺序号组成特定的名字。在建立子节点后，对父节点下面的所有以临时节点名称name开头的子节点进行排序，判断刚刚建立的子节点顺序号是否是最小的节点，如果是最小节点，则获得锁。如果不是最小节点，则阻塞等待锁，并且获得该节点的上一顺序节点，为其注册监听事件，等待节点对应的操作获得锁。当调用完共享资源后，删除该节点，关闭zk，进而可以触发监听事件，释放该锁。
 
-![1c2df592672c78fd5d006cd23eb11f28](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/1c2df592672c78fd5d006cd23eb11f28.jpg)
+![1c2df592672c78fd5d006cd23eb11f28](./Java-performance-tuning/1c2df592672c78fd5d006cd23eb11f28.jpg)
 
 
 
@@ -8513,9 +8513,9 @@ redLock.unlock();
 
 **从这个案例中，我想你应该意识到了分布式事务的重要性。**如今，大部分公司的服务基本都实现了微服务化，首先是业务需求，为了解耦业务；其次是为了减少业务与业务之间的相互影响。电商系统亦是如此，大部分公司的电商系统都是分为了不同服务模块，例如商品模块、订单模块、库存模块等等。事实上，分解服务是一把双刃剑，可以带来一些开发、性能以及运维上的优势，但同时也会增加业务开发的逻辑复杂度。其中最为突出的就是分布式事务了。通常，存在分布式事务的服务架构部署有以下两种：同服务不同数据库，不同服务不同数据库。我们以商城为例，用图示说明下这两种部署：
 
-![111f44892deb9919a1310d636a538f5a](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/111f44892deb9919a1310d636a538f5a.jpg)
+![111f44892deb9919a1310d636a538f5a](./Java-performance-tuning/111f44892deb9919a1310d636a538f5a.jpg)
 
-![48d448543aeac5eba4b9edd24e1bcf6c](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/48d448543aeac5eba4b9edd24e1bcf6c.jpg)
+![48d448543aeac5eba4b9edd24e1bcf6c](./Java-performance-tuning/48d448543aeac5eba4b9edd24e1bcf6c.jpg)
 
 
 
@@ -8537,7 +8537,7 @@ redLock.unlock();
 
 在XA规范之前，存在着一个DTP模型，该模型规范了分布式事务的模型设计。DTP规范中主要包含了AP、RM、TM三个部分，其中AP是应用程序，是事务发起和结束的地方；RM是资源管理器，主要负责管理每个数据库的连接数据源；TM是事务管理器，负责事务的全局管理，包括事务的生命周期管理和资源的分配协调等。
 
-![dcbb483b62b1e0a51d03c7edfcf89767](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/dcbb483b62b1e0a51d03c7edfcf89767.jpg)
+![dcbb483b62b1e0a51d03c7edfcf89767](./Java-performance-tuning/dcbb483b62b1e0a51d03c7edfcf89767.jpg)
 
 XA则规范了TM与RM之间的通信接口，在TM与多个RM之间形成一个双向通信桥梁，从而在多个数据库资源下保证ACID四个特性。这里强调一下，JTA是基于XA规范实现的一套Java事务编程接口，是一种两阶段提交事务。我们可以通过[源码](https://github.com/nickliuchao/jta)简单了解下JTA实现的多数据源事务提交。
 
@@ -8551,15 +8551,15 @@ XA则规范了TM与RM之间的通信接口，在TM与多个RM之间形成一个�
 
 在第一阶段，应用程序向事务管理器（TM）发起事务请求，而事务管理器则会分别向参与的各个资源管理器（RM）发送事务预处理请求（Prepare），此时这些资源管理器会打开本地数据库事务，然后开始执行数据库事务，但执行完成后并不会立刻提交事务，而是向事务管理器返回已就绪（Ready）或未就绪（Not Ready）状态。如果各个参与节点都返回状态了，就会进入第二阶段。
 
-![2a1cf8f45675acac6fe07c172a36ec95](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/2a1cf8f45675acac6fe07c172a36ec95.jpg)
+![2a1cf8f45675acac6fe07c172a36ec95](./Java-performance-tuning/2a1cf8f45675acac6fe07c172a36ec95.jpg)
 
 到了第二阶段，如果资源管理器返回的都是就绪状态，事务管理器则会向各个资源管理器发送提交（Commit）通知，资源管理器则会完成本地数据库的事务提交，最终返回提交结果给事务管理器。
 
-![59734e1a229ceee9df4295d0901ce2d5](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/59734e1a229ceee9df4295d0901ce2d5.jpg)
+![59734e1a229ceee9df4295d0901ce2d5](./Java-performance-tuning/59734e1a229ceee9df4295d0901ce2d5.jpg)
 
 在第二阶段中，如果任意资源管理器返回了未就绪状态，此时事务管理器会向所有资源管理器发送事务回滚（Rollback）通知，此时各个资源管理器就会回滚本地数据库事务，释放资源，并返回结果通知。
 
-![8791dfe19fce916f77b6c5740bc32e2f](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/8791dfe19fce916f77b6c5740bc32e2f.jpg)
+![8791dfe19fce916f77b6c5740bc32e2f](./Java-performance-tuning/8791dfe19fce916f77b6c5740bc32e2f.jpg)
 
 但事实上，二阶事务提交也存在一些缺陷。
 
@@ -8586,7 +8586,7 @@ XA则规范了TM与RM之间的通信接口，在TM与多个RM之间形成一个�
 
 而TCC正是为了解决以上问题而出现的一种分布式事务解决方案。TCC采用最终一致性的方式实现了一种柔性分布式事务，与XA规范实现的二阶事务不同的是，TCC的实现是基于服务层实现的一种二阶事务提交。TCC分为三个阶段，即Try、Confirm、Cancel三个阶段。
 
-![23f68980870465ba6c00c0f2619fcfa9](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/23f68980870465ba6c00c0f2619fcfa9.jpg)
+![23f68980870465ba6c00c0f2619fcfa9](./Java-performance-tuning/23f68980870465ba6c00c0f2619fcfa9.jpg)
 
 - Try阶段：主要尝试执行业务，执行各个服务中的Try方法，主要包括预留操作；
 - Confirm阶段：确认Try中的各个方法执行成功，然后通过TM调用各个服务的Confirm方法，这个阶段是提交阶段；
@@ -8604,7 +8604,7 @@ XA则规范了TM与RM之间的通信接口，在TM与多个RM之间形成一个�
 
 Seata是阿里去年开源的一套分布式事务解决方案，开源一年多已经有一万多star了，可见受欢迎程度非常之高。Seata的基础建模和DTP模型类似，只不过前者是将事务管理器分得更细了，抽出一个事务协调器（Transaction Coordinator 简称TC），主要维护全局事务的运行状态，负责协调并驱动全局事务的提交或回滚。而TM则负责开启一个全局事务，并最终发起全局提交或全局回滚的决议。如下图所示：
 
-![6ac3de014819c54fe6904c938240b183](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/6ac3de014819c54fe6904c938240b183.jpg)
+![6ac3de014819c54fe6904c938240b183](./Java-performance-tuning/6ac3de014819c54fe6904c938240b183.jpg)
 
 按照[Github](https://github.com/seata/seata)中的说明介绍，整个事务流程为：
 
@@ -8905,7 +8905,7 @@ Seata在第一阶段已经提交了事务，那如果在第二阶段发生了异
 
 平时使用拦截器（例如Fiddler）或浏览器Debug时，我们经常会发现一些接口返回304状态码+ Not Modified字符串，如下图中的极客时间Web首页。
 
-![5ae757f7c5b12901d4422b5722c0647b](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/5ae757f7c5b12901d4422b5722c0647b.png)
+![5ae757f7c5b12901d4422b5722c0647b](./Java-performance-tuning/5ae757f7c5b12901d4422b5722c0647b.png)
 
 如果我们对前端缓存技术不了解，就很容易对此感到困惑。浏览器常用的一种缓存就是这种基于304响应状态实现的本地缓存了，通常这种缓存被称为协商缓存。协商缓存，顾名思义就是与服务端协商之后，通过协商结果来判断是否使用本地缓存。一般协商缓存可以基于请求头部中的If-Modified-Since字段与返回头部中的Last-Modified字段实现，也可以基于请求头部中的If-None-Match字段与返回头部中的ETag字段来实现。
 
@@ -8920,7 +8920,7 @@ Seata在第一阶段已经提交了事务，那如果在第二阶段发生了异
 
 本地缓存中除了这种协商缓存，还有一种就是强缓存的实现。强缓存指的是只要判断缓存没有过期，则直接使用浏览器的本地缓存。如下图中，返回的是200状态码，但在size项中标识的是memory cache。
 
-![0a169df1141f31326b4b6ab331ab3748](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/0a169df1141f31326b4b6ab331ab3748.png)
+![0a169df1141f31326b4b6ab331ab3748](./Java-performance-tuning/0a169df1141f31326b4b6ab331ab3748.png)
 
 强缓存是利用Expires或者Cache-Control这两个HTTP Response Header实现的，它们都用来表示资源在客户端缓存的有效期。Expires是一个绝对时间，而Cache-Control是一个相对时间，即一个过期时间大小，与协商缓存一样，基于Expires实现的强缓存也会因为时间问题导致缓存管理出现问题。我建议使用Cache-Control来实现强缓存。具体的实现流程如下：
 
@@ -9030,7 +9030,7 @@ public class GuavaCacheDemo {
 
 BloomFilter的实现原理与Redis中的BitMap类似，首先初始化一个m长度的数组，并且每个bit初始化值都是0，当插入一个元素时，会使用n个hash函数来计算出n个不同的值，分别代表所在数组的位置，然后再将这些位置的值设置为1。假设我们插入两个key值分别为20,28的元素，通过两次哈希函数取模后的值分别为4,9以及14,19，因此4,9以及14,19都被设置为1。
 
-![d939bf92331838da581c4b500e7473a3](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/d939bf92331838da581c4b500e7473a3.jpg)
+![d939bf92331838da581c4b500e7473a3](./Java-performance-tuning/d939bf92331838da581c4b500e7473a3.jpg)
 
 
 
@@ -9089,7 +9089,7 @@ BloomFilter的实现原理与Redis中的BitMap类似，首先初始化一个m长
 - 用户完善订单信息，点击提交订单，此时校验库存，并创建订单，进入锁定库存状态，之后，用户支付订单款。
 - 当用户支付成功后，第三方支付平台将产生支付回调，系统通过回调更新订单状态，并扣除数据库的实际库存，通知用户购买成功。
 
-![e47d6d3c0bcd5aa455252a045c9f52e0](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/Java-performance-tuning/e47d6d3c0bcd5aa455252a045c9f52e0.jpg)
+![e47d6d3c0bcd5aa455252a045c9f52e0](./Java-performance-tuning/e47d6d3c0bcd5aa455252a045c9f52e0.jpg)
 
 
 
