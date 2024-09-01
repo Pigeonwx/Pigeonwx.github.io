@@ -1235,6 +1235,124 @@ public class HeapSort {
 
 在这个堆排序实现中，我们首先构建一个最大堆，然后将堆顶元素（最大值）与当前未排序部分的最后一个元素交换，再对剩余未排序部分重新构建最大堆。重复这个过程，直到所有元素都已排序。堆排序的时间复杂度为 O(nlogn)，空间复杂度为 O(1)。
 
+## 3.4 树的遍历-非递归实现
+
+### 3.4.1 前序遍历（Pre-order Traversal）
+
+前序遍历的顺序是：访问根节点 -> 前序遍历左子树 -> 前序遍历右子树。
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Stack;
+
+class TreeNode {
+    int value;
+    TreeNode left;
+    TreeNode right;
+
+    TreeNode(int value) {
+        this.value = value;
+        this.left = null;
+        this.right = null;
+    }
+}
+
+public class BinaryTree {
+    public List<Integer> preOrderTraversal(TreeNode root) {
+        List<Integer> result = new ArrayList<>();
+        if (root == null) {
+            return result;
+        }
+
+        Stack<TreeNode> stack = new Stack<>();
+        stack.push(root);
+
+        while (!stack.isEmpty()) {
+            TreeNode node = stack.pop();
+            result.add(node.value);
+
+            // 先右后左入栈，确保左子树先被访问
+            if (node.right != null) {
+                stack.push(node.right);
+            }
+            if (node.left != null) {
+                stack.push(node.left);
+            }
+        }
+
+        return result;
+    }
+}
+```
+
+### 3.4.2 中序遍历（In-order Traversal）
+
+中序遍历的顺序是：中序遍历左子树 -> 访问根节点 -> 中序遍历右子树。
+
+```java
+public List<Integer> inOrderTraversal(TreeNode root) {
+    List<Integer> result = new ArrayList<>();
+    Stack<TreeNode> stack = new Stack<>();
+    TreeNode current = root;
+
+    while (!stack.isEmpty() || current != null) {
+        // 先遍历到最左边的节点
+        while (current != null) {
+            stack.push(current);
+            current = current.left;
+        }
+
+        // 当前节点为空，说明左子树遍历完了
+        current = stack.pop();
+        result.add(current.value);
+
+        // 遍历右子树
+        current = current.right;
+    }
+
+    return result;
+}
+```
+
+### 3. 后序遍历（Post-order Traversal）
+
+后序遍历的顺序是：后序遍历左子树 -> 后序遍历右子树 -> 访问根节点。
+
+#### 非递归实现
+
+```java
+public List<Integer> postOrderTraversal(TreeNode root) {
+    List<Integer> result = new ArrayList<>();
+    Stack<TreeNode> stack = new Stack<>();
+    TreeNode lastVisitedNode = null;
+    TreeNode current = root;
+
+    while (!stack.isEmpty() || current != null) {
+        // 先遍历到最左边的节点
+        while (current != null) {
+            stack.push(current);
+            current = current.left;
+        }
+
+        // 查看栈顶元素
+        TreeNode peekNode = stack.peek();
+
+        // 如果右子树为空或已经访问过，访问根节点
+        if (peekNode.right == null || peekNode.right == lastVisitedNode) {
+            result.add(peekNode.value);
+            lastVisitedNode = stack.pop();
+        } else {
+            // 如果右子树存在且未被访问，遍历右子树
+            current = peekNode.right;
+        }
+    }
+
+    return result;
+}
+```
+
+
 # 四、奇思妙想
 
 ## 4.1 GospersHack
@@ -1738,9 +1856,10 @@ public class BitSetExample {
 }
 ```
 
+
 **输出示例**
 
-```
+```java
 BitSet1: {0, 2, 4}
 BitSet2: {1, 2, 3}
 AND Result: {2}
@@ -2010,3 +2129,55 @@ public class FastPower {
 }
 ```
 
+## 4.15 差分数组
+
+差分（Difference）在数据结构和算法中是一种常用的技术，主要用于高效地处理区间更新和查询问题。差分的基本思想是通过维护一个差分数组来简化对原数组的更新操作，从而提高效率。以下是差分在数据结构算法中的一些主要应用和相关概念。
+
+1. 差分数组的基本概念
+差分数组是一个辅助数组，用于记录相邻元素之间的差值。给定一个数组 A，其差分数组 D 定义为：
+
+D[i] = A[i] - A[i-1] (对于 i > 0)
+D[0] = A[0]
+通过差分数组，可以在 O(1) 的时间内对原数组的某个区间进行加法更新。
+
+2. 区间更新
+假设我们需要对数组 A 的某个区间 [l, r] 进行加上一个值 x 的操作。使用差分数组可以将这个操作转化为以下步骤：
+
+在差分数组 D 中进行更新：
+
+D[l] += x （从 l 开始加上 x）
+D[r + 1] -= x （在 r + 1 位置减去 x，以结束这个区间的影响）
+最后，通过对差分数组进行前缀和计算，可以得到更新后的原数组 A。
+
+3. 区间查询
+在使用差分数组进行区间更新后，查询某个位置的值也变得高效。通过维护一个前缀和数组，可以在 O(1) 的时间内查询任意位置的值。
+
+---
+
+这是 LeetCode 上的「1109. 航班预订统计」，难度为「中等」。
+
+Tag : 「区间求和问题」、「差分」、「线段树」
+
+这里有  个航班，它们分别从  到  进行编号。
+
+有一份航班预订表 bookings，表中第 [start,end,seat] 条预订记录  意味着在从  start到end  （包含start  和  end）的 每个航班 上预订了 seat 个座位。
+
+请你返回一个数组 answer，其中 answer[i] 是航班 i 上预订的座位总数。
+```java
+class Solution {
+    public int[] corpFlightBookings(int[][] bs, int n) {
+        int[] c = new int[n + 1];
+        for (int[] bo : bs) {
+            int l = bo[0] - 1, r = bo[1] - 1, v = bo[2];
+            c[l] += v;
+            c[r + 1] -= v;
+        }
+        int[] ans = new int[n];
+        ans[0] = c[0];
+        for (int i = 1; i < n; i++) {
+            ans[i] = ans[i - 1] + c[i];
+        }
+        return ans;
+    }
+}
+```
