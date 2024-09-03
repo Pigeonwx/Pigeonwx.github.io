@@ -158,7 +158,7 @@ public class ReferenceCountingGC {
 
 通过 GC Roots 作为起始点进行搜索，能够到达到的对象都是存活的，不可达的对象可被回收。
 
-![0635cbe8](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/0635cbe8.png)
+![0635cbe8](./JVM/0635cbe8.png)
 
 Java 虚拟机使用该算法来判断对象是否可被回收，在 Java 中 GC Roots 一般包含以下内容:
 
@@ -402,7 +402,7 @@ public class PhantomReferenceDemo {
 
 ### 1. 标记 - 清除
 
-![a4248c4b-6c1d-4fb8-a557-86da92d3a294](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/a4248c4b-6c1d-4fb8-a557-86da92d3a294.jpg)
+![a4248c4b-6c1d-4fb8-a557-86da92d3a294](./JVM/a4248c4b-6c1d-4fb8-a557-86da92d3a294.jpg)
 
 **将存活的对象进行标记，然后清理掉未被标记的对象。**
 
@@ -414,13 +414,13 @@ public class PhantomReferenceDemo {
 
 ### 2. 标记 - 整理
 
-![902b83ab-8054-4bd2-898f-9a4a0fe52830](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/902b83ab-8054-4bd2-898f-9a4a0fe52830.jpg)
+![902b83ab-8054-4bd2-898f-9a4a0fe52830](./JVM/902b83ab-8054-4bd2-898f-9a4a0fe52830.jpg)
 
 让所有存活的对象都向一端移动，然后直接清理掉端边界以外的内存。
 
 ### 3. 复制
 
-![e6b733ad-606d-4028-b3e8-83c3a73a3797](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/e6b733ad-606d-4028-b3e8-83c3a73a3797.jpg)
+![e6b733ad-606d-4028-b3e8-83c3a73a3797](./JVM/e6b733ad-606d-4028-b3e8-83c3a73a3797.jpg)
 
 - 将内存划分为大小相等的两块，每次只使用其中一块，当这一块内存用完了就将还存活的对象复制到另一块上面，然后再把使用过的内存空间进行一次清理。主要不足是只使用了内存的一半。
 
@@ -439,7 +439,7 @@ public class PhantomReferenceDemo {
 
 ## 3.4 垃圾收集器
 
-![c625baa0-dde6-449e-93df-c3a67f2f430f](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/c625baa0-dde6-449e-93df-c3a67f2f430f.jpg)
+![c625baa0-dde6-449e-93df-c3a67f2f430f](./JVM/c625baa0-dde6-449e-93df-c3a67f2f430f.jpg)
 
 以上是 HotSpot 虚拟机中的 7 个垃圾收集器，连线表示垃圾收集器可以配合使用。
 
@@ -450,7 +450,7 @@ public class PhantomReferenceDemo {
 
 ### 1. Serial 收集器
 
-![22fda4ae-4dd5-489d-ab10-9ebfdad22ae0](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/22fda4ae-4dd5-489d-ab10-9ebfdad22ae0.jpg)
+![22fda4ae-4dd5-489d-ab10-9ebfdad22ae0](./JVM/22fda4ae-4dd5-489d-ab10-9ebfdad22ae0.jpg)
 
 Serial 翻译为串行，也就是说它以串行的方式执行。
 
@@ -462,7 +462,7 @@ Serial 翻译为串行，也就是说它以串行的方式执行。
 
 ### 2. ParNew 收集器
 
-![81538cd5-1bcf-4e31-86e5-e198df1e013b](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/81538cd5-1bcf-4e31-86e5-e198df1e013b.jpg)
+![81538cd5-1bcf-4e31-86e5-e198df1e013b](./JVM/81538cd5-1bcf-4e31-86e5-e198df1e013b.jpg)
 
 它是 Serial 收集器的多线程版本。
 
@@ -486,7 +486,7 @@ Serial 翻译为串行，也就是说它以串行的方式执行。
 
 ------
 
-![08f32fd3-f736-4a67-81ca-295b2a7972f2](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/08f32fd3-f736-4a67-81ca-295b2a7972f2.jpg)
+![08f32fd3-f736-4a67-81ca-295b2a7972f2](./JVM/08f32fd3-f736-4a67-81ca-295b2a7972f2.jpg)
 
 是 Serial 收集器的老年代版本，也是给 Client 模式下的虚拟机使用。如果用在 Server 模式下，它有两大用途:
 
@@ -497,7 +497,7 @@ Serial 翻译为串行，也就是说它以串行的方式执行。
 
 
 
-![278fe431-af88-4a95-a895-9c3b80117de3](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/278fe431-af88-4a95-a895-9c3b80117de3.jpg)
+![278fe431-af88-4a95-a895-9c3b80117de3](./JVM/278fe431-af88-4a95-a895-9c3b80117de3.jpg)
 
 是 Parallel Scavenge 收集器的老年代版本。
 
@@ -505,7 +505,7 @@ Serial 翻译为串行，也就是说它以串行的方式执行。
 
 ### 6. CMS 收集器
 
-![62e77997-6957-4b68-8d12-bfd609bb2c68](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/62e77997-6957-4b68-8d12-bfd609bb2c68.jpg)
+![62e77997-6957-4b68-8d12-bfd609bb2c68](./JVM/62e77997-6957-4b68-8d12-bfd609bb2c68.jpg)
 
 CMS(Concurrent Mark Sweep)，Mark Sweep 指的是标记 - 清除算法。
 
@@ -530,17 +530,17 @@ G1(Garbage-First)，它是一款面向服务端应用的垃圾收集器，在多
 
 堆被分为新生代和老年代，其它收集器进行收集的范围都是整个新生代或者老年代，而 G1 可以直接对新生代和老年代一起回收。
 
-![4cf711a8-7ab2-4152-b85c-d5c226733807](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/4cf711a8-7ab2-4152-b85c-d5c226733807.png)
+![4cf711a8-7ab2-4152-b85c-d5c226733807](./JVM/4cf711a8-7ab2-4152-b85c-d5c226733807.png)
 
 G1 把堆划分成多个大小相等的独立区域(Region)，新生代和老年代不再物理隔离。
 
-![9bbddeeb-e939-41f0-8e8e-2b1a0aa7e0a7](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/9bbddeeb-e939-41f0-8e8e-2b1a0aa7e0a7.png)
+![9bbddeeb-e939-41f0-8e8e-2b1a0aa7e0a7](./JVM/9bbddeeb-e939-41f0-8e8e-2b1a0aa7e0a7.png)
 
 通过引入 Region 的概念，从而将原来的一整块内存空间划分成多个的小空间，使得每个小空间可以单独进行垃圾回收。这种划分方法带来了很大的灵活性，使得可预测的停顿时间模型成为可能。通过记录每个 Region 垃圾回收时间以及回收所获得的空间(这两个值是通过过去回收的经验获得)，并维护一个优先列表，每次根据允许的收集时间，优先回收价值最大的 Region。
 
 每个 Region 都有一个 Remembered Set，用来记录该 Region 对象的引用对象所在的 Region。通过使用 Remembered Set，在做可达性分析的时候就可以避免全堆扫描。
 
-![f99ee771-c56f-47fb-9148-c0036695b5fe](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/f99ee771-c56f-47fb-9148-c0036695b5fe.jpg)
+![f99ee771-c56f-47fb-9148-c0036695b5fe](./JVM/f99ee771-c56f-47fb-9148-c0036695b5fe.jpg)
 
 如果不计算维护 Remembered Set 的操作，G1 收集器的运作大致可划分为以下几个步骤:
 
@@ -653,7 +653,7 @@ G1垃圾回收器是在Java7 update 4之后引入的一个新的垃圾回收器�
 
 - G1分区示意图
 
-![java-jvm-gc-g1-1](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/java-jvm-gc-g1-1.jpeg)
+![java-jvm-gc-g1-1](./JVM/java-jvm-gc-g1-1.jpeg)
 
 
 
@@ -671,7 +671,7 @@ G1同样可以通过-Xms/-Xmx来指定堆空间大小。当发生年轻代收集
 
 #### 2.2 分代模型
 
-![java-jvm-gc-g1-2](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/java-jvm-gc-g1-2.jpeg)
+![java-jvm-gc-g1-2](./JVM/java-jvm-gc-g1-2.jpeg)
 
 ##### 2.2.1 分代垃圾收集
 
@@ -687,7 +687,7 @@ G1同样可以通过-Xms/-Xmx来指定堆空间大小。当发生年轻代收集
 
 #### 2.3 分区模型
 
-![java-jvm-gc-g1-3](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/java-jvm-gc-g1-3.jpeg)
+![java-jvm-gc-g1-3](./JVM/java-jvm-gc-g1-3.jpeg)
 
 G1对内存的使用以分区(Region)为单位，而对对象的分配则以卡片(Card)为单位。
 
@@ -717,7 +717,7 @@ RSet在内部使用Per Region Table(PRT)记录分区的引用情况。由于RSet
 
 CSet收集示意图
 
-![java-jvm-gc-g1-4](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/java-jvm-gc-g1-4.jpeg)
+![java-jvm-gc-g1-4](./JVM/java-jvm-gc-g1-4.jpeg)
 
 
 
@@ -743,11 +743,11 @@ CSet收集示意图
 
 CMS和G1在并发标记时使用的是同一个算法：三色标记法，使用白灰黑三种颜色标记对象。白色是未标记；灰色自身被标记，引用的对象未标记；黑色自身与引用对象都已标记。
 
-![java-jvm-gc-g1-5](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/java-jvm-gc-g1-5.png)
+![java-jvm-gc-g1-5](./JVM/java-jvm-gc-g1-5.png)
 
 GC 开始前所有对象都是白色，GC 一开始所有根能够直达的对象被压到栈中，待搜索，此时颜色是灰色。然后灰色对象依次从栈中取出搜索子对象，子对象也会被涂为灰色，入栈。当其所有的子对象都涂为灰色之后该对象被涂为黑色。当 GC 结束之后灰色对象将全部没了，剩下黑色的为存活对象，白色的为垃圾。
 
-![java-jvm-gc-g1-5-1](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/java-jvm-gc-g1-5-1.gif)
+![java-jvm-gc-g1-5-1](./JVM/java-jvm-gc-g1-5-1.gif)
 
 
 
@@ -755,7 +755,7 @@ GC 开始前所有对象都是白色，GC 一开始所有根能够直达的对�
 
 在remark过程中，黑色指向了白色，如果不对黑色重新扫描，则会漏标。会把白色D对象当作没有新引用指向从而回收掉。
 
-![java-jvm-gc-g1-6](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/java-jvm-gc-g1-6.png)
+![java-jvm-gc-g1-6](./JVM/java-jvm-gc-g1-6.png)
 
 并发标记过程中，Mutator删除了所有从灰色到白色的引用，会产生漏标。此时白色对象应该被回收
 
@@ -781,7 +781,7 @@ GC 开始前所有对象都是白色，GC 一开始所有根能够直达的对�
 
 G1垃圾收集活动周期图
 
-![java-jvm-gc-g1-7](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/java-jvm-gc-g1-7.jpeg)
+![java-jvm-gc-g1-7](./JVM/java-jvm-gc-g1-7.jpeg)
 
 #### 3.2 RSet的维护
 
@@ -789,7 +789,7 @@ G1垃圾收集活动周期图
 
 ##### 3.2.1 栅栏Barrier
 
-栅栏代码示意![java-jvm-gc-g1-8](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/java-jvm-gc-g1-8.jpeg)
+栅栏代码示意![java-jvm-gc-g1-8](./JVM/java-jvm-gc-g1-8.jpeg)
 
 我们首先介绍一下栅栏(Barrier)的概念。栅栏是指在原生代码片段中，当某些语句被执行时，栅栏代码也会被执行。而G1主要在赋值语句中，使用写前栅栏(Pre-Write Barrrier)和写后栅栏(Post-Write Barrrier)。事实上，写栅栏的指令序列开销非常昂贵，应用吞吐量也会根据栅栏复杂度而降低。
 
@@ -825,7 +825,7 @@ G1中使用基于Urs Hölzle的快速写栅栏，将栅栏开销缩减到2个额
 
 并发标记位图过程
 
-![java-jvm-gc-g1-9](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JVM/java-jvm-gc-g1-9.png)
+![java-jvm-gc-g1-9](./JVM/java-jvm-gc-g1-9.png)
 
 要标记存活的对象，每个分区都需要创建位图(Bitmap)信息来存储标记数据，来确定标记周期内被分配的对象。G1采用了两个位图Previous Bitmap、Next Bitmap，来存储标记数据，Previous位图存储上次的标记数据，Next位图在标记周期内不断变化更新，同时Previous位图的标记数据也越来越过时，当标记周期结束后Next位图便替换Previous位图，成为上次标记的位图。同时，每个分区通过顶部开始标记(TAMS)，来记录已标记过的内存范围。同样的，G1使用了两个顶部开始标记Previous TAMS(PTAMS)、Next TAMS(NTAMS)，记录已标记的范围。
 
