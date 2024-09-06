@@ -2317,7 +2317,7 @@ public class WaitNotifyExample {
 ```
 
 在这个例子中，等待线程先获得了锁，然后调用 `wait()` 方法进入等待状态。在等待一段时间后，唤醒线程获取了相同的锁，并调用 `notify()` 或 `notifyAll()` 方法唤醒等待线程。当被唤醒的线程再次获得锁时，它将继续执行。
----
+
 `IllegalMonitorStateException` 是 Java 中的一种运行时异常，属于 `java.lang` 包。它通常在尝试对一个对象的监视器（monitor）进行操作时抛出，但当前线程并没有持有该对象的监视器。
 
 **监视器（Monitor）**
