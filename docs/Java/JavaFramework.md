@@ -448,7 +448,7 @@ PS:这是一道全新的八股，毕竟 ModelAndView 这种方式应该没人用
 - @Bean：注解在方法上，声明当前方法的返回值为一个 Bean。返回的 Bean 对应的类中可以定义 init()方法和 destroy()方法，然后在`@Bean(initMethod=”init”,destroyMethod=”destroy”)`定义，在构造之后执行 init，在销毁之前执行 destroy。
 - @Scope:定义我们采用什么模式去创建 Bean（方法上，得有@Bean） 其设置类型包括：Singleton 、Prototype、Request 、 Session、GlobalSession。
 
-#### @Order
+#### 2.2.2.1 @Order
 
 在 Spring 框架中，`@Order` 注解可以用于多个组件，以控制它们的执行顺序。以下是几个常见的使用场景：
 
@@ -533,7 +533,7 @@ public class SecondConfig {
 
 
 
-#### 2.2.2.1 @Autowired 的实现原理
+#### 2.2.2.2 @Autowired 的实现原理
 
 实现@Autowired 的关键是：**AutowiredAnnotationBeanPostProcessor**
 
@@ -1897,9 +1897,9 @@ org.springframework.transaction.UnexpectedRollbackException: Transaction rolled 
 - filter（过滤器）是在请求到达servlet之前进行预处理。interceptor（拦截器）是在请求到达servlet之后在进入action（controller）之前进行预处理，在action（controller）处理完返回视图前再处理，待action（controller）返回视图后进行最终处理。
 - filter可以过滤被web容器管理的几乎所有资源请求（JSP、Servlet、静态资源等），interceptor只能对action（SpringMVC里的controller）进行拦截处理。
 
-![Snipaste_2024-08-14_17-38-16](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JavaFramework/Snipaste_2024-08-14_17-38-16.png)
+![Snipaste_2024-08-14_17-38-16](./JavaFramework/Snipaste_2024-08-14_17-38-16.png)
 
-![4414bee0263d0b48a7efcea94d9e6060](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JavaFramework/4414bee0263d0b48a7efcea94d9e6060.png)
+![4414bee0263d0b48a7efcea94d9e6060](./JavaFramework/4414bee0263d0b48a7efcea94d9e6060.png)
 
 ### 2.8.1 Filter
 
@@ -2000,7 +2000,7 @@ public class FilterConfig {
 
 ### 2.8.2 Zuul-Filter
 
-![o_QQ截图20190313145207](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JavaFramework/o_QQ截图20190313145207.png)
+![o_QQ截图20190313145207](./JavaFramework/o_QQ截图20190313145207.png)
 
 Zuul 是 Netflix 开源的一个边缘服务解决方案，主要用于提供动态路由、监控、弹性、负载均衡等功能。**Zuul Filter** 是其核心部分之一，允许开发者在请求路径的不同阶段插入自定义的处理逻辑，以扩展或修改请求和响应的处理流程。
 
@@ -2122,7 +2122,7 @@ FormBodyWrapperFilter：它的执行顺序为-1，是第三个执行的过滤器
 
 ### 2.8.3 Interceptor
 
-![Snipaste_2024-08-15_10-01-42](/Users/xiangjianhang/init-git/pigeonwx.github.io/docs/Java/JavaFramework/Snipaste_2024-08-15_10-01-42.png)
+![Snipaste_2024-08-15_10-01-42](./JavaFramework/Snipaste_2024-08-15_10-01-42.png)
 
 **拦截器**（Interceptor）是 Spring MVC 中的重要组件，用于在处理 HTTP 请求与响应的过程中，对请求的执行进行拦截和处理。拦截器可以对请求进行预处理、目标方法执行前后的处理、以及响应的后处理，通常用于实现日志记录、权限检查等功能。
 
@@ -2546,7 +2546,7 @@ SpringBoot 开启自动配置的注解是`@EnableAutoConfiguration` ，启动类
 
 
 
-### 3.2.2 自定义一个 SpringBoot Starter
+### 3.2.2 自定义 SpringBoot Starter
 
 知道了自动配置原理，创建一个自定义 SpringBoot Starter 也很简单。
 
@@ -2584,6 +2584,10 @@ public class HelloProperties {
 @Configuration
 @EnableConfigurationProperties(HelloProperties.class)
 public class HelloPropertiesConfigure {
+  	@Bean //涉及的一些装配bean
+    public MyService myService() {
+        return new MyService();
+    }
 }
 ```
 
@@ -2649,11 +2653,11 @@ SpringBoot 启动大致流程如下 ：
 
 ![spring-68744556-a1ba-4e1f-a092-1582875f0da6](./JavaFramework/spring-68744556-a1ba-4e1f-a092-1582875f0da6.png)
 
-##  SpringBoot3场景实战
+##  3.3 SpringBoot3场景实战
 
-###  Docker快速入门
+###  3.3.1 Docker快速入门
 
-###  NoSOL
+###  3.3.2 NoSOL
 
 接口文档
 远程调用
@@ -2662,7 +2666,7 @@ Web安全
 可观测性
  AOT
 
-## 响应式编程全套
+## 3.4 响应式编程全套
 
  Reactor核心
 Spring-WebFlux(响应式Web)
@@ -2674,9 +2678,9 @@ Spring Security Reactive（响应式安全）
 
 
 
-## 3.3 常用注解
+## 3.5 常用注解
 
-### SpingBoot 也有定时任务？是什么注解？
+### 3.5.1 SpingBoot 定时任务
 
 在 SpringBoot 中使用定时任务主要有两种不同的方式，一个就是使用 Spring 中的 @Scheduled 注解，另一个则是使用第三方框架 Quartz。
 
